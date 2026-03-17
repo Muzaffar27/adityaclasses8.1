@@ -1,0 +1,6 @@
+// 1. Override variables BEFORE importing Bulma
+$primary: #00d1b2;
+$family-primary: 'Segoe UI', sans-serif;
+
+// 2. Import Bulma
+@import "bulma/bulma";

@@ -6,8 +6,11 @@
         "build": "vite build"
     },
     "devDependencies": {
+        "@vitejs/plugin-vue": "^6.0.5",
         "axios": "^1.6.4",
+        "bulma": "^1.0.4",
         "laravel-vite-plugin": "^1.0.0",
+        "sass": "^1.98.0",
         "vite": "^5.0.0"
     },
     "dependencies": {
