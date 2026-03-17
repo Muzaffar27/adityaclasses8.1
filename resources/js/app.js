@@ -1,8 +1,10 @@
+import "./bootstrap";
+import { createApp } from "vue";
+import router from "./router"; // Import your router configuration
+import App from "./components/App.vue";
 import "../sass/app.scss";
 
-import { createApp } from "vue";
-import HomePage from "./components/HomePage.vue";
+const app = createApp(App);
 
-const app = createApp({});
-app.component("home-page", HomePage);
+app.use(router);
 app.mount("#app");

@@ -1,6 +1,109 @@
-// 1. Override variables BEFORE importing Bulma
-$primary: #00d1b2;
-$family-primary: 'Segoe UI', sans-serif;
+
+// 1. Set your custom variables
+$primary: #4f46e5;
+$sidebar-width: 250px;
+$link: $primary;
 
 // 2. Import Bulma
 @import "bulma/bulma";
+
+:root {
+    --bulma-primary-h: 235deg;
+    --bulma-primary-s: 75%;
+    --bulma-primary-l: 59%;
+    --bulma-primary: #4f46e5;
+    
+    // Also update the link color to match
+    --bulma-link-h: 235deg;
+    --bulma-link-s: 75%;
+    --bulma-link-l: 59%;
+    --bulma-link: #4f46e5;
+}
+
+
+/* Fade Transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.sidebar {
+    width: $sidebar-width;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 1.5rem;
+    background-color: #1e293b; // Deep dark
+    z-index: 100;
+    transition: transform 0.3s ease;
+    
+    @media screen and (max-width: 1023px) {
+        transform: translateX(-100%); // Hide off-screen by default on mobile
+        
+        &.is-open {
+            transform: translateX(0); // Slide in when we add this class
+        }
+    }
+
+    .menu-label {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .menu-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        color: #cbd5e1;
+        transition: all 0.2s ease;
+        margin-bottom: 2px;
+
+        &:hover {
+            background-color: rgba($primary, 0.15);
+            color: #fff;
+        }
+
+        &.is-active {
+            background-color: $primary;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+    }
+}
+
+.main-content {
+     // Default for Desktop
+     margin-left: $sidebar-width;
+     min-height: 100vh;
+     transition: margin 0.3s ease;
+
+    @media screen and (max-width: 1023px) {
+        margin-left: 0; // Remove margin on mobile
+        padding-top: 60px; // Make room for the mobile navbar
+    }
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 90;
+}
