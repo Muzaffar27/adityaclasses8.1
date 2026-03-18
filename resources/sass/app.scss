@@ -1,7 +1,6 @@
-
 // 1. Set your custom variables
 $primary: #4f46e5;
-$sidebar-width: 250px;
+$sidebar-width: 280px;
 $link: $primary;
 
 // 2. Import Bulma
@@ -12,26 +11,24 @@ $link: $primary;
     --bulma-primary-s: 75%;
     --bulma-primary-l: 59%;
     --bulma-primary: #4f46e5;
-    
-    // Also update the link color to match
+
     --bulma-link-h: 235deg;
     --bulma-link-s: 75%;
     --bulma-link-l: 59%;
     --bulma-link: #4f46e5;
 }
 
-
-/* Fade Transition */
+/* ── Fade Transition ──────────────────────────────────────────────────────── */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
-  opacity: 0;
+    opacity: 0;
 }
 
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
 .sidebar {
     width: $sidebar-width;
     height: 100%;
@@ -39,39 +36,68 @@ $link: $primary;
     top: 0;
     left: 0;
     padding: 1.5rem;
-    overflow-y: auto;       /* Enable internal scrolling */
     display: flex;
     flex-direction: column;
-
-    background-color: #1e293b; // Deep dark
+    overflow-y: auto;
+    background-color: #1e293b;
     z-index: 100;
     transition: transform 0.3s ease;
-    
-    @media screen and (max-width: 1023px) {
-        transform: translateX(-100%); // Hide off-screen by default on mobile
-        min-height: 100vh;
-        &.is-open {
-            transform: translateX(0); // Slide in when we add this class
+
+    /* ── Custom scrollbar (webkit) ── */
+    scrollbar-width: thin;                          /* Firefox */
+    scrollbar-color: rgba(255,255,255,0.12) transparent; /* Firefox */
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.12);
+        border-radius: 4px;
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.22);
         }
     }
 
+    /* ── Mobile: slide in/out ── */
+    @media screen and (max-width: 1023px) {
+        width: 100%;                // Full width on small phones
+        max-width: $sidebar-width;  // Cap at sidebar width on larger phones/tablets
+        transform: translateX(-100%);
+        min-height: 100vh;
+        min-height: 100dvh;         // Use dvh so mobile browser chrome is accounted for
+
+        &.is-open {
+            transform: translateX(0);
+        }
+    }
+
+    /* ── Menu labels ── */
     .menu-label {
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255, 255, 255, 0.4);
         margin-top: 1.5rem;
-        font-size: 0.75rem;
-        letter-spacing: 0.1em;
+        margin-bottom: 0.25rem;
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
     }
 
+    /* ── Menu links ── */
     .menu-link {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1rem;
+        gap: 0.625rem;
+        padding: 0.7rem 1rem;
         border-radius: 8px;
-        color: #cbd5e1;
-        transition: all 0.2s ease;
+        color: #94a3b8;
+        transition: background-color 0.15s ease, color 0.15s ease;
         margin-bottom: 2px;
+        font-size: 0.9rem;
+        white-space: nowrap;        // Prevent label wrapping on narrow screens
+        overflow: hidden;
 
         &:hover {
             background-color: rgba($primary, 0.15);
@@ -85,30 +111,120 @@ $link: $primary;
         }
 
         .icon {
-            width: 1.25rem;
-            height: 1.25rem;
+            width: 1.15rem;
+            height: 1.15rem;
+            flex-shrink: 0;         // Icon never squishes
+        }
+
+        /* Badge sits at the far right */
+        .sidebar-badge {
+            margin-left: auto;
         }
     }
-}
 
-.main-content {
-     // Default for Desktop
-     margin-left: $sidebar-width;
-     min-height: 100vh;
-     transition: margin 0.3s ease;
+    /* ── Logout button inherits menu-link look ── */
+    .sidebar-logout {
+        width: 100%;
+        background: none;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        margin-top: 4px;
+        color: rgba(255, 255, 255, 0.5);
 
-    @media screen and (max-width: 1023px) {
-        margin-left: 0; // Remove margin on mobile
-        padding-top: 60px; // Make room for the mobile navbar
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
+    }
+
+    /* ── User block at the top ── */
+    .sidebar-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+        margin-bottom: 1.25rem;
+    }
+
+    .sidebar-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .sidebar-user-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        margin: 0;
+        line-height: 1.3;
+        /* Truncate long names */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 160px;
+    }
+
+    .sidebar-user-role {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.45);
+        margin: 0;
+        text-transform: capitalize;
+    }
+
+    /* ── Pending badge ── */
+    .sidebar-badge {
+        margin-left: auto;
+        background: #f14668;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 10px;
+        line-height: 1.4;
+        flex-shrink: 0;
+    }
+
+    /* ── Bottom actions always stick to the bottom ── */
+    .sidebar-bottom {
+        margin-top: auto;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
     }
 }
 
+/* ── Main content area ────────────────────────────────────────────────────── */
+.main-content {
+    margin-left: $sidebar-width;
+    min-height: 100vh;
+    transition: margin 0.3s ease;
+
+    @media screen and (max-width: 1023px) {
+        margin-left: 0;
+        padding-top: 60px;
+    }
+}
+
+/* ── Sidebar overlay (mobile) ─────────────────────────────────────────────── */
 .sidebar-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 90;
+    backdrop-filter: blur(2px);     // Subtle blur behind the sidebar on mobile
+    -webkit-backdrop-filter: blur(2px);
 }
