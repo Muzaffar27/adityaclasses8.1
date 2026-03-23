@@ -11,7 +11,6 @@ const routes = [
         path: "/",
         name: "home",
         component: Homepage,
-        meta: { guestOnly: true },
     },
     {
         path: "/register",
@@ -45,17 +44,19 @@ const router = createRouter({
 router.beforeEach(async (to) => {
     const auth = useAuthStore();
 
-    if (!auth.user) await auth.fetchUser();
+    if (!auth.user && localStorage.getItem("auth_token")) {
+        await auth.fetchUser();
+    }
 
-    const guestRoutes = ["login", "register", "home"];
-    const authRoutes = ["dashboard"];
-
-    if (authRoutes.includes(to.name) && !auth.isLoggedIn) {
+    // 🚫 Block protected routes if not logged in
+    if (to.meta.requiresAuth && !auth.isLoggedIn) {
         return { name: "login" };
     }
 
-    if (guestRoutes.includes(to.name) && auth.isLoggedIn) {
+    // 🚫 Prevent logged-in users from going to login/register
+    if (to.meta.guestOnly && auth.isLoggedIn) {
         return { name: "dashboard" };
     }
 });
+
 export default router;

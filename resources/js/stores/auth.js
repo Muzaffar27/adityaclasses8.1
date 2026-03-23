@@ -5,6 +5,7 @@ import api from "../api";
 export const useAuthStore = defineStore("auth", () => {
     // ── State ─────────────────────────────────────────────────────────────────
     const user = ref(null);
+    const isInitialLoading = ref(true);
 
     // ── Getters ───────────────────────────────────────────────────────────────
     const isLoggedIn = computed(() => !!user.value);
@@ -14,20 +15,25 @@ export const useAuthStore = defineStore("auth", () => {
 
     // ── Actions ───────────────────────────────────────────────────────────────
     async function fetchUser() {
+        const token = localStorage.getItem("auth_token");
+        if (!token) {
+            user.value = null;
+            isInitialLoading.value = false;
+            return;
+        }
+
         try {
-            console.log("fetchUser: attempting...");
             const { data } = await api.get("/me");
-            console.log("fetchUser: success", data);
             user.value = data.user;
         } catch (err) {
-            console.log(
-                "fetchUser: failed",
-                err.response?.status,
-                err.response?.data
-            );
+            // If /me 404s or 401s, wipe the local trace immediately
+            localStorage.removeItem("auth_token");
             user.value = null;
+        } finally {
+            isInitialLoading.value = false;
         }
     }
+
     async function register(payload) {
         await api.get("/sanctum/csrf-cookie");
         const { data } = await api.post("/register", payload);
@@ -44,10 +50,16 @@ export const useAuthStore = defineStore("auth", () => {
 
     async function logout() {
         try {
-            await api.post("/logout");
+            // Optional: only call API if token exists
+            if (localStorage.getItem("auth_token")) {
+                await api.post("/logout");
+            }
+        } catch (err) {
+            console.error("Logout API failed, clearing local state anyway.");
         } finally {
+            // CRITICAL: Clear local state FIRST before any redirects
             user.value = null;
-            localStorage.removeItem("auth_token"); // clear token
+            localStorage.removeItem("auth_token");
         }
     }
 
