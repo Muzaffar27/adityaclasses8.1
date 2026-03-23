@@ -135,7 +135,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-//import { useAuthStore } from '@/stores/auth'; // adjust path to your Pinia auth store
+import { useAuthStore } from '../stores/auth';// adjust path to your Pinia auth store
 
 import {
     HomeIcon,
@@ -156,15 +156,7 @@ defineProps(['isOpen']);
 defineEmits(['close']);
 
 const router = useRouter();
-const user = "TestName"
-const userInitials = "T.N"
-
-const isStudent = 'student';
-const isTutor = 'tutor';
-const isAdmin = 'admin';
-
-const roleLabel = "admin"
-/**const auth = useAuthStore();
+const auth = useAuthStore();
 
 // ── User info ──────────────────────────────────────────────────────────────
 const user = computed(() => auth.user);
@@ -191,14 +183,14 @@ const roleLabel = computed(() => ({
 
 // ── Pending access requests badge (tutor only) ─────────────────────────────
 // Pull this from your store; the store should fetch from /api/tutor/requests?status=pending
-const pendingCount = computed(() => auth.pendingRequestsCount ?? 0);
+// const pendingCount = computed(() => auth.pendingRequestsCount ?? 0);
 
 // ── Logout ─────────────────────────────────────────────────────────────────
 async function logout() {
     await auth.logout();          // clears token/user in store + calls API
     router.push({ name: 'login' });
 }
-    **/
+
 </script>
 
 <style scoped>
