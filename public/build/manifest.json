@@ -1,6 +1,6 @@
 {
   "resources/js/app.js": {
-    "file": "assets/app-xLuJL9mw.js",
+    "file": "assets/app-B73ABluz.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -15,7 +15,7 @@
     ]
   },
   "resources/js/components/Dashboard.vue": {
-    "file": "assets/Dashboard-3ytGUHFF.js",
+    "file": "assets/Dashboard-BVmlFhEz.js",
     "name": "Dashboard",
     "src": "resources/js/components/Dashboard.vue",
     "isDynamicEntry": true,
@@ -24,7 +24,7 @@
     ]
   },
   "resources/js/components/HomePage.vue": {
-    "file": "assets/HomePage-BMWg4Ns_.js",
+    "file": "assets/HomePage-zkpz_0yJ.js",
     "name": "HomePage",
     "src": "resources/js/components/HomePage.vue",
     "isDynamicEntry": true,
@@ -33,7 +33,7 @@
     ]
   },
   "resources/js/components/auth/LoginPage.vue": {
-    "file": "assets/LoginPage-CW6mp5Wc.js",
+    "file": "assets/LoginPage-C-YW4FAD.js",
     "name": "LoginPage",
     "src": "resources/js/components/auth/LoginPage.vue",
     "isDynamicEntry": true,
@@ -42,7 +42,7 @@
     ]
   },
   "resources/js/components/auth/RegisterPage.vue": {
-    "file": "assets/RegisterPage-ppznYWGF.js",
+    "file": "assets/RegisterPage-BoWzaFQV.js",
     "name": "RegisterPage",
     "src": "resources/js/components/auth/RegisterPage.vue",
     "isDynamicEntry": true,
