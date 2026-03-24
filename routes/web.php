@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\DB;
 |
 */
 
-
 Route::get('/admin/migrate', function () {
     try {
         // This is the same as running "php artisan migrate" in terminal
@@ -37,7 +36,7 @@ Route::get('/admin/check-db', function () {
 });
 
 Route::get('/admin/import-final', function () {
-    $path = storage_path('app/final_migration_with_grade7.csv');
+    $path = storage_path('app/fixed_final_migration.csv');
 
     if (!File::exists($path)) return "CSV not found!";
 

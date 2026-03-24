@@ -1,62 +1,44 @@
 <template>
   <div class="p-5">
-    <h1 class="title">Available Courses</h1>
+    <h1 class="title mb-5">Choose Your Grade</h1>
 
     <div class="columns is-multiline">
-      <div class="column is-4" v-for="course in courses" :key="course.id">
-        <div class="card">
-          <div class="card-content">
-            <p class="title is-5">{{ course.title }}</p>
-            <p class="content">
-              {{ course.description }}
+      <div class="column is-3" v-for="grade in grades" :key="grade.id">
+        <div class="card cursor-pointer" @click="goToGrade(grade.id)">
+          <div class="card-content has-text-centered">
+            <p class="title is-5">{{ grade.name }}</p>
+            <p class="subtitle is-6">
+              {{ grade.lessons_count }} lessons
             </p>
           </div>
-
-          <footer class="card-footer">
-            <button class="card-footer-item button is-primary is-light" @click="handleEnroll">
-              Enroll / Sign in
-            </button>
-          </footer>
         </div>
       </div>
     </div>
+
+    <p v-if="grades.length === 0">No grades available.</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
-import api from "@/api";
+import axios from "axios";
 import { useRouter } from "vue-router";
 
-const courses = ref([]);
+const grades = ref([]);
 const router = useRouter();
 
-async function fetchCourses() {
-  //const { data } = await api.get("/courses");
-  const mockData = [
-    {
-      id: 1,
-      title: "Introduction to Vue 3",
-      description: "Master the Composition API and build reactive apps with ease."
-    },
-    {
-      id: 2,
-      title: "Advanced CSS with Bulma",
-      description: "Learn how to leverage modern Flexbox-based frameworks for rapid UI development."
-    },
-    {
-      id: 3,
-      title: "State Management with Pinia",
-      description: "A deep dive into the intuitive, modular store for Vue applications."
-    }
-  ];
-
-  courses.value = mockData;
+async function fetchGrades() {
+  try {
+    const { data } = await axios.get("/api/grades");
+    grades.value = data;
+  } catch (e) {
+    console.error(e);
+  }
 }
 
-function handleEnroll() {
-  router.push({ name: "login" }); // redirect guest to login
+function goToGrade(id) {
+  router.push({ name: "grade", params: { id } });
 }
 
-onMounted(fetchCourses);
+onMounted(fetchGrades);
 </script>
