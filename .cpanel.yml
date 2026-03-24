@@ -1,10 +1,8 @@
----
 deployment:
   tasks:
-    #new
-    # 1. Sync all code to your private project folder
+    # 1. Sync all Laravel code to your project folder
     - export DEPLOYPATH=/home/adityaclasses/adityaclasses_project/
     - /bin/rsync -avz --exclude='.git' --exclude='storage' ./ $DEPLOYPATH
 
-    # 2. Sync only the built assets to the public dev folder
-    - /bin/cp -R ./public/build/ /home/adityaclasses/public_html/dev/build/
+    # 2. Sync the entire public folder to public_html
+    - /bin/rsync -avz --exclude='.git' $DEPLOYPATH/public/ /home/adityaclasses/public_html/
