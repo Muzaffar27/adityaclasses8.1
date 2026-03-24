@@ -1,11 +1,53 @@
 {
   "resources/js/app.js": {
-    "file": "assets/app-tHmxmXdD.js",
+    "file": "assets/app-xLuJL9mw.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
+    "dynamicImports": [
+      "resources/js/components/auth/RegisterPage.vue",
+      "resources/js/components/auth/LoginPage.vue",
+      "resources/js/components/Dashboard.vue",
+      "resources/js/components/HomePage.vue"
+    ],
     "css": [
-      "assets/app-By3KiJx1.css"
+      "assets/app-Du6jq7NG.css"
+    ]
+  },
+  "resources/js/components/Dashboard.vue": {
+    "file": "assets/Dashboard-3ytGUHFF.js",
+    "name": "Dashboard",
+    "src": "resources/js/components/Dashboard.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/components/HomePage.vue": {
+    "file": "assets/HomePage-BMWg4Ns_.js",
+    "name": "HomePage",
+    "src": "resources/js/components/HomePage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/components/auth/LoginPage.vue": {
+    "file": "assets/LoginPage-CW6mp5Wc.js",
+    "name": "LoginPage",
+    "src": "resources/js/components/auth/LoginPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/components/auth/RegisterPage.vue": {
+    "file": "assets/RegisterPage-ppznYWGF.js",
+    "name": "RegisterPage",
+    "src": "resources/js/components/auth/RegisterPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
     ]
   }
 }

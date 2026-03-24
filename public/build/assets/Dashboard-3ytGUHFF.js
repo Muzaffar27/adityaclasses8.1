@@ -1,0 +1,1 @@
+import{_ as o,o as t,c as a,a as e}from"./app-xLuJL9mw.js";const c={},n={class:"section"};function r(i,s){return t(),a("section",n,[...s[0]||(s[0]=[e("div",{class:"container"},[e("h1",{class:"title"},"Dashboard")],-1)])])}const d=o(c,[["render",r]]);export{d as default};
