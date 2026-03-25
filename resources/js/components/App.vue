@@ -21,22 +21,14 @@
                 </transition>
             </router-view>
 
-            <Loader v-if="loading" key="loader" />
-
         </main>
     </div>
 </template>
 
 <script setup>
+
 import { ref } from 'vue';
-import { storeToRefs } from "pinia";
-import { useLoaderStore } from "@/stores/loader";
-
 import Sidebar from './Sidebar.vue';
-import Loader from '../components/common/Loader.vue'
-
-const loaderStore = useLoaderStore();
-const { loading } = storeToRefs(loaderStore);
 
 const mobileMenuOpen = ref(false);
 </script>

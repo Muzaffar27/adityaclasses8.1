@@ -1,16 +1,16 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "../stores/auth";
-
-const RegisterPage = () => import("../components/auth/RegisterPage.vue");
-const LoginPage = () => import("../components/auth/LoginPage.vue");
-const Dashboard = () => import("../components/Dashboard.vue");
-const Homepage = () => import("../components/HomePage.vue");
+import SubjectPage from "../components/SubjectPage.vue";
+import RegisterPage from "../components/auth/RegisterPage.vue";
+import LoginPage from "../components/auth/LoginPage.vue";
+import Dashboard from "../components/Dashboard.vue";
+import HomePage from "../components/HomePage.vue";
 
 const routes = [
     {
         path: "/",
         name: "home",
-        component: Homepage,
+        component: HomePage,
     },
     {
         path: "/register",
@@ -29,6 +29,11 @@ const routes = [
         name: "dashboard",
         component: Dashboard,
         meta: { requiresAuth: true },
+    },
+    {
+        path: "/subject",
+        name: "subject",
+        component: SubjectPage,
     },
     {
         path: "/:catchAll(.*)",

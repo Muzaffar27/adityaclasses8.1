@@ -23,6 +23,7 @@ $primary: #4f46e5;
 
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+
 }
 
 .loader-wrapper {
