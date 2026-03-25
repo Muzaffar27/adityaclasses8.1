@@ -15,13 +15,14 @@
 
         <main class="main-content">
 
-            <Loader v-if="loading" key="loader" />
-
-            <router-view v-else v-slot="{ Component }">
+            <router-view v-slot="{ Component }">
                 <transition name="fade" mode="out-in">
                     <component :is="Component" />
                 </transition>
             </router-view>
+
+            <Loader v-if="loading" key="loader" />
+
         </main>
     </div>
 </template>
