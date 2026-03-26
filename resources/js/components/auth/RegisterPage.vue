@@ -1,45 +1,58 @@
 <template>
-    <div style="max-width: 400px; margin: 60px auto; padding: 0 1rem;">
-        <h1>Register</h1>
+    <div class="login-wrapper">
+        <div class="login-card">
 
-        <form @submit.prevent="submit">
-            <div>
-                <label>Name</label><br>
-                <input v-model="form.name" type="text" placeholder="Your name" />
-                <p v-if="errors.name" style="color:red;">{{ errors.name }}</p>
-            </div>
+            <h1 class="login-title">Create Account ✨</h1>
 
-            <div>
-                <label>Email</label><br>
-                <input v-model="form.email" type="email" placeholder="you@email.com" />
-                <p v-if="errors.email" style="color:red;">{{ errors.email }}</p>
-            </div>
+            <form @submit.prevent="submit">
 
-            <div>
-                <label>Password</label><br>
-                <input v-model="form.password" type="password" placeholder="Min 8 characters" />
-                <p v-if="errors.password" style="color:red;">{{ errors.password }}</p>
-            </div>
+                <div class="field">
+                    <label>Name</label>
+                    <input v-model="form.name" type="text" placeholder="Your name" class="input-field" />
+                    <p v-if="errors.name" class="error-text">{{ errors.name }}</p>
+                </div>
 
-            <div>
-                <label>Confirm Password</label><br>
-                <input v-model="form.passwordConfirmation" type="password" placeholder="Repeat password" />
-            </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input v-model="form.email" type="email" placeholder="you@email.com" class="input-field" />
+                    <p v-if="errors.email" class="error-text">{{ errors.email }}</p>
+                </div>
 
-            <p v-if="generalError" style="color:red;">{{ generalError }}</p>
+                <div class="field">
+                    <label>Password</label>
+                    <input v-model="form.password" type="password" placeholder="Min 8 characters" class="input-field" />
+                    <p v-if="errors.password" class="error-text">{{ errors.password }}</p>
+                </div>
 
-            <br>
-            <button type="submit" :disabled="loading">
-                {{ loading ? 'Registering...' : 'Register' }}
-            </button>
-        </form>
+                <div class="field">
+                    <label>Confirm Password</label>
+                    <input v-model="form.passwordConfirmation" type="password" placeholder="Repeat password"
+                        class="input-field" />
+                </div>
 
-        <p>Already have an account? <router-link to="/login">Login</router-link></p>
+                <p v-if="form.passwordConfirmation && !passwordsMatch" class="error-text">
+                    Passwords do not match
+                </p>
+                <p v-if="generalError" class="error-text">{{ generalError }}</p>
+
+                <button type="submit" class="login-btn" :disabled="loading || !passwordsMatch">
+                    {{ loading ?
+                        'Registering...' : 'Register' }}
+                </button>
+
+            </form>
+
+            <p class="register-link">
+                Already have an account?
+                <router-link to="/login">Login</router-link>
+            </p>
+
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -56,6 +69,11 @@ const form = reactive({
 const errors = reactive({})
 const generalError = ref('')
 const loading = ref(false)
+
+const passwordsMatch = computed(() =>
+    form.password && form.password === form.passwordConfirmation
+);
+
 async function submit() {
     Object.keys(errors).forEach(k => delete errors[k])
     generalError.value = ''

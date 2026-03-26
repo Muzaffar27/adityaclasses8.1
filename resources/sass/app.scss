@@ -228,3 +228,143 @@ $link: $primary;
     backdrop-filter: blur(2px);     // Subtle blur behind the sidebar on mobile
     -webkit-backdrop-filter: blur(2px);
 }
+
+.login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+
+/* CARD */
+.login-card {
+    width: 100%;
+    max-width: 400px;
+
+    background: #1e2a38;
+    border-radius: 20px;
+    padding: 30px 25px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+    animation: fadeUp 0.4s ease;
+}
+
+/* TITLE */
+.login-title {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+/* FIELDS */
+.field {
+    margin-bottom: 16px;
+}
+
+.field label {
+    color: #cbd5e1;
+    font-size: 0.85rem;
+}
+
+/* INPUT */
+.input-field {
+    width: 100%;
+    margin-top: 6px;
+
+    padding: 10px 12px;
+    border-radius: 10px;
+
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    color: #fff;
+    font-size: 0.9rem;
+
+    transition: all 0.2s ease;
+}
+
+.input-field::placeholder {
+    color: #64748b;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 1px #4f46e5;
+}
+
+/* CHECKBOX */
+.remember {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    margin-bottom: 10px;
+}
+
+/* BUTTON */
+.login-btn {
+    width: 100%;
+    margin-top: 10px;
+
+    background: #4f46e5;
+    color: white;
+
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+
+    font-weight: 600;
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.login-btn:hover {
+    background: #6366f1;
+    transform: translateY(-2px);
+}
+
+.login-btn:active {
+    transform: scale(0.96);
+}
+
+.login-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ERROR */
+.error-text {
+    color: #f87171;
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
+/* REGISTER */
+.register-link {
+    margin-top: 18px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+}
+
+.register-link a {
+    color: #4f46e5;
+    font-weight: 600;
+}
+
+/* ANIMATION */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

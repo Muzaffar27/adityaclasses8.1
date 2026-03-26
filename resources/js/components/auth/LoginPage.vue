@@ -1,36 +1,44 @@
 <template>
-    <div style="max-width: 400px; margin: 60px auto; padding: 0 1rem;">
-        <h1>Login</h1>
+    <div class="login-wrapper">
+        <div class="login-card">
 
-        <form @submit.prevent="submit">
-            <div>
-                <label>Email</label><br>
-                <input v-model="form.email" type="email" placeholder="you@email.com" />
-                <p v-if="errors.email" style="color:red;">{{ errors.email }}</p>
-            </div>
+            <h1 class="login-title">Welcome Back 👋</h1>
 
-            <div>
-                <label>Password</label><br>
-                <input v-model="form.password" type="password" placeholder="Your password" />
-                <p v-if="errors.password" style="color:red;">{{ errors.password }}</p>
-            </div>
+            <form @submit.prevent="submit">
 
-            <div>
-                <label>
-                    <input v-model="form.remember" type="checkbox" />
-                    Remember me for 90 days
-                </label>
-            </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input v-model="form.email" type="email" placeholder="you@email.com" class="input-field" />
+                    <p v-if="errors.email" class="error-text">{{ errors.email }}</p>
+                </div>
 
-            <p v-if="generalError" style="color:red;">{{ generalError }}</p>
+                <div class="field">
+                    <label>Password</label>
+                    <input v-model="form.password" type="password" placeholder="Your password" class="input-field" />
+                    <p v-if="errors.password" class="error-text">{{ errors.password }}</p>
+                </div>
 
-            <br>
-            <button type="submit" :disabled="loading">
-                {{ loading ? 'Logging in...' : 'Login' }}
-            </button>
-        </form>
+                <div class="remember">
+                    <label>
+                        <input v-model="form.remember" type="checkbox" />
+                        Remember me
+                    </label>
+                </div>
 
-        <p>No account yet? <router-link to="/register">Register</router-link></p>
+                <p v-if="generalError" class="error-text">{{ generalError }}</p>
+
+                <button type="submit" class="login-btn" :disabled="loading">
+                    {{ loading ? 'Logging in...' : 'Login' }}
+                </button>
+
+            </form>
+
+            <p class="register-link">
+                No account yet?
+                <router-link to="/register">Register</router-link>
+            </p>
+
+        </div>
     </div>
 </template>
 
