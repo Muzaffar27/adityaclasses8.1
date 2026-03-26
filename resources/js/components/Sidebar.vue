@@ -24,12 +24,12 @@
                     <HomeIcon class="icon" /> <span>Home</span>
                 </router-link>
             </li>
-            <li>
+            <!-- <li>
                 <router-link :to="{ name: 'dashboard' }" class="menu-link" active-class="is-active"
                     @click="$emit('close')">
                     <Squares2X2Icon class="icon" /> <span>Dashboard</span>
                 </router-link>
-            </li>
+            </li> -->
         </ul>
 
         <!-- ─── STUDENT PORTAL (students only) ─── -->

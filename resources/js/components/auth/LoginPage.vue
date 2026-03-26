@@ -63,7 +63,7 @@ async function submit() {
             password: form.password,
             remember: form.remember,
         })
-        router.push({ name: 'dashboard' })
+        router.push({ name: 'home' })
     } catch (err) {
         if (err.validationErrors) {
             Object.assign(errors, err.validationErrors)

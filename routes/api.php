@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\LessonAccessController;
+
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -21,6 +23,9 @@ Route::get('/subjects', [SubjectController::class, 'get']);
 
 //Lesson routes
 Route::get('/lessons', [LessonController::class, 'get']);
+
+//LessonAccess routes
+Route::middleware('auth:sanctum')->post('/lesson-access/request', [LessonAccessController::class, 'request']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

@@ -69,8 +69,17 @@
                                     {{ lesson.duration || '—' }}
                                 </span>
 
-                                <button class="watch-btn" @click="openLesson(lesson)">
+                                <button v-if="lesson.user_has_access" class="watch-btn" @click="openLesson(lesson)">
                                     ▶ Watch
+                                </button>
+
+                                <button v-else-if="lesson.request_status === 'pending'" class="locked-btn" disabled>
+                                    ⏳ Pending approval
+                                </button>
+
+                                <button v-else class="locked-btn" @click="requestAccess(lesson)"
+                                    :disabled="lesson.requestLoading">
+                                    🔒 Request Access
                                 </button>
 
                             </div>
@@ -92,6 +101,7 @@
 <script setup>
 import { computed, ref, onMounted } from "vue";
 import axios from "axios";
+import api from "../api";
 import { useRoute, useRouter } from "vue-router";
 import Loader from "./common/Loader.vue";
 import { ArrowLeftIcon } from "@heroicons/vue/24/outline";
@@ -116,13 +126,14 @@ async function fetchLessons() {
     loading.value = true;
 
     try {
-        const { data } = await axios.get("/api/lessons", {
+        const { data } = await api.get("/lessons", {
             params: {
                 subject_id: subjectId,
                 grade_id: gradeId,
             },
         });
 
+        console.log("Lessons = ", data)
         lessons.value = data;
     } catch (e) {
         console.error(e);
@@ -141,12 +152,33 @@ const filteredLessons = computed(() => {
 });
 
 function openLesson(lesson) {
+    if (!lesson.user_has_access) return;
+
     selectedLesson.value = lesson;
 }
 
 function closeLesson() {
     selectedLesson.value = null;
 }
+
+async function requestAccess(lesson) {
+    try {
+        lesson.requestLoading = true;
+
+        await api.post("/lesson-access/request", {
+            lesson_id: lesson.id,
+        });
+
+        lesson.requested = true;
+        lesson.request_status = "pending";
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        lesson.requestLoading = false;
+    }
+}
+
 function goBack() {
     router.back();
 }
