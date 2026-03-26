@@ -35,14 +35,14 @@ export const useAuthStore = defineStore("auth", () => {
     }
 
     async function register(payload) {
-        await api.get("/sanctum/csrf-cookie");
+        // await api.get("/sanctum/csrf-cookie");
         const { data } = await api.post("/register", payload);
         user.value = data.user;
         localStorage.setItem("auth_token", data.token);
     }
 
     async function login(payload) {
-        await api.get("/sanctum/csrf-cookie");
+        // await api.get("/sanctum/csrf-cookie");
         const { data } = await api.post("/login", payload);
         user.value = data.user;
         localStorage.setItem("auth_token", data.token); // save token
