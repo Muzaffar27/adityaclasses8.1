@@ -24,12 +24,7 @@
                     <HomeIcon class="icon" /> <span>Home</span>
                 </router-link>
             </li>
-            <!-- <li>
-                <router-link :to="{ name: 'dashboard' }" class="menu-link" active-class="is-active"
-                    @click="$emit('close')">
-                    <Squares2X2Icon class="icon" /> <span>Dashboard</span>
-                </router-link>
-            </li> -->
+
         </ul>
 
         <!-- ─── STUDENT PORTAL (students only) ─── -->
@@ -71,6 +66,13 @@
                 <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <CloudArrowUpIcon class="icon" /> <span>New Course</span>
+                    </router-link>
+                </li>
+
+                <li>
+                    <router-link :to="{ name: 'request-access' }" class="menu-link" active-class="is-active"
+                        @click="$emit('close')">
+                        <Squares2X2Icon class="icon" /> <span>Request Access</span>
                     </router-link>
                 </li>
             </ul>

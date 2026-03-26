@@ -22,10 +22,15 @@ Route::get('/grades', [GradeController::class, 'get']);
 Route::get('/subjects', [SubjectController::class, 'get']);
 
 //Lesson routes
-Route::get('/lessons', [LessonController::class, 'get']);
+Route::middleware('auth:sanctum')->get('/lessons', [LessonController::class, 'get']);
 
 //LessonAccess routes
-Route::middleware('auth:sanctum')->post('/lesson-access/request', [LessonAccessController::class, 'request']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/lesson-access/request', [LessonAccessController::class, 'request']);
+    Route::post('/lesson-access/accept', [LessonAccessController::class, 'accept']);
+    Route::post('/lesson-access/refuse', [LessonAccessController::class, 'refuse']);
+    Route::get('/lesson-access/list_request', [LessonAccessController::class, 'listRequests']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
