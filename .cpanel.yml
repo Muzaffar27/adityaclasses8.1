@@ -10,3 +10,6 @@ deployment:
     # 3. Automatically fix the paths in public_html/index.php
     - sed -i "s|require __DIR__.'/../vendor/autoload.php'|require __DIR__.'/../adityaclasses_project/vendor/autoload.php'|g" /home/adityaclasses/public_html/index.php
     - sed -i "s|require_once __DIR__.'/../bootstrap/app.php'|require_once __DIR__.'/../adityaclasses_project/bootstrap/app.php'|g" /home/adityaclasses/public_html/index.php
+
+    # 4. Optional: Force a clear of the Laravel cache so the new paths take effect immediately
+    - php $DEPLOYPATH/artisan optimize:clear
