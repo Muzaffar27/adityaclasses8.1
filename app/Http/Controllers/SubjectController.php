@@ -8,5 +8,8 @@ use App\Models\Subject;
 class SubjectController extends Controller
 {
 
-    public function get($id) {}
+    public function get()
+    {
+        return Subject::orderBy('name', 'asc')->get();
+    }
 }

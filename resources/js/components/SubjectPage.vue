@@ -1,7 +1,7 @@
 <template>
   <div class="section px-4 py-5 main-content-wrapper mobile-container">
     <div class="container is-fluid">
-      <h1 class="title is-4 mb-6 ml-2">Subjects</h1>
+      <h1 class="title is-4 mb-6 ml-2">School subjects</h1>
 
       <div v-if="loading">
         <Loader />
@@ -9,7 +9,7 @@
 
       <div v-else class="columns is-mobile is-multiline">
         <div class="column is-6-mobile is-4-tablet is-3-desktop" v-for="subject in subjects" :key="subject.id">
-          <div class="card subject-card" @click="goToLessons(subject.id)">
+          <div class="card subject-card" @click="goToGrades(subject.id)">
             <div class="card-content p-4 has-text-centered">
               <div class="icon-circle mb-3" :style="{ background: getColor(subject.id) }">
                 {{ getSubjectIcon(subject.name) }}
@@ -31,8 +31,12 @@
 import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import Loader from "./common/Loader.vue";
+import { useSubjectStore } from "../stores/cache";
+import { storeToRefs } from "pinia";
 
-const subjects = ref([]);
+const subjectStore = useSubjectStore();
+const { subjects } = storeToRefs(subjectStore);
+
 const router = useRouter();
 const route = useRoute();
 const loading = ref(false);
@@ -40,29 +44,8 @@ const loading = ref(false);
 // The grade ID from the URL params
 const gradeId = route.params.id;
 
-async function fetchSubjects() {
-  loading.value = true;
-  try {
-    // const { data } = await axios.get(`/api/grades/${gradeId}/subjects`);
-
-    subjects.value = [
-      { id: 1, name: "math" },
-      { id: 2, name: "science" },
-      { id: 3, name: "english" },
-      { id: 4, name: "hist" },
-      { id: 5, name: "Biology" },
-    ];
-
-    subjects.value = data;
-  } catch (e) {
-    console.error(e);
-  } finally {
-    loading.value = false;
-  }
-}
-
-function goToLessons(subjectId) {
-  router.push({ name: "lessons", params: { id: subjectId } });
+function goToGrades(subjectId) {
+  router.push({ name: "grade", params: { id: subjectId } });
 }
 
 function getColor(id) {
@@ -80,9 +63,10 @@ function getSubjectIcon(name) {
   return '📖'; // Default
 }
 
-onMounted(() => {
-  fetchSubjects();
+onMounted(async () => {
+  await subjectStore.fetchSubjects();
 });
+
 </script>
 
 <style scoped>

@@ -17,7 +17,7 @@ Route::get('/lessons', [LessonController::class, 'get']);
 Route::get('/grades', [GradeController::class, 'get']);
 
 //Subject routes
-Route::get('/subjects/{id}', [SubjectController::class], 'get');
+Route::get('/subjects', [SubjectController::class, 'get']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

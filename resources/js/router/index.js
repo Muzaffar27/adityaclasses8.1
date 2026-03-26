@@ -5,6 +5,7 @@ import RegisterPage from "../components/auth/RegisterPage.vue";
 import LoginPage from "../components/auth/LoginPage.vue";
 import Dashboard from "../components/Dashboard.vue";
 import HomePage from "../components/HomePage.vue";
+import GradePage from "../components/GradePage.vue";
 
 const routes = [
     {
@@ -34,6 +35,11 @@ const routes = [
         path: "/subject",
         name: "subject",
         component: SubjectPage,
+    },
+    {
+        path: "/grade/:id",
+        name: "grade",
+        component: GradePage,
     },
     {
         path: "/:catchAll(.*)",
