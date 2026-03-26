@@ -6,6 +6,7 @@ import LoginPage from "../components/auth/LoginPage.vue";
 import Dashboard from "../components/Dashboard.vue";
 import HomePage from "../components/HomePage.vue";
 import GradePage from "../components/GradePage.vue";
+import LessonPage from "../components/LessonPage.vue";
 
 const routes = [
     {
@@ -40,6 +41,11 @@ const routes = [
         path: "/grade/:id",
         name: "grade",
         component: GradePage,
+    },
+    {
+        path: "/lessons/:subjectId/:gradeId",
+        name: "lesson",
+        component: LessonPage,
     },
     {
         path: "/:catchAll(.*)",

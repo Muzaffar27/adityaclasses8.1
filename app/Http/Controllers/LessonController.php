@@ -4,20 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lesson;
+use Illuminate\Http\Request;
 
 class LessonController extends Controller
 {
 
-    public function get()
+    public function get(Request $request)
     {
-
-        $lessons = Lesson::with(['subject', 'grade'])
-            ->where('is_active', true)
-            ->orderBy('subject_id')
-            ->orderBy('grade_id')
-            ->orderBy('part_number')
+        return Lesson::where('subject_id', $request->subject_id)
+            ->where('grade_id', $request->grade_id)
             ->get();
-
-        return response()->json($lessons);
     }
 }

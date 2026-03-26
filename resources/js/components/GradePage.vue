@@ -17,7 +17,7 @@
 
             <div v-else class="columns is-mobile is-multiline">
                 <div class="column is-6-mobile is-4-tablet is-3-desktop" v-for="grade in grades" :key="grade.id">
-                    <div class="card grade-card" @click="goToGrade(grade.id)">
+                    <div class="card grade-card" @click="goToLesson(grade.id)">
                         <div class="card-content p-4 has-text-centered">
                             <div class="icon-circle mb-3" :style="{ background: getColor(grade.id) }">
                                 🎓
@@ -73,6 +73,16 @@ async function fetchGrades() {
     } finally {
         loading.value = false;
     }
+}
+
+function goToLesson(gradeId) {
+    router.push({
+        name: "lesson",
+        params: {
+            gradeId: gradeId,
+            subjectId: subjectId
+        }
+    });
 }
 
 function goBack() {

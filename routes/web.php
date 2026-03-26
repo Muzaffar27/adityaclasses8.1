@@ -67,7 +67,7 @@ Route::get('/admin/import-final', function () {
         }
 
         // Create lesson
-        Lesson::create([
+        Lesson::updateOrCreate([
             'subject_id'  => $subject->id,
             'grade_id'    => $grade->id,
             'topic'       => $topic,
