@@ -1,7 +1,8 @@
 import axios from "axios";
 import { useLoaderStore } from "@/stores/loader"; // Use the @ alias for safety
 
-console.log("API baseURL:", import.meta.env.VITE_API_URL);
+console.log("API baseURL prod:", import.meta.env.VITE_API_URL);
+console.log("API hardoced url: https://adityaclasses.mu/api");
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
