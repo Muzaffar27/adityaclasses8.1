@@ -18,22 +18,22 @@ use Illuminate\Support\Facades\DB;
 |
 */
 
-// Route::get('/admin/migrate', function () {
-//     try {
-//         // This is the same as running "php artisan migrate" in terminal
-//         Artisan::call('migrate', ['--force' => true]);
+Route::get('/admin/migrate', function () {
+    try {
+        // This is the same as running "php artisan migrate" in terminal
+        Artisan::call('migrate', ['--force' => true]);
 
-//         // Show exactly what happened (e.g., "Migrated: create_lessons_table")
-//         return "<pre>" . Artisan::output() . "</pre>";
-//     } catch (\Exception $e) {
-//         return "Migration Error: " . $e->getMessage();
-//     }
-// });
+        // Show exactly what happened (e.g., "Migrated: create_lessons_table")
+        return "<pre>" . Artisan::output() . "</pre>";
+    } catch (\Exception $e) {
+        return "Migration Error: " . $e->getMessage();
+    }
+});
 
-// Route::get('/admin/check-db', function () {
-//     $tables = DB::select('SHOW TABLES');
-//     return response()->json($tables);
-// });
+Route::get('/admin/check-db', function () {
+    $tables = DB::select('SHOW TABLES');
+    return response()->json($tables);
+});
 
 // Route::get('/admin/import-final', function () {
 //     $path = storage_path('app/fixed_final_migration.csv');
