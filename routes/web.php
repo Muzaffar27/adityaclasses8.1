@@ -7,6 +7,8 @@ use App\Models\Subject;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -17,6 +19,20 @@ use Illuminate\Support\Facades\DB;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+
+Route::get('/debug-auth', function (Request $request) {
+    $token = $request->bearerToken();
+    $hashedToken = hash('sha256', explode('|', $token)[1] ?? '');
+    $found = \Laravel\Sanctum\PersonalAccessToken::where('token', $hashedToken)->first();
+
+    return response()->json([
+        'bearer_token_received' => $token,
+        'hashed' => $hashedToken,
+        'found_in_db' => $found ? 'YES' : 'NO',
+        'token_in_db' => $found?->token,
+    ]);
+});
+
 
 Route::get('/admin/debug-token', function () {
     $token = \Laravel\Sanctum\PersonalAccessToken::orderBy('id', 'desc')->take(5)->get();
