@@ -7,6 +7,7 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LessonAccessController;
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Request;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
@@ -35,4 +36,17 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
+});
+
+Route::get('/debug-auth', function (Request $request) {
+    $token = $request->bearerToken();
+    $hashedToken = hash('sha256', explode('|', $token)[1] ?? '');
+    $found = \Laravel\Sanctum\PersonalAccessToken::where('token', $hashedToken)->first();
+
+    return response()->json([
+        'bearer_token_received' => $token,
+        'hashed' => $hashedToken,
+        'found_in_db' => $found ? 'YES' : 'NO',
+        'token_in_db' => $found?->token,
+    ]);
 });

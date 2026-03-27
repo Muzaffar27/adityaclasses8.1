@@ -20,19 +20,13 @@ use Illuminate\Support\Facades\Request;
 |
 */
 
-Route::get('/debug-auth', function (Request $request) {
-    $token = $request->bearerToken();
-    $hashedToken = hash('sha256', explode('|', $token)[1] ?? '');
-    $found = \Laravel\Sanctum\PersonalAccessToken::where('token', $hashedToken)->first();
 
-    return response()->json([
-        'bearer_token_received' => $token,
-        'hashed' => $hashedToken,
-        'found_in_db' => $found ? 'YES' : 'NO',
-        'token_in_db' => $found?->token,
-    ]);
+Route::get('/admin/clear-cache', function () {
+    Artisan::call('config:clear');
+    Artisan::call('route:clear');
+    Artisan::call('cache:clear');
+    return response()->json(['done' => true]);
 });
-
 
 Route::get('/admin/debug-token', function () {
     $token = \Laravel\Sanctum\PersonalAccessToken::orderBy('id', 'desc')->take(5)->get();
