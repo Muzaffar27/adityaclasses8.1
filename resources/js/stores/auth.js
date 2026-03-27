@@ -73,11 +73,6 @@ export const useAuthStore = defineStore("auth", () => {
         }
     }
 
-    // ── Auto-load user if token exists
-    if (localStorage.getItem("auth_token")) {
-        fetchUser();
-    }
-
     return {
         user,
         isLoggedIn,
