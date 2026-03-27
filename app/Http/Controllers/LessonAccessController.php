@@ -79,6 +79,8 @@ class LessonAccessController extends Controller
             ->select(
                 'lesson_access.id',
                 'lesson_access.status',
+                'lessons.id as lesson_id',
+                'users.id as student_id',
                 'users.name as student_name',
                 'lessons.title as lesson_title'
             )
