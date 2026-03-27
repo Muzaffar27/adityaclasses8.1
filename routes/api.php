@@ -7,7 +7,7 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LessonAccessController;
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Http\Request;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);

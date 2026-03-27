@@ -1,13 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Models\Grade;
-use App\Models\Lesson;
-use App\Models\Subject;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Request;
 
 /*
 |--------------------------------------------------------------------------
