@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useLoaderStore } from "@/stores/loader"; // Use the @ alias for safety
+import router from "../router";
 
 const api = axios.create({
     baseURL: window.location.origin + "/api",
@@ -18,7 +19,7 @@ api.interceptors.request.use(
         console.log("Sending request with token:", token);
         console.log("Headers:", config.headers);
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers["X-Auth-Token"] = token;
         }
         return config;
     },
@@ -46,7 +47,7 @@ api.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem("auth_token");
             // Consider using router.push('/login') if you pass router to this file
-            window.location.href = "/login";
+            router.push("/login");
         }
 
         return Promise.reject(error);
