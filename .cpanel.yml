@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - echo "Deploy is working!" > /home/adityaclasses/test_cpanel.txt
+    - date >> /home/yourcpaneluser/test_cpanel.txt

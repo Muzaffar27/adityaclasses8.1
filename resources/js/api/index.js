@@ -16,8 +16,6 @@ api.interceptors.request.use(
         loader.start();
 
         const token = localStorage.getItem("auth_token");
-        console.log("Sending request with token:", token);
-        console.log("Headers:", config.headers);
         if (token) {
             config.headers["X-Auth-Token"] = token;
         }

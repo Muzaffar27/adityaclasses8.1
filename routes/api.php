@@ -37,19 +37,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
 });
-
-Route::get('/debug-auth', function (\Illuminate\Http\Request $request) {
-    return response()->json([
-        'all_headers' => $request->headers->all(),
-        'server_vars' => [
-            'HTTP_AUTHORIZATION' => $_SERVER['HTTP_AUTHORIZATION'] ?? 'NOT SET',
-            'REDIRECT_HTTP_AUTHORIZATION' => $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? 'NOT SET',
-            'bearer' => $request->bearerToken(),
-        ],
-        'all_server_auth_keys' => array_filter(
-            $_SERVER,
-            fn($key) => str_contains(strtolower($key), 'auth'),
-            ARRAY_FILTER_USE_KEY
-        ),
-    ]);
-});

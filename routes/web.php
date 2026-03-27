@@ -23,17 +23,6 @@ Route::get('/admin/clear-cache', function () {
     return response()->json(['done' => true]);
 });
 
-Route::get('/admin/debug-token', function () {
-    $token = \Laravel\Sanctum\PersonalAccessToken::orderBy('id', 'desc')->take(5)->get();
-    $userCount = \App\Models\User::count();
-
-    return response()->json([
-        'latest_tokens' => $token,
-        'user_count' => $userCount,
-        'db_name' => DB::connection()->getDatabaseName(),
-    ]);
-});
-
 Route::get('/admin/migrate', function () {
     try {
         // This is the same as running "php artisan migrate" in terminal
