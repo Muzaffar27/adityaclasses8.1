@@ -59,6 +59,7 @@ export const useAuthStore = defineStore("auth", () => {
     async function login(payload) {
         // await api.get("/sanctum/csrf-cookie");
         const { data } = await api.post("/login", payload);
+        console.log("Login response data:", data);
         user.value = data.user;
         localStorage.setItem("auth_token", data.token); // save token
     }
