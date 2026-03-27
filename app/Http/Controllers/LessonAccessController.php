@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Models\LessonAccess;
 
 class LessonAccessController extends Controller
 {
@@ -40,6 +41,22 @@ class LessonAccessController extends Controller
             ]);
 
         return response()->json(['message' => 'Accepted']);
+    }
+
+    public function acceptMultiple(Request $request)
+    {
+        LessonAccess::whereIn('id', $request->ids)
+            ->update(['status' => 'accepted']);
+
+        return response()->json(['message' => 'Accepted']);
+    }
+
+    public function refuseMultiple(Request $request)
+    {
+        LessonAccess::whereIn('id', $request->ids)
+            ->update(['status' => 'refused']);
+
+        return response()->json(['message' => 'Refused']);
     }
 
     public function refuse(Request $request)
