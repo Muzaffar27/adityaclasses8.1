@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 |
 */
 
-Route::get('/debug-token', function () {
+Route::get('/admin/debug-token', function () {
     $token = \Laravel\Sanctum\PersonalAccessToken::orderBy('id', 'desc')->take(5)->get();
     $userCount = \App\Models\User::count();
 
