@@ -39,14 +39,25 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/debug-auth', function (Request $request) {
-    $token = $request->bearerToken();
-    $hashedToken = hash('sha256', explode('|', $token)[1] ?? '');
-    $found = \Laravel\Sanctum\PersonalAccessToken::where('token', $hashedToken)->first();
+    try {
+        $rawToken = $request->bearerToken();
+        $parts = explode('|', $rawToken ?? '');
+        $plainText = $parts[1] ?? 'NO_PLAIN_TEXT';
+        $hashedToken = hash('sha256', $plainText);
+        $found = \Laravel\Sanctum\PersonalAccessToken::where('token', $hashedToken)->first();
 
-    return response()->json([
-        'bearer_token_received' => $token,
-        'hashed' => $hashedToken,
-        'found_in_db' => $found ? 'YES' : 'NO',
-        'token_in_db' => $found?->token,
-    ]);
+        return response()->json([
+            'raw_token' => $rawToken,
+            'plain_text_part' => $plainText,
+            'hashed' => $hashedToken,
+            'found_in_db' => $found ? 'YES' : 'NO',
+            'db_token' => $found ? $found->token : 'NOT FOUND',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => $e->getFile(),
+        ]);
+    }
 });
