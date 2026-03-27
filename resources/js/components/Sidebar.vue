@@ -31,7 +31,7 @@
         <template v-if="isStudent || isAdmin">
             <p class="menu-label">My Learning</p>
             <ul class="menu-list mt-2">
-                <li>
+                <!-- <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <PlayCircleIcon class="icon" /> <span>My Courses</span>
                     </router-link>
@@ -50,7 +50,7 @@
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <DocumentArrowDownIcon class="icon" /> <span>Study Materials</span>
                     </router-link>
-                </li>
+                </li> -->
             </ul>
         </template>
 
@@ -58,7 +58,7 @@
         <template v-if="isTutor || isAdmin">
             <p class="menu-label">Courses</p>
             <ul class="menu-list mt-2">
-                <li>
+                <!-- <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <PlayCircleIcon class="icon" /> <span>My Courses</span>
                     </router-link>
@@ -67,7 +67,7 @@
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <CloudArrowUpIcon class="icon" /> <span>New Course</span>
                     </router-link>
-                </li>
+                </li> -->
 
                 <li>
                     <router-link :to="{ name: 'request-access' }" class="menu-link" active-class="is-active"
@@ -79,18 +79,17 @@
 
             <p class="menu-label">Students</p>
             <ul class="menu-list mt-2">
-                <li>
+                <!-- <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <ClockIcon class="icon" />
                         <span>Access Requests</span>
-                        <!-- <span v-if="pendingCount > 0" class="sidebar-badge">{{ pendingCount }}</span> -->
                     </router-link>
-                </li>
-                <li>
+                </li> -->
+                <!-- <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <UserGroupIcon class="icon" /> <span>All Students</span>
                     </router-link>
-                </li>
+                </li> -->
             </ul>
         </template>
 
@@ -98,7 +97,7 @@
         <template v-if="isAdmin">
             <p class="menu-label">Admin</p>
             <ul class="menu-list mt-2">
-                <li>
+                <!-- <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <UserGroupIcon class="icon" /> <span>Users</span>
                     </router-link>
@@ -117,7 +116,7 @@
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <ClockIcon class="icon" /> <span>Activity Log</span>
                     </router-link>
-                </li>
+                </li> -->
             </ul>
         </template>
 

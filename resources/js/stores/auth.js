@@ -16,7 +16,6 @@ export const useAuthStore = defineStore("auth", () => {
     // ── Actions ───────────────────────────────────────────────────────────────
     async function fetchUser() {
         const token = localStorage.getItem("auth_token");
-        console.log("fetchUser called, token:", token);
 
         if (!token) {
             user.value = null;
@@ -26,7 +25,6 @@ export const useAuthStore = defineStore("auth", () => {
 
         try {
             const { data } = await api.get("/me");
-            console.log("fetchUser success:", data);
             user.value = data.user;
         } catch (err) {
             const status = err.response?.status;

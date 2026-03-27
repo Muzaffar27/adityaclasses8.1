@@ -1,4 +1,0 @@
-deployment:
-  tasks:
-    - /bin/echo "Deploy started" > /home/adityaclasses/deploy_log.txt
-    - /bin/cp .cpanel.yml /home/adityaclasses/deploy_log.txt
