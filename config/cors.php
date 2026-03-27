@@ -15,11 +15,17 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    // Do not use ['*'] here if supports_credentials is true
+    'allowed_origins' => [
+        'https://adityaclasses.mu',
+        'https://www.adityaclasses.mu',
+        'http://localhost:5173', // Keep this for your local development
+        'http://localhost:8000',
+    ],
 
     'allowed_origins_patterns' => [],
 
@@ -29,6 +35,7 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    // This MUST be true for Sanctum/Cookies to work
+    'supports_credentials' => true,
 
 ];
