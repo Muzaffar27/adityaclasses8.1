@@ -16,7 +16,7 @@ export const useAuthStore = defineStore("auth", () => {
     // ── Actions ───────────────────────────────────────────────────────────────
     async function fetchUser() {
         const token = localStorage.getItem("auth_token");
-        console.log("fetchUser called, token:", token); // ← add this
+        console.log("fetchUser called, token:", token);
 
         if (!token) {
             user.value = null;
@@ -26,24 +26,18 @@ export const useAuthStore = defineStore("auth", () => {
 
         try {
             const { data } = await api.get("/me");
-            console.log("fetchUser success:", data); // ← and this
-
+            console.log("fetchUser success:", data);
             user.value = data.user;
         } catch (err) {
-            console.error(
-                "fetchUser failed:",
-                err.response?.status,
-                err.response?.data
-            ); // ← and this
-            console.error(
-                "fetchUser failed:",
-                err.response?.status,
-                err.response?.data
-            ); // ← and this
+            const status = err.response?.status;
+            console.error("fetchUser failed:", status, err.response?.data);
 
-            // If /me 404s or 401s, wipe the local trace immediately
-            localStorage.removeItem("auth_token");
-            user.value = null;
+            // Only wipe token if explicitly unauthorized
+            if (status === 401) {
+                localStorage.removeItem("auth_token");
+                user.value = null;
+            }
+            // Network errors, 500s, etc. — leave the token alone
         } finally {
             isInitialLoading.value = false;
         }
