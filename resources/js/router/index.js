@@ -68,7 +68,8 @@ const router = createRouter({
 router.beforeEach(async (to) => {
     const auth = useAuthStore();
 
-    if (!auth.user && localStorage.getItem("auth_token")) {
+    // Only fetch if main.js hasn't already done it
+    if (auth.isInitialLoading && localStorage.getItem("auth_token")) {
         await auth.fetchUser();
     }
 
@@ -79,7 +80,7 @@ router.beforeEach(async (to) => {
 
     // 🚫 Prevent logged-in users from going to login/register
     if (to.meta.guestOnly && auth.isLoggedIn) {
-        return { name: "dashboard" };
+        return { name: "home" };
     }
 });
 
