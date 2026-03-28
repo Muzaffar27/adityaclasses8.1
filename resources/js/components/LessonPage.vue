@@ -19,9 +19,9 @@
             </div>
 
             <div v-if="selectedLesson" class="video-modal">
-
                 <div class="video-box">
 
+                    <!-- Header -->
                     <div class="video-header">
                         <h3>{{ selectedLesson.title }}</h3>
 
@@ -30,12 +30,26 @@
                         </button>
                     </div>
 
-                    <iframe :src="selectedLesson.vimeo_url" frameborder="0" allow="autoplay; fullscreen" allowfullscreen
-                        class="video-frame"></iframe>
+                    <!-- Thumbnail (before playing) -->
+                    <div v-if="!isPlaying" class="video-thumbnail" @click="startVideo">
+                        <img :src="selectedLesson.thumbnail || getVimeoThumbnail(selectedLesson.vimeo_url)"
+                            alt="Video thumbnail" />
+                        <div class="play-overlay">
+                            ▶
+                        </div>
+                    </div>
 
+                    <!-- Video iframe -->
+                    <iframe v-if="isPlaying" :src="videoUrl" loading="lazy" frameborder="0" allow="autoplay; fullscreen"
+                        allowfullscreen class="video-frame" @load="onVideoLoaded">
+                    </iframe>
+
+                    <div v-if="isVideoLoading" class="video-loading">
+                        Loading video...
+                    </div>
                 </div>
-
             </div>
+
             <!-- LOADER -->
             <div v-if="loading">
                 <Loader />
@@ -69,18 +83,22 @@
                                     {{ lesson.duration || '—' }}
                                 </span>
 
-                                <button v-if="lesson.user_has_access" class="watch-btn" @click="openLesson(lesson)">
+                                <button class="watch-btn" @click="openLesson(lesson)">
                                     ▶ Watch
                                 </button>
 
-                                <button v-else-if="lesson.request_status === 'pending'" class="locked-btn" disabled>
+                                <!-- <button v-if="lesson.user_has_access" class="watch-btn" @click="openLesson(lesson)">
+                                    ▶ Watch
+                                </button> -->
+
+                                <!-- <button v-else-if="lesson.request_status === 'pending'" class="locked-btn" disabled>
                                     ⏳ Pending approval
                                 </button>
 
                                 <button v-else class="locked-btn" @click="requestAccess(lesson)"
                                     :disabled="lesson.requestLoading">
                                     🔒 Request Access
-                                </button>
+                                </button> -->
 
                             </div>
                         </div>
@@ -114,6 +132,8 @@ const gradeId = route.params.gradeId;
 
 const lessons = ref([]);
 const loading = ref(false);
+const isPlaying = ref(false);
+const isVideoLoading = ref(false);
 
 const search = ref("");
 const selectedLesson = ref(null);
@@ -142,6 +162,14 @@ async function fetchLessons() {
     }
 }
 
+const videoUrl = computed(() => {
+    if (!selectedLesson.value?.vimeo_url) return '';
+
+    // Add performance params
+    return selectedLesson.value.vimeo_url +
+        '?autoplay=1&muted=1&quality=360p';
+});
+
 const filteredLessons = computed(() => {
     if (!search.value) return lessons.value;
 
@@ -151,14 +179,38 @@ const filteredLessons = computed(() => {
     );
 });
 
+function getVimeoThumbnail(url) {
+    if (!url) return "https://via.placeholder.com/800x450?text=Video";
+
+    // Works for both vimeo.com and player.vimeo.com
+    const match = url.match(/video\/(\d+)|vimeo\.com\/(\d+)/);
+    const id = match ? (match[1] || match[2]) : null;
+
+    if (!id) return "https://via.placeholder.com/800x450?text=Video";
+
+    return `https://vumbnail.com/${id}.jpg`;
+}
+
+function startVideo() {
+    isPlaying.value = true;
+    isVideoLoading.value = true;
+
+}
+
+function onVideoLoaded() {
+    isVideoLoading.value = false;
+}
+
 function openLesson(lesson) {
-    if (!lesson.user_has_access) return;
+    // if (!lesson.user_has_access) return;
 
     selectedLesson.value = lesson;
+    isPlaying.value = false;
 }
 
 function closeLesson() {
     selectedLesson.value = null;
+    isPlaying.value = false;
 }
 
 async function requestAccess(lesson) {
@@ -342,6 +394,8 @@ function goBack() {
 }
 
 .video-box {
+    position: relative;
+
     width: 90%;
     max-width: 900px;
     background: #1e2a38;
@@ -368,10 +422,12 @@ function goBack() {
 }
 
 .video-frame {
+    animation: fadeIn 0.3s ease;
     width: 100%;
     height: 500px;
     border: none;
 }
+
 
 /* animations */
 @keyframes fadeIn {
@@ -396,10 +452,58 @@ function goBack() {
     }
 }
 
+.video-thumbnail {
+    position: relative;
+    cursor: pointer;
+    min-height: 200px;
+    background: #000;
+}
+
+.video-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-frame,
+.video-thumbnail {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+
+.play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 50px;
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    padding: 10px 20px;
+}
+
 /* mobile */
 @media (max-width: 768px) {
     .video-frame {
         height: 250px;
     }
+}
+
+.video-loading {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.85);
+
+    color: white;
+    font-size: 14px;
+
+    aspect-ratio: 16 / 9;
 }
 </style>
