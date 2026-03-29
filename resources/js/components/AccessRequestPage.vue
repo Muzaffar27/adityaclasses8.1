@@ -1,53 +1,76 @@
 <template>
 
-    <div v-for="student in groupedRequests" :key="student.student_id" class="card mb-4 p-4">
+    <Layout title="Access Requests" :loading="loading" @back="goBack">
 
-        <!-- Student header -->
-        <nav class="student-header" @click="toggleLessons(student.student_id)">
-            <div class="left">
-                <span class="icon">
-                    <ChevronDownIcon v-if="!expandedStudents.includes(student.student_id)" />
-                    <ChevronUpIcon v-else />
-                </span>
+        <div v-if="groupedRequests.length === 0" class="has-text-centered mt-6">
+            <p class="has-text-grey">No access requests.</p>
+        </div>
 
-                <p class="student-name">{{ student.student_name }}</p>
 
-                <span class="tag is-warning is-light is-rounded">
-                    {{ student.requests.length }}
-                </span>
-            </div>
+        <div v-else>
+            <div v-for="student in groupedRequests" :key="student.student_id" class="card mb-4 p-4">
 
-            <div class="right">
-                <button class="button is-success is-small" @click.stop="acceptStudent(student)">
-                    Accept All
-                </button>
+                <!-- Student header -->
+                <nav class="student-header" @click="toggleLessons(student.student_id)">
+                    <div class="left">
+                        <span class="icon">
+                            <ChevronRightIcon v-if="!expandedStudents.has(student.student_id)" />
+                            <ChevronDownIcon v-else />
+                        </span>
 
-                <button class="button is-danger is-small" @click.stop="refuseStudent(student)">
-                    Refuse All
-                </button>
-            </div>
-        </nav>
+                        <p class="student-name">{{ student.student_name }}</p>
 
-        <transition name="expand">
-            <div v-if="expandedStudents.includes(student.student_id)" class="mt-3">
-                <div v-for="req in student.requests" :key="req.id"
-                    class="is-flex is-justify-content-space-between is-align-items-center  py-1 border-bottom">
+                        <span class="tag is-warning is-light is-rounded">
+                            {{ student.requests.length }}
+                        </span>
+                    </div>
 
-                    <p class="is-size-7 ml-5 has-text-white">{{ req.lesson_title }}</p>
+                    <div class="right">
 
-                    <div class="buttons">
-                        <button class="button is-success is-small is-rounded" @click="acceptRequest(req.id)">
-                            <span>Accept</span>
+                        <button class="button is-success is-small"
+                            :class="{ 'is-loading': loadingStudentsAccept.has(student.student_id) }"
+                            :disabled="loadingStudentsAccept.has(student.student_id)"
+                            @click.stop="acceptStudent(student)">
+                            Accept All
                         </button>
-                        <button class="button is-danger is-small is-rounded" @click="refuseRequest(req.id)">
-                            <span>Refuse</span>
+
+                        <button class="button is-danger is-small"
+                            :class="{ 'is-loading': loadingStudentsRefuse.has(student.student_id) }"
+                            :disabled="loadingStudentsRefuse.has(student.student_id)"
+                            @click.stop="refuseStudent(student)">
+                            Refuse All
                         </button>
+
+                    </div>
+                </nav>
+
+                <div v-if="expandedStudents.has(student.student_id)" class="mt-3">
+                    <div v-for="req in student.requests" :key="req.id"
+                        class="is-flex is-justify-content-space-between is-align-items-center  py-1 border-bottom">
+
+                        <p class="is-size-7 ml-5 has-text-white">{{ req.lesson_title }}</p>
+
+                        <div class="buttons">
+
+                            <button class="button is-success is-small is-rounded"
+                                :class="{ 'is-loading': loadingAccept.has(req.id) }"
+                                :disabled="loadingAccept.has(req.id)" @click="acceptRequest(req.id)">
+                                Accept
+                            </button>
+
+                            <button class="button is-danger is-small is-rounded"
+                                :class="{ 'is-loading': loadingRefuse.has(req.id) }"
+                                :disabled="loadingRefuse.has(req.id)" @click="refuseRequest(req.id)">
+                                Refuse
+                            </button>
+
+                        </div>
                     </div>
                 </div>
             </div>
-        </transition>
-    </div>
+        </div>
 
+    </Layout>
 </template>
 
 <script setup>
@@ -55,19 +78,52 @@
 import { ref, onMounted } from "vue";
 import api from "../api";
 import { computed } from "vue";
+import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/vue/24/outline";
+import Layout from "./common/Layout.vue";
 
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 const requests = ref([]);
+
+const loading = ref(false);
+
+const loadingAccept = ref(new Set());   //per lesson
+const loadingRefuse = ref(new Set());   //per lesson
+
+const loadingStudentsAccept = ref(new Set());  //per student
+const loadingStudentsRefuse = ref(new Set());  //per student
 
 onMounted(fetchRequests);
 
-const expandedStudents = ref([]);
+const expandedStudents = ref(new Set());
+
+async function withLoader(setRef, key, callback) {
+    const newSet = new Set(setRef.value);
+    newSet.add(key);
+    setRef.value = newSet;
+
+    try {
+        await callback();
+    } catch (e) {
+        console.error(e);
+    } finally {
+        const newSet = new Set(setRef.value);
+        newSet.delete(key);
+        setRef.value = newSet;
+    }
+}
 
 const toggleLessons = (studentId) => {
-    if (expandedStudents.value.includes(studentId)) {
-        expandedStudents.value = expandedStudents.value.filter(id => id !== studentId);
+    const newSet = new Set(expandedStudents.value);
+
+    if (newSet.has(studentId)) {
+        newSet.delete(studentId);
     } else {
-        expandedStudents.value.push(studentId);
+        newSet.add(studentId);
     }
+
+    expandedStudents.value = newSet;
 };
 
 const groupedRequests = computed(() => {
@@ -90,48 +146,58 @@ const groupedRequests = computed(() => {
 
 //fetch requests lists
 async function fetchRequests() {
-    const { data } = await api.get("/lesson-access/list_request");
-    requests.value = data;
-}
-
-async function acceptRequest(id) {
-    await api.post("/lesson-access/accept", { id });
-    requests.value = requests.value.filter(r => r.id !== id);
-}
-
-async function refuseRequest(id) {
-    await api.post("/lesson-access/refuse", { id });
-    requests.value = requests.value.filter(r => r.id !== id);
-}
-
-async function acceptStudent(student) {
-    const ids = student.requests.map(r => r.id);
+    loading.value = true;
 
     try {
-        await api.post("/lesson-access/accept-multiple", {
-            ids: ids
-        });
-
-        // Remove accepted requests from UI
-        requests.value = requests.value.filter(r => !ids.includes(r.id));
-
-    } catch (e) {
-        console.error(e);
+        const { data } = await api.get("/lesson-access/list_request");
+        requests.value = data;
+    }
+    catch (e) {
+        console.error("Error Access request page : ", e)
+    } finally {
+        loading.value = false;
     }
 }
 
-async function refuseStudent(student) {
+function acceptRequest(id) {
+    withLoader(loadingAccept, id, async () => {
+        await api.post("/lesson-access/accept", { id });
+        requests.value = requests.value.filter(r => r.id !== id);
+    });
+}
+
+function refuseRequest(id) {
+    withLoader(loadingRefuse, id, async () => {
+        await api.post("/lesson-access/refuse", { id });
+        requests.value = requests.value.filter(r => r.id !== id);
+    });
+}
+
+function acceptStudent(student) {
     const ids = student.requests.map(r => r.id);
 
-    try {
-        await api.post("/lesson-access/refuse-multiple", {
-            ids: ids
-        });
+    withLoader(loadingStudentsAccept, student.student_id, async () => {
+        await api.post("/lesson-access/accept-multiple", { ids });
 
         requests.value = requests.value.filter(r => !ids.includes(r.id));
+    });
+}
 
-    } catch (e) {
-        console.error(e);
+function refuseStudent(student) {
+    const ids = student.requests.map(r => r.id);
+
+    withLoader(loadingStudentsRefuse, student.student_id, async () => {
+        await api.post("/lesson-access/refuse-multiple", { ids });
+
+        requests.value = requests.value.filter(r => !ids.includes(r.id));
+    });
+}
+
+function goBack() {
+    if (window.history.length > 1) {
+        router.back();
+    } else {
+        router.push('/');
     }
 }
 </script>

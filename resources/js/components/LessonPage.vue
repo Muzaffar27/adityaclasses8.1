@@ -1,128 +1,86 @@
 <template>
-    <div class="section px-4 py-5 main-content-wrapper mobile-container">
+    <Layout title="Lessons" :loading="loading" @back="goBack">
 
-        <div class="container is-fluid">
-
-            <!-- HEADER (same as Grades page) -->
-            <div class="header-bar">
-                <div class="back-btn" @click="goBack">
-                    <ArrowLeftIcon class="back-icon" />
-                </div>
-
-                <h1 class="title is-4 mb-0">
-                    Lessons
-                </h1>
-            </div>
-
-            <div class="search-box mb-4">
-                <input v-model="search" type="text" class="input search-input" placeholder="Search lessons..." />
-            </div>
-
-            <div v-if="selectedLesson" class="video-modal">
-                <div class="video-box">
-
-                    <!-- Header -->
-                    <div class="video-header">
-                        <h3>{{ selectedLesson.title }}</h3>
-
-                        <button class="close-btn" @click="closeLesson">
-                            ✕
-                        </button>
-                    </div>
-
-                    <!-- Thumbnail (before playing) -->
-                    <div v-if="!isPlaying" class="video-thumbnail" @click="startVideo">
-                        <img :src="selectedLesson.thumbnail || getVimeoThumbnail(selectedLesson.vimeo_url)"
-                            alt="Video thumbnail" />
-                        <div class="play-overlay">
-                            ▶
-                        </div>
-                    </div>
-
-                    <!-- Video iframe -->
-                    <iframe v-if="isPlaying" :src="videoUrl" loading="lazy" frameborder="0" allow="autoplay; fullscreen"
-                        allowfullscreen class="video-frame" @load="onVideoLoaded">
-                    </iframe>
-
-                    <div v-if="isVideoLoading" class="video-loading">
-                        Loading video...
-                    </div>
-                </div>
-            </div>
-
-            <!-- LOADER -->
-            <div v-if="loading">
-                <Loader />
-            </div>
-
-            <!-- LESSON GRID (same structure style as grades) -->
-            <div v-else class="columns is-mobile is-multiline">
-
-                <div class="column is-12" v-for="lesson in filteredLessons" :key="lesson.id">
-
-                    <div class="card lesson-card">
-
-                        <div class="card-content p-4">
-
-                            <div class="lesson-top">
-                                <p class="lesson-title">
-                                    {{ lesson.title }}
-                                </p>
-
-                                <span class="lesson-part">
-                                    Part {{ lesson.part_number || '-' }}
-                                </span>
-                            </div>
-
-                            <p class="lesson-topic">
-                                {{ lesson.topic }}
-                            </p>
-
-                            <div class="lesson-bottom">
-                                <span class="duration">
-                                    {{ lesson.duration || '—' }}
-                                </span>
-
-                                <button class="watch-btn" @click="openLesson(lesson)">
-                                    ▶ Watch
-                                </button>
-
-                                <!-- <button v-if="lesson.user_has_access" class="watch-btn" @click="openLesson(lesson)">
-                                    ▶ Watch
-                                </button> -->
-
-                                <!-- <button v-else-if="lesson.request_status === 'pending'" class="locked-btn" disabled>
-                                    ⏳ Pending approval
-                                </button>
-
-                                <button v-else class="locked-btn" @click="requestAccess(lesson)"
-                                    :disabled="lesson.requestLoading">
-                                    🔒 Request Access
-                                </button> -->
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- EMPTY STATE -->
-            <div v-if="!loading && lessons.length === 0" class="has-text-centered mt-6">
-                <p class="has-text-grey">No lessons available.</p>
-            </div>
-
+        <div class="search-box mb-4">
+            <input v-model="search" type="text" class="input search-input" placeholder="Search lessons..." />
         </div>
 
-    </div>
+        <!-- VIDEO MODAL -->
+        <div v-if="selectedLesson" class="video-modal">
+            <div class="video-box">
+
+                <div class="video-header">
+                    <h3>{{ selectedLesson.title }}</h3>
+
+                    <button class="close-btn" @click="closeLesson">✕</button>
+                </div>
+
+                <div v-if="!isPlaying" class="video-thumbnail" @click="startVideo">
+                    <img :src="selectedLesson.thumbnail || getVimeoThumbnail(selectedLesson.vimeo_url)" />
+                    <div class="play-overlay">▶</div>
+                </div>
+
+                <iframe v-if="isPlaying" :src="videoUrl" loading="lazy" frameborder="0" allow="autoplay; fullscreen"
+                    allowfullscreen class="video-frame" @load="onVideoLoaded" />
+
+                <div v-if="isVideoLoading" class="video-loading">
+                    Loading video...
+                </div>
+
+            </div>
+        </div>
+
+        <!-- GRID -->
+        <div v-else class="columns is-mobile is-multiline">
+
+            <div class="column is-12" v-for="lesson in filteredLessons" :key="lesson.id">
+
+                <div class="card lesson-card">
+                    <div class="card-content p-4">
+
+                        <div class="lesson-top">
+                            <p class="lesson-title">{{ lesson.title }}</p>
+                            <span class="lesson-part">Part {{ lesson.part_number || '-' }}</span>
+                        </div>
+
+                        <p class="lesson-topic">{{ lesson.topic }}</p>
+
+                        <div class="lesson-bottom">
+                            <span class="duration">{{ lesson.duration || '—' }}</span>
+
+                            <button v-if="lesson.user_has_access" class="watch-btn" @click="openLesson(lesson)">
+                                ▶ Watch
+                            </button>
+
+                            <button v-else-if="lesson.request_status === 'pending'" class="locked-btn" disabled>
+                                ⏳ Pending approval
+                            </button>
+
+                            <button v-else class="locked-btn" @click="requestAccess(lesson)"
+                                :disabled="lesson.requestLoading">
+                                🔒 Request Access
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div v-if="!loading && lessons.length === 0" class="has-text-centered mt-6">
+            <p class="has-text-grey">No lessons available.</p>
+        </div>
+
+    </Layout>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from "vue";
-import axios from "axios";
 import api from "../api";
 import { useRoute, useRouter } from "vue-router";
-import Loader from "./common/Loader.vue";
-import { ArrowLeftIcon } from "@heroicons/vue/24/outline";
+import Layout from "./common/Layout.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -244,39 +202,6 @@ function goBack() {
 .mobile-container {
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-}
-
-/* SAME HEADER STYLE (reused) */
-.header-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.back-btn {
-    width: 38px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 12px;
-    background: rgba(79, 70, 229, 0.1);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(6px);
-}
-
-.back-btn:hover {
-    transform: translateX(-4px);
-    background: rgba(79, 70, 229, 0.2);
-}
-
-.back-icon {
-    width: 20px;
-    height: 20px;
-    color: #4f46e5;
 }
 
 /* LESSON CARD (consistent style with grade-card) */

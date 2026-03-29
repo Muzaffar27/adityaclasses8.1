@@ -1,36 +1,34 @@
 <template>
-  <div class="section px-4 py-5 main-content-wrapper mobile-container">
-    <div class="container is-fluid">
-      <h1 class="title is-4 mb-6 ml-2">School subjects</h1>
+  <Layout title="School subjects" :loading="loading" :showBack="false">
+    <div class="columns is-mobile is-multiline">
+      <div class="column is-6-mobile is-4-tablet is-3-desktop" v-for="subject in subjects" :key="subject.id">
+        <div class="card subject-card" @click="goToGrades(subject.id)">
+          <div class="card-content p-4 has-text-centered">
 
-      <div v-if="loading">
-        <Loader />
-      </div>
-
-      <div v-else class="columns is-mobile is-multiline">
-        <div class="column is-6-mobile is-4-tablet is-3-desktop" v-for="subject in subjects" :key="subject.id">
-          <div class="card subject-card" @click="goToGrades(subject.id)">
-            <div class="card-content p-4 has-text-centered">
-              <div class="icon-circle mb-3" :style="{ background: getColor(subject.id) }">
-                {{ getSubjectIcon(subject.name) }}
-              </div>
-              <p class="subject-name">{{ subject.name }}</p>
+            <div class="icon-circle mb-3" :style="{ background: getColor(subject.id) }">
+              {{ getSubjectIcon(subject.name) }}
             </div>
+
+            <p class="subject-name">{{ subject.name }}</p>
+
           </div>
         </div>
       </div>
-
-      <div v-if="!loading && subjects.length === 0" class="has-text-centered mt-6">
-        <p class="has-text-grey">No subjects available for this grade.</p>
-      </div>
     </div>
-  </div>
+
+    <!-- EMPTY STATE -->
+    <div v-if="!loading && subjects.length === 0" class="has-text-centered mt-6">
+      <p class="has-text-grey">No subjects available for this grade.</p>
+    </div>
+
+  </Layout>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import Loader from "./common/Loader.vue";
+import Layout from "./common/Layout.vue";
+
 import { useSubjectStore } from "../stores/cache";
 import { storeToRefs } from "pinia";
 
@@ -39,13 +37,19 @@ const { subjects } = storeToRefs(subjectStore);
 
 const router = useRouter();
 const route = useRoute();
-const loading = ref(false);
 
-// The grade ID from the URL params
-const gradeId = route.params.id;
+const loading = ref(false);
 
 function goToGrades(subjectId) {
   router.push({ name: "grade", params: { id: subjectId } });
+}
+
+function goBack() {
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push("/grades");
+  }
 }
 
 function getColor(id) {
@@ -53,20 +57,23 @@ function getColor(id) {
   return colors[id % colors.length];
 }
 
-// Map icons to subject names for a premium feel
 function getSubjectIcon(name) {
   const subjectName = name.toLowerCase();
-  if (subjectName.includes('math')) return '📐';
-  if (subjectName.includes('science')) return '🧪';
-  if (subjectName.includes('english') || subjectName.includes('lang')) return '📚';
-  if (subjectName.includes('hist')) return '🏛️';
-  return '📖'; // Default
+  if (subjectName.includes("math")) return "📐";
+  if (subjectName.includes("science")) return "🧪";
+  if (subjectName.includes("english") || subjectName.includes("lang")) return "📚";
+  if (subjectName.includes("hist")) return "🏛️";
+  return "📖";
 }
 
 onMounted(async () => {
-  await subjectStore.fetchSubjects();
+  loading.value = true;
+  try {
+    await subjectStore.fetchSubjects();
+  } finally {
+    loading.value = false;
+  }
 });
-
 </script>
 
 <style scoped>

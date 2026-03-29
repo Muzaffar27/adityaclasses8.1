@@ -1,49 +1,39 @@
 <template>
-    <div class="section px-4 py-5 main-content-wrapper mobile-container">
+    <Layout title="School Grades" :loading="loading" @back="goBack">
 
-        <div class="container is-fluid">
+        <div class="columns is-mobile is-multiline">
+            <div class="column is-6-mobile is-4-tablet is-3-desktop" v-for="grade in grades" :key="grade.id">
+                <div class="card grade-card" @click="goToLesson(grade.id)">
+                    <div class="card-content p-4 has-text-centered">
 
-            <div class="header-bar">
-                <div class="back-btn" @click="goBack">
-                    <ArrowLeftIcon class="back-icon" />
-                </div>
-
-                <h1 class="title is-4 mb-0">School Grades</h1>
-            </div>
-
-            <div v-if="loading">
-                <Loader />
-            </div>
-
-            <div v-else class="columns is-mobile is-multiline">
-                <div class="column is-6-mobile is-4-tablet is-3-desktop" v-for="grade in grades" :key="grade.id">
-                    <div class="card grade-card" @click="goToLesson(grade.id)">
-                        <div class="card-content p-4 has-text-centered">
-                            <div class="icon-circle mb-3" :style="{ background: getColor(grade.id) }">
-                                🎓
-                            </div>
-                            <p class="grade-name">{{ grade.name }}</p>
-                            <p class="subtitle is-7 has-text-grey mb-0">
-                                {{ grade.lessons_count }} lessons
-                            </p>
+                        <div class="icon-circle mb-3" :style="{ background: getColor(grade.id) }">
+                            🎓
                         </div>
+
+                        <p class="grade-name">{{ grade.name }}</p>
+
+                        <p class="subtitle is-7 has-text-grey mb-0">
+                            {{ grade.lessons_count }} lessons
+                        </p>
+
                     </div>
                 </div>
             </div>
-
-            <div v-if="!loading && grades.length === 0" class="has-text-centered mt-6">
-                <p class="has-text-grey">No grades available.</p>
-            </div>
         </div>
-    </div>
+
+        <!-- EMPTY STATE -->
+        <div v-if="!loading && grades.length === 0" class="has-text-centered mt-6">
+            <p class="has-text-grey">No grades available.</p>
+        </div>
+
+    </Layout>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { useRoute, useRouter } from "vue-router";
-import Loader from "./common/Loader.vue";
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import Layout from "./common/Layout.vue";
 
 const route = useRoute();
 const router = useRouter();
