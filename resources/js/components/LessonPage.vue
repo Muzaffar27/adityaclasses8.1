@@ -1,9 +1,22 @@
 <template>
     <Layout title="Lessons" :loading="loading" @back="goBack">
 
-        <div class="search-box mb-4">
-            <input v-model="search" type="text" class="input search-input" placeholder="Search lessons..." />
-        </div>
+        <template #actions>
+
+            <div class="mr-2">
+                <button v-if="hasAccess" class="button is-dark is-light">
+                    ✅ Access
+                </button>
+
+                <button v-else-if="requestStatus === 'pending'" class="button is-warning is-light" disabled>
+                    ⏳ Pending
+                </button>
+
+                <button v-else class="button is-primary" @click="requestAccess" :disabled="requestLoading">
+                    🔒 Request
+                </button>
+            </div>
+        </template>
 
         <!-- VIDEO MODAL -->
         <div v-if="selectedLesson" class="video-modal">
@@ -30,12 +43,18 @@
             </div>
         </div>
 
+
         <!-- GRID -->
         <div v-else class="columns is-mobile is-multiline">
 
             <div class="column is-12" v-for="lesson in filteredLessons" :key="lesson.id">
 
-                <div class="card lesson-card">
+                <div class="card lesson-card" @click="hasAccess && openLesson(lesson)">
+
+                    <div v-if="!hasAccess && !selectedLesson" class="locked-overlay">
+                        🔒 Locked
+                    </div>
+
                     <div class="card-content p-4">
 
                         <div class="lesson-top">
@@ -45,23 +64,15 @@
 
                         <p class="lesson-topic">{{ lesson.topic }}</p>
 
+
                         <div class="lesson-bottom">
                             <span class="duration">{{ lesson.duration || '—' }}</span>
 
-                            <button v-if="lesson.user_has_access" class="watch-btn" @click="openLesson(lesson)">
+                            <button class="watch-btn">
                                 ▶ Watch
                             </button>
-
-                            <button v-else-if="lesson.request_status === 'pending'" class="locked-btn" disabled>
-                                ⏳ Pending approval
-                            </button>
-
-                            <button v-else class="locked-btn" @click="requestAccess(lesson)"
-                                :disabled="lesson.requestLoading">
-                                🔒 Request Access
-                            </button>
-
                         </div>
+
                     </div>
                 </div>
 
@@ -92,6 +103,10 @@ const lessons = ref([]);
 const loading = ref(false);
 const isPlaying = ref(false);
 const isVideoLoading = ref(false);
+const requestLoading = ref(false);
+
+const hasAccess = ref(false);
+const requestStatus = ref(null);
 
 const search = ref("");
 const selectedLesson = ref(null);
@@ -111,8 +126,10 @@ async function fetchLessons() {
             },
         });
 
-        console.log("Lessons = ", data)
-        lessons.value = data;
+        lessons.value = data.lessons || [];
+        hasAccess.value = data.access?.has_access || false;
+        requestStatus.value = data.access?.status || null;
+
     } catch (e) {
         console.error(e);
     } finally {
@@ -160,7 +177,9 @@ function onVideoLoaded() {
 }
 
 function openLesson(lesson) {
-    // if (!lesson.user_has_access) return;
+    if (!hasAccess.value) return;
+
+    if (!lesson?.vimeo_url) return;
 
     selectedLesson.value = lesson;
     isPlaying.value = false;
@@ -171,21 +190,23 @@ function closeLesson() {
     isPlaying.value = false;
 }
 
-async function requestAccess(lesson) {
+async function requestAccess() {
     try {
-        lesson.requestLoading = true;
+        requestLoading.value = true;
 
         await api.post("/lesson-access/request", {
-            lesson_id: lesson.id,
+            subject_id: subjectId,
+            grade_id: gradeId,
         });
 
-        lesson.requested = true;
-        lesson.request_status = "pending";
+        requestStatus.value = "pending";
+        hasAccess.value = false;
+        await fetchLessons();
 
     } catch (e) {
         console.error(e);
     } finally {
-        lesson.requestLoading = false;
+        requestLoading.value = false;
     }
 }
 
@@ -206,16 +227,23 @@ function goBack() {
 
 /* LESSON CARD (consistent style with grade-card) */
 .lesson-card {
+    position: relative;
     cursor: pointer;
     border-radius: 16px;
     transition: all 0.25s ease;
     background-color: #1e2a38;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.25s ease;
 }
 
 .lesson-card:hover {
+    cursor: pointer;
     transform: translateY(-4px);
     box-shadow: 0 2px 8px rgba(79, 70, 220, 0.8);
+}
+
+.lesson-card:has(.locked-overlay) {
+    cursor: not-allowed;
 }
 
 /* layout inside card */
@@ -430,5 +458,22 @@ function goBack() {
     font-size: 14px;
 
     aspect-ratio: 16 / 9;
+}
+
+.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.locked-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    border-radius: 16px;
 }
 </style>

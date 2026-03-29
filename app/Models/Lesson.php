@@ -32,10 +32,4 @@ class Lesson extends Model
     {
         return $this->belongsTo(Subject::class);
     }
-
-    public function accesses()
-    {
-        // This connects your Lesson to the lesson_access table
-        return $this->hasMany(LessonAccess::class, 'lesson_id');
-    }
 }

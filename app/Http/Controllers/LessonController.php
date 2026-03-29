@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\LessonAccess;
 
 class LessonController extends Controller
 {
@@ -14,21 +14,29 @@ class LessonController extends Controller
     {
         $userId = auth()->id();
 
+        // 1. Get lessons (NO access logic here anymore)
         $lessons = Lesson::where('subject_id', $request->subject_id)
             ->where('grade_id', $request->grade_id)
-            ->when($userId, function ($query) use ($userId) {
-                // Only check access if we actually have a user
-                $query->withExists(['accesses as user_has_access' => function ($q) use ($userId) {
-                    $q->where('user_id', $userId)->where('status', 'accepted');
-                }]);
-            }, function ($query) {
-                // If no user, just set it to false
-                $query->withExists(['accesses as user_has_access' => function ($q) {
-                    $q->whereRaw('1 = 0');
-                }]);
-            })
             ->get();
 
-        return $lessons;
+        // 2. Get access for this subject + grade
+        $access = null;
+
+        if ($userId) {
+            $access = LessonAccess::where([
+                'user_id' => $userId,
+                'subject_id' => $request->subject_id,
+                'grade_id' => $request->grade_id,
+            ])->first();
+        }
+
+        // 3. Return structured response
+        return response()->json([
+            'lessons' => $lessons,
+            'access' => [
+                'has_access' => $access && $access->status === 'accepted',
+                'status' => $access->status ?? null,
+            ]
+        ]);
     }
 }

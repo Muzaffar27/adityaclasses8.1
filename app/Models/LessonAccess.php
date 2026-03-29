@@ -6,8 +6,31 @@ use Illuminate\Database\Eloquent\Model;
 
 class LessonAccess extends Model
 {
-    // Tell Laravel to stop looking for "lesson_accesses"
     protected $table = 'lesson_access';
 
-    protected $fillable = ['lesson_id', 'user_id', 'status'];
+    protected $fillable = [
+        'subject_id',
+        'grade_id',
+        'user_id',
+        'status'
+    ];
+
+    protected $attributes = [
+        'status' => 'pending',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class);
+    }
+
+    public function grade()
+    {
+        return $this->belongsTo(Grade::class);
+    }
 }

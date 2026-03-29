@@ -3,11 +3,21 @@
     <div class="container is-fluid">
 
       <div class="header-bar">
-        <div v-if="showBack" class="back-btn" @click="$emit('back')">
-          <ArrowLeftIcon class="back-icon" />
+
+        <div class="left-section">
+          <div v-if="showBack" class="back-btn" @click="$emit('back')">
+            <ArrowLeftIcon class="back-icon" />
+          </div>
         </div>
 
-        <h1 class="title is-4 mb-0">{{ title }}</h1>
+        <h1 class="title is-4 mb-0 header-title">
+          {{ title }}
+        </h1>
+
+        <div class="right-section">
+          <slot name="actions" />
+        </div>
+
       </div>
 
       <div v-if="loading">
@@ -41,8 +51,21 @@ defineEmits(['back']);
 .header-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.left-section,
+.right-section {
+  display: flex;
+  align-items: center;
+  min-width: 60px;
+}
+
+.header-title {
+  flex: 1;
+  text-align: center;
 }
 
 .back-btn {

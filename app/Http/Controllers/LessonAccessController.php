@@ -11,13 +11,13 @@ class LessonAccessController extends Controller
 
     public function request(Request $request)
     {
-
         $userId = auth()->id();
 
         DB::table('lesson_access')->updateOrInsert(
             [
-                'lesson_id' => $request->lesson_id,
                 'user_id' => $userId,
+                'subject_id' => $request->subject_id,
+                'grade_id' => $request->grade_id,
             ],
             [
                 'status' => 'pending',
@@ -75,14 +75,15 @@ class LessonAccessController extends Controller
     {
         return DB::table('lesson_access')
             ->join('users', 'lesson_access.user_id', '=', 'users.id')
-            ->join('lessons', 'lesson_access.lesson_id', '=', 'lessons.id')
+            ->join('subjects', 'lesson_access.subject_id', '=', 'subjects.id')
+            ->join('grades', 'lesson_access.grade_id', '=', 'grades.id')
             ->select(
                 'lesson_access.id',
                 'lesson_access.status',
-                'lessons.id as lesson_id',
                 'users.id as student_id',
                 'users.name as student_name',
-                'lessons.title as lesson_title'
+                'subjects.name as subject_name',
+                'grades.name as grade_name'
             )
             ->where('lesson_access.status', 'pending')
             ->latest('lesson_access.created_at')

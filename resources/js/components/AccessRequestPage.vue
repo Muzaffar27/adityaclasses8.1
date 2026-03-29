@@ -2,7 +2,7 @@
 
     <Layout title="Access Requests" :loading="loading" @back="goBack">
 
-        <div v-if="groupedRequests.length === 0" class="has-text-centered mt-6">
+        <div v-if="!loading && groupedRequests.length === 0" class="has-text-centered mt-6">
             <p class="has-text-grey">No access requests.</p>
         </div>
 
@@ -11,7 +11,7 @@
             <div v-for="student in groupedRequests" :key="student.student_id" class="card mb-4 p-4">
 
                 <!-- Student header -->
-                <nav class="student-header" @click="toggleLessons(student.student_id)">
+                <nav class="student-header" @click="toggleRequests(student.student_id)">
                     <div class="left">
                         <span class="icon">
                             <ChevronRightIcon v-if="!expandedStudents.has(student.student_id)" />
@@ -21,7 +21,7 @@
                         <p class="student-name">{{ student.student_name }}</p>
 
                         <span class="tag is-warning is-light is-rounded">
-                            {{ student.requests.length }}
+                            {{ student.accessRequests.length }}
                         </span>
                     </div>
 
@@ -45,10 +45,13 @@
                 </nav>
 
                 <div v-if="expandedStudents.has(student.student_id)" class="mt-3">
-                    <div v-for="req in student.requests" :key="req.id"
+                    <div v-for="req in student.accessRequests" :key="req.id"
                         class="is-flex is-justify-content-space-between is-align-items-center  py-1 border-bottom">
 
-                        <p class="is-size-7 ml-5 has-text-white">{{ req.lesson_title }}</p>
+                        <p class="is-size-7 ml-5 has-text-white">
+                            📘 {{ req.subject_name }}
+                            <span class="has-text-grey">• {{ req.grade_name }}</span>
+                        </p>
 
                         <div class="buttons">
 
@@ -114,7 +117,7 @@ async function withLoader(setRef, key, callback) {
     }
 }
 
-const toggleLessons = (studentId) => {
+const toggleRequests = (studentId) => {
     const newSet = new Set(expandedStudents.value);
 
     if (newSet.has(studentId)) {
@@ -134,11 +137,11 @@ const groupedRequests = computed(() => {
             groups[req.student_id] = {
                 student_id: req.student_id,
                 student_name: req.student_name,
-                requests: []
+                accessRequests: []
             };
         }
 
-        groups[req.student_id].requests.push(req);
+        groups[req.student_id].accessRequests.push(req);
     });
 
     return Object.values(groups);
@@ -174,7 +177,7 @@ function refuseRequest(id) {
 }
 
 function acceptStudent(student) {
-    const ids = student.requests.map(r => r.id);
+    const ids = student.accessRequests.map(r => r.id);
 
     withLoader(loadingStudentsAccept, student.student_id, async () => {
         await api.post("/lesson-access/accept-multiple", { ids });
@@ -184,7 +187,7 @@ function acceptStudent(student) {
 }
 
 function refuseStudent(student) {
-    const ids = student.requests.map(r => r.id);
+    const ids = student.accessRequests.map(r => r.id);
 
     withLoader(loadingStudentsRefuse, student.student_id, async () => {
         await api.post("/lesson-access/refuse-multiple", { ids });
