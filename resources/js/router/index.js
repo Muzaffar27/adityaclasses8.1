@@ -9,6 +9,9 @@ import GradePage from "../components/GradePage.vue";
 import LessonPage from "../components/LessonPage.vue";
 import AccessRequestPage from "../components/AccessRequestPage.vue";
 
+import lessonList from "../components/Lesson/LessonList.vue";
+import LessonManagePage from "../components/Lesson/LessonManagePage.vue";
+
 const routes = [
     {
         path: "/",
@@ -32,6 +35,18 @@ const routes = [
         path: "/dashboard",
         name: "dashboard",
         component: Dashboard,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: "/lessonList/:grade_id/:subject_id",
+        name: "lessonList",
+        component: lessonList,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: "/lessonManagement",
+        name: "lessonManagement",
+        component: LessonManagePage,
         meta: { requiresAuth: true },
     },
     {

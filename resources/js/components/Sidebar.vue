@@ -56,28 +56,29 @@
 
         <!-- ─── TUTOR WORKSPACE (tutors only) ─── -->
         <template v-if="isTutor || isAdmin">
-            <p class="menu-label">Courses</p>
-            <ul class="menu-list mt-2">
-                <!-- <li>
-                    <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
-                        <PlayCircleIcon class="icon" /> <span>My Courses</span>
-                    </router-link>
-                </li>
-                <li>
-                    <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
-                        <CloudArrowUpIcon class="icon" /> <span>New Course</span>
-                    </router-link>
-                </li> -->
+            <p class="menu-label">Tutor Space</p>
 
+            <ul class="menu-list mt-2">
                 <li>
                     <router-link :to="{ name: 'request-access' }" class="menu-link" active-class="is-active"
                         @click="$emit('close')">
-                        <Squares2X2Icon class="icon" /> <span>Request Access</span>
+                        <Squares2X2Icon class="icon" /> <span>Request Access </span>
                     </router-link>
                 </li>
             </ul>
 
-            <p class="menu-label">Students</p>
+
+            <ul class="menu-list mt-2">
+                <li>
+                    <router-link :to="{ name: 'lessonManagement' }" class="menu-link" active-class="is-active"
+                        @click="$emit('close')">
+                        <Squares2X2Icon class="icon" /> <span>Lesson Management</span>
+                    </router-link>
+                </li>
+            </ul>
+
+
+            <p class="menu-label">Student Space</p>
             <ul class="menu-list mt-2">
                 <!-- <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">

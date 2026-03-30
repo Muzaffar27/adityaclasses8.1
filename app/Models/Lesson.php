@@ -23,6 +23,8 @@ class Lesson extends Model
         'is_active'
     ];
 
+    protected $guarded = [];
+
     public function grade()
     {
         return $this->belongsTo(Grade::class);

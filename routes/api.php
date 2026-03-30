@@ -15,6 +15,9 @@ Route::post('/login',    [AuthController::class, 'login']);
 
 //Lessons routes
 Route::get('/lessons', [LessonController::class, 'get']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('admin/lessons', LessonController::class);
+});
 
 //Grade routes
 Route::get('/grades', [GradeController::class, 'get']);
