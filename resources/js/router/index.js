@@ -44,6 +44,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: "/lessons/create",
+        name: "lessonCreate",
+        component: () => import("../components/Lesson/LessonEditForm.vue"),
+        meta: { requiresAuth: true },
+    },
+    {
         path: "/lessonManagement",
         name: "lessonManagement",
         component: LessonManagePage,

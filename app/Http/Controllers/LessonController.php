@@ -60,6 +60,7 @@ class LessonController extends Controller
 
         // 1. Get lessons (NO access logic here anymore)
         $lessons = Lesson::where('subject_id', $request->subject_id)
+            ->where('is_active', 1)
             ->where('grade_id', $request->grade_id)
             ->get();
 

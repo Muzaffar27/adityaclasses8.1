@@ -1,16 +1,26 @@
 <template>
     <Layout title="Lesson Management" :loading="loading" :showBack="false">
 
+        <div class="is-flex is-justify-content-flex-end mb-4">
+            <button class="button is-primary" @click="createLesson">
+                <span class="icon">
+                    <PlusIcon />
+                </span>
+                <span>Add Lesson</span>
+            </button>
+        </div>
+
         <div class="box">
 
             <h2 class="title is-5 mb-4">Lesson Filters</h2>
 
+
             <!-- GRADE -->
             <div class="field">
                 <label class="label">Grade</label>
-                <div class="control">
+                <div class="control" :class="{ 'is-loading': loading }">
                     <div class="select is-fullwidth">
-                        <select v-model="selectedGrade">
+                        <select v-model="selectedGrade" :disabled="loading">
                             <option disabled value="">Select Grade</option>
                             <option v-for="grade in grades" :key="grade.id" :value="grade.id">
                                 {{ grade.name }}
@@ -23,9 +33,9 @@
             <!-- SUBJECT -->
             <div class="field">
                 <label class="label">Subject</label>
-                <div class="control">
+                <div class="control" :class="{ 'is-loading': loading }">
                     <div class="select is-fullwidth">
-                        <select v-model="selectedSubject">
+                        <select v-model="selectedSubject" :disabled="loading">
                             <option disabled value="">Select Subject</option>
                             <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
                                 {{ subject.name }}
@@ -50,36 +60,21 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '../../api';
 import Layout from '../common/Layout.vue';
+import { PlusIcon } from '@heroicons/vue/24/outline';
+import { useCacheStore } from '../../stores/cache';
+import { storeToRefs } from 'pinia';
 
 const router = useRouter();
 
-const grades = ref([]);
-const subjects = ref([]);
+const cacheStore = useCacheStore();
+const { subjects, grades, loading } = storeToRefs(cacheStore);
 
 const selectedGrade = ref("");
 const selectedSubject = ref("");
 
-const loading = ref(false);
-
-onMounted(async () => {
-    loading.value = true;
-
-    try {
-        const [gradesRes, subjectsRes] = await Promise.all([
-            api.get('/grades'),
-            api.get('/subjects')
-        ]);
-
-        grades.value = gradesRes.data;
-        subjects.value = subjectsRes.data;
-
-    } catch (e) {
-        console.error(e);
-    } finally {
-        loading.value = false;
-    }
+onMounted(async () => {    // One call to rule them all
+    await cacheStore.fetchAllMetadata();
 });
 
 function goToLessons() {
@@ -97,4 +92,9 @@ function goToLessons() {
         }
     });
 }
+
+function createLesson() {
+    router.push({ name: 'lessonCreate' });
+}
+
 </script>

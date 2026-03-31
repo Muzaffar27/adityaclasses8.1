@@ -29,11 +29,11 @@ import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
 
-import { useSubjectStore } from "../stores/cache";
+import { useCacheStore } from "../stores/cache";
 import { storeToRefs } from "pinia";
 
-const subjectStore = useSubjectStore();
-const { subjects } = storeToRefs(subjectStore);
+const cacheStore = useCacheStore();
+const { subjects } = storeToRefs(cacheStore);
 
 const router = useRouter();
 const route = useRoute();
@@ -69,11 +69,15 @@ function getSubjectIcon(name) {
 onMounted(async () => {
   loading.value = true;
   try {
-    await subjectStore.fetchSubjects();
+    // FIX: Use the unified fetcher
+    await cacheStore.fetchAllMetadata();
+  } catch (error) {
+    console.error("Failed to load school subjects:", error);
   } finally {
     loading.value = false;
   }
 });
+
 </script>
 
 <style scoped>

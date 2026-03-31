@@ -4,12 +4,8 @@
         <!-- HEADER -->
         <div class="admin-header">
             <div>
-                <p class="has-text-grey">Create, edit, and delete lessons</p>
+                <p class="has-text-grey">Edit, and delete lessons</p>
             </div>
-
-            <button class="button is-primary" @click="createLesson">
-                + Add Lesson
-            </button>
         </div>
 
         <div v-if="lessons.length > 0" class="mb-3 has-text-grey is-size-7">
