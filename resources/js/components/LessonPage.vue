@@ -3,7 +3,7 @@
 
         <template #actions>
 
-            <div class="mr-2">
+            <div v-if="!loading" class="">
                 <button v-if="hasAccess" class="button is-dark is-light">
                     ✅ Access
                 </button>

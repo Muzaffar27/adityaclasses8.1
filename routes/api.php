@@ -28,6 +28,7 @@ Route::get('/subjects', [SubjectController::class, 'get']);
 
 //Lesson routes
 Route::middleware('auth:sanctum')->get('/lessons', [LessonController::class, 'get']);
+Route::middleware('auth:sanctum')->get('/myCourses', [LessonController::class, 'myCourses']);
 
 //LessonAccess routes
 Route::middleware('auth:sanctum')->group(function () {

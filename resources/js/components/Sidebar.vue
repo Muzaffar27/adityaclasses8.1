@@ -31,11 +31,16 @@
         <template v-if="isStudent || isAdmin">
             <p class="menu-label">My Learning</p>
             <ul class="menu-list mt-2">
-                <!-- <li>
-                    <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
-                        <PlayCircleIcon class="icon" /> <span>My Courses</span>
-                    </router-link>
-                </li>
+
+                <ul class="menu-list mt-2">
+                    <li>
+                        <router-link :to="{ name: 'myCourses' }" class="menu-link" active-class="is-active"
+                            @click="$emit('close')">
+                            <PlayCircleIcon class="icon" /> <span>My Courses </span>
+                        </router-link>
+                    </li>
+                </ul>
+                <!--
                 <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <ArrowRightCircleIcon class="icon" /> <span>Continue Watching</span>

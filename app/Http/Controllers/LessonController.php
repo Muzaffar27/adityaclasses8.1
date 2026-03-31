@@ -84,4 +84,13 @@ class LessonController extends Controller
             ]
         ]);
     }
+
+    public function myCourses()
+    {
+        // Fetch only approved access for the current user
+        return LessonAccess::with(['subject', 'grade'])
+            ->where('user_id', auth()->id())
+            ->where('status', 'accepted')
+            ->get();
+    }
 }
