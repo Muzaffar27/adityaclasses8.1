@@ -79,7 +79,8 @@
                         Cancel
                     </button>
 
-                    <button class="button is-small is-primary" :class="{ 'is-loading': loading }" @click="handleSave">
+                    <button class="button is-small is-primary has-text-white" :class="{ 'is-loading': loading }"
+                        @click="handleSave">
                         <span>{{ lesson?.id ? 'Update Lesson' : 'Create Lesson' }}</span>
                     </button>
                 </div>
@@ -291,7 +292,7 @@ input:checked+.slider:before {
 /* Base container style */
 .edit-form-container {
     animation: slideDown 0.2s ease-out;
-    background-color: #fafafa;
+    background-color: hsl(221, 14%, 9%, 1) !important;
     transition: all 0.3s ease;
 }
 
@@ -301,7 +302,7 @@ input:checked+.slider:before {
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
     margin-top: 1rem;
-    background-color: #ffffff;
+    background-color: hsl(221, 14%, 9%, 1) !important;
     border-left: none;
     /* Remove the aggressive indigo bar in full-page mode */
 }

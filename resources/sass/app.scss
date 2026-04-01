@@ -21,11 +21,13 @@ $link: $primary;
 /* ── Fade Transition ──────────────────────────────────────────────────────── */
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease, transform 0.25s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+    transform: scale(0.96);
+
 }
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */
@@ -219,6 +221,16 @@ $link: $primary;
 html, body, .section, .main-content-wrapper {
     background-color: hsl(221, 14%, 9%,1) !important;
     color: hsl(0, 0%, 90%) !important;
+}
+
+/* Force Bulma surfaces */
+.section,
+.hero,
+.card,
+.box,
+.navbar,
+.container {
+    background-color: transparent !important;
 }
 
 /* ── Sidebar overlay (mobile) ─────────────────────────────────────────────── */

@@ -2,7 +2,7 @@
     <Layout title="Lesson Management" :loading="loading" :showBack="false">
 
         <div class="is-flex is-justify-content-flex-end mb-4">
-            <button class="button is-primary" @click="createLesson">
+            <button class="button is-primary has-text-white" @click="createLesson">
                 <span class="icon">
                     <PlusIcon />
                 </span>
@@ -47,7 +47,8 @@
 
             <!-- ACTION -->
             <div class="has-text-centered mt-4">
-                <button class="button is-primary" :disabled="!selectedGrade || !selectedSubject" @click="goToLessons">
+                <button class="button is-primary has-text-white" :disabled="!selectedGrade || !selectedSubject"
+                    @click="goToLessons">
                     Load Lessons
                 </button>
             </div>

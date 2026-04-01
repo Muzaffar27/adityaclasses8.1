@@ -27,7 +27,7 @@
                             </h3>
                         </div>
 
-                        <button class="button is-primary is-fullwidth is-rounded action-btn"
+                        <button class="button is-primary is-fullwidth is-rounded action-btn has-text-white"
                             @click="viewLessons(access.grade_id, access.subject_id)">
                             <span>View videos</span>
                             <span class="icon is-small ml-2">
