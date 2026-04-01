@@ -9,7 +9,7 @@
 
         <div v-else class="columns is-multiline is-mobile">
             <div v-for="access in enrolledCourses" :key="access.id" class="column is-12-mobile is-4-tablet">
-                <div class="card course-card">
+                <div class="card glass-card">
                     <div class="card-content">
                         <div>
                             <div class="is-flex is-justify-content-between is-align-items-start mb-4">
@@ -92,124 +92,13 @@ const viewLessons = (gradeId, subjectId) => {
 
 onMounted(fetchMyCourses);
 </script>
+
 <style scoped>
-/* Grid fix for mobile */
 .columns.is-mobile {
     padding: 0 10px;
 }
 
-.course-card {
-    border-radius: 20px;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    /* Glassmorphism effect */
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-}
-
-.course-card:hover {
-    transform: translateY(-8px);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: #4f46e5;
-    /* Your primary color */
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-}
-
-.is-dark-accent {
-    background-color: rgba(79, 70, 229, 0.15);
-    color: #a5b4fc;
-    border: 1px solid rgba(79, 70, 229, 0.3);
-    font-weight: 600;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.action-btn {
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.action-btn:active {
-    transform: scale(0.95);
-    /* Tactile feedback for mobile */
-}
-
-/* Empty State Styling */
-.empty-container {
-    padding: 3rem;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 24px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-}
-
-.empty-icon {
-    font-size: 3rem;
-    filter: grayscale(1);
-    opacity: 0.5;
-}
-
-/* Skeleton Loading Animation */
-.skeleton-card {
-    height: 200px;
-    background: linear-gradient(90deg, #121212 25%, #1a1a1a 50%, #121212 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
-    border-radius: 20px;
-}
-
-@keyframes loading {
-    0% {
-        background-position: 200% 0;
-    }
-
-    100% {
-        background-position: -200% 0;
-    }
-}
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-    .column.is-12-mobile {
-        padding-bottom: 1.5rem;
-    }
-
-    .title.is-5 {
-        font-size: 1.1rem;
-    }
-}
-
-/* Heroicon Styling */
-.hero-icon-lg {
-    width: 28px;
-    height: 28px;
-}
-
-.hero-icon-sm {
-    width: 18px;
-    height: 18px;
-}
-
-.hero-icon-xl {
-    width: 64px;
-    height: 64px;
-    opacity: 0.4;
-}
-
-/* Ensure the button content stays centered with the icon */
-.action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
 .move-up {
     margin-top: -3px;
-    /* Adjust this number to go higher or lower */
-    /* Alternative: transform: translateY(-4px); */
 }
 </style>

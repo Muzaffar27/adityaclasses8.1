@@ -1,11 +1,26 @@
 {
   "resources/js/app.js": {
-    "file": "assets/app-B_je8_fb.js",
+    "file": "assets/app-DzFcj-Aq.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
+    "dynamicImports": [
+      "resources/js/components/MyCourse.vue"
+    ],
     "css": [
-      "assets/app--HHjEehp.css"
+      "assets/app-CsO4vhaG.css"
+    ]
+  },
+  "resources/js/components/MyCourse.vue": {
+    "file": "assets/MyCourse-BDrfftw5.js",
+    "name": "MyCourse",
+    "src": "resources/js/components/MyCourse.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/MyCourse-CDfLs6P4.css"
     ]
   }
 }

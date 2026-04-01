@@ -216,6 +216,11 @@ $link: $primary;
     }
 }
 
+html, body, .section, .main-content-wrapper {
+    background-color: hsl(221, 14%, 9%,1) !important;
+    color: hsl(0, 0%, 90%) !important;
+}
+
 /* ── Sidebar overlay (mobile) ─────────────────────────────────────────────── */
 .sidebar-overlay {
     position: fixed;
@@ -368,3 +373,105 @@ $link: $primary;
         transform: translateY(0);
     }
 }
+
+/* === GLASS CARD (reusable everywhere) === */
+.glass-card {
+    border-radius: 20px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+}
+
+.glass-card:hover {
+    transform: translateY(-8px);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: #4f46e5;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* === TAG STYLE === */
+.is-dark-accent {
+    background-color: rgba(79, 70, 229, 0.15);
+    color: #a5b4fc;
+    border: 1px solid rgba(79, 70, 229, 0.3);
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* === BUTTON === */
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+/* === EMPTY STATE === */
+.empty-container {
+    padding: 3rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 24px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* === SKELETON === */
+.skeleton-card {
+    height: 200px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, #121212 25%, #1a1a1a 50%, #121212 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* === ICONS === */
+.hero-icon-lg {
+    width: 28px;
+    height: 28px;
+}
+
+.hero-icon-sm {
+    width: 18px;
+    height: 18px;
+}
+
+.hero-icon-xl {
+    width: 64px;
+    height: 64px;
+    opacity: 0.4;
+}
+
+/* Clickable card behavior */
+.clickable-card {
+    cursor: pointer;
+  }
+  
+.clickable-card:active {
+    transform: scale(0.97);
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+  }
+
+  .fixed-card {
+    height: 170px;
+  }

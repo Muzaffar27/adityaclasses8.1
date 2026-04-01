@@ -10,7 +10,7 @@
           </div>
         </div>
 
-        <h1 class="title is-4 mb-0 header-title">
+        <h1 class="title is-4 mb-0 header-title has-text-white">
           {{ title }}
         </h1>
 

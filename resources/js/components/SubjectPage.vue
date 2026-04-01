@@ -1,8 +1,8 @@
 <template>
   <Layout title="School subjects" :loading="loading" :showBack="false">
     <div class="columns is-mobile is-multiline">
-      <div class="column is-6-mobile is-4-tablet is-3-desktop" v-for="subject in subjects" :key="subject.id">
-        <div class="card subject-card" @click="goToGrades(subject.id)">
+      <div class="column is-12-mobile is-4-tablet" v-for="subject in subjects" :key="subject.id">
+        <div class="card glass-card clickable-card fixed-card" @click="goToGrades(subject.id)">
           <div class="card-content p-4 has-text-centered">
 
             <div class="icon-circle mb-3" :style="{ background: getColor(subject.id) }">
@@ -81,47 +81,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.main-content-wrapper {
-  min-height: 100vh;
-}
-
-/* Sidebar padding for Desktop */
-@media (min-width: 1024px) {
-  .main-content-wrapper {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-}
-
-.mobile-container {
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.subject-card {
-  cursor: pointer;
-  border-radius: 16px;
-  transition: all 0.25s ease;
-  padding: 10px;
-  background-color: #1e2a38;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Hover effect matches the Grades page */
-.subject-card:hover {
-  transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 2px 8px rgba(79, 70, 220, 0.8);
-}
-
-/* Tactile feedback for mobile */
-.subject-card:active {
-  transform: scale(0.95);
-  background-color: #4f46e5;
-}
-
 .subject-name {
   font-weight: 700;
   font-size: 1.1rem;
