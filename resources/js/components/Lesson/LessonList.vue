@@ -33,36 +33,63 @@
                 </thead>
 
                 <tbody>
-                    <tr v-for="lesson in lessons" :key="lesson.id">
-                        <td>
-                            <strong>{{ lesson.title }}</strong>
-                            <p class="is-size-7 has-text-grey">
-                                {{ lesson.topic }}
-                            </p>
-                        </td>
+                    <template v-for="group in groupedLessons" :key="group.topic">
 
-                        <td :class="{ 'has-text-grey-light is-italic': !lesson.part_number }">
-                            {{ lesson.part_number ?? 'N/A' }}
-                        </td>
+                        <!-- TOPIC HEADER -->
+                        <tr class="topic-row">
+                            <td colspan="4">
+                                <div class="glass-card topic-card is-flex is-align-items-center is-justify-content-space-between"
+                                    @click="toggleTopic(group.topic)">
+                                    <div>
+                                        <strong class="has-text-white">{{ group.topic }}</strong>
+                                        <p class="is-size-7 has-text-grey">
+                                            {{ group.lessons.length }} lessons
+                                        </p>
+                                    </div>
 
-                        <td>{{ lesson.is_active ? 'Yes' : 'No' }}</td>
+                                    <span class="tag is-dark-accent">
+                                        {{ isTopicOpen(group.topic) ? 'Hide' : 'Show' }}
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
 
-                        <td>
-                            <button class="button is-small" @click="toggleEdit(lesson.id)">
-                                {{ editingId === lesson.id ? 'Close' : 'Edit' }}
-                            </button>
-                        </td>
+                        <!-- LESSONS -->
+                        <template v-if="isTopicOpen(group.topic)">
+                            <template v-for="lesson in group.lessons" :key="lesson.id">
 
-                        <!-- <button class="button is-small is-danger" @click="deleteLesson(lesson.id)">
-                                Delete
-                            </button> -->
+                                <tr>
+                                    <td>
+                                        <strong class="ml-6" style="display:inline-block;">
+                                            {{ lesson.title }}
+                                        </strong>
+                                    </td>
 
-                    <tr v-if="editingId === lesson.id" class="edit-row-active">
-                        <td colspan="4" style="padding: 0;">
-                            <LessonEditForm :lesson="lesson" @saved="onLessonSaved" @cancel="editingId = null" />
-                        </td>
-                    </tr>
-                    </tr>
+                                    <td :class="{ 'has-text-grey-light is-italic': !lesson.part_number }">
+                                        {{ lesson.part_number ?? 'N/A' }}
+                                    </td>
+
+                                    <td>{{ lesson.is_active ? 'Yes' : 'No' }}</td>
+
+                                    <td>
+                                        <button class="button is-small" @click.stop="toggleEdit(lesson.id)">
+                                            {{ editingId === lesson.id ? 'Close' : 'Edit' }}
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- ✅ NOW lesson is defined -->
+                                <tr v-if="editingId === lesson.id" class="edit-row-active">
+                                    <td colspan="4" style="padding: 0;">
+                                        <LessonEditForm :lesson="lesson" @saved="onLessonSaved"
+                                            @cancel="editingId = null" />
+                                    </td>
+                                </tr>
+
+                            </template>
+                        </template>
+
+                    </template>
                 </tbody>
             </table>
 
@@ -73,33 +100,35 @@
         <!-- ===================== -->
         <div class="is-hidden-tablet">
 
-            <div v-for="lesson in lessons" :key="lesson.id" class="mobile-card">
+            <div v-for="group in groupedLessons" :key="group.topic" class="mb-4">
 
-                <div class="card-content">
+                <!-- TOPIC HEADER -->
+                <div class="topic-header" @click="toggleTopic(group.topic)">
+                    <strong>{{ group.topic }}</strong>
+                    <span class="ml-2 has-text-grey">
+                        ({{ group.lessons.length }})
+                    </span>
+                </div>
 
-                    <div class="card-top">
-                        <strong>{{ lesson.title }}</strong>
-                    </div>
+                <!-- LESSONS -->
+                <div v-if="isTopicOpen(group.topic)">
+                    <div v-for="lesson in group.lessons" :key="lesson.id" class="mobile-card">
 
-                    <p class="is-size-7 has-text-grey mb-2">
-                        {{ lesson.topic }}
-                    </p>
+                        <div class=" card-content">
 
-                    <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap mt-3"
-                        style="gap: 10px;">
+                            <strong>{{ lesson.title }}</strong>
 
-                        <div class="is-flex is-flex-wrap-wrap" style="gap: 5px;">
-                            <span class="tag is-warning is-light">
-                                Part: {{ lesson.part_number ?? 'N/A' }}
-                            </span>
+                            <div class="mt-2">
+                                <span class="tag is-warning is-light">
+                                    Part: {{ lesson.part_number ?? 'N/A' }}
+                                </span>
 
-                            <span class="tag" :class="lesson.is_active ? 'is-success' : 'is-danger'">
-                                {{ lesson.is_active ? 'Active' : 'Inactive' }}
-                            </span>
-                        </div>
+                                <span class="tag ml-1" :class="lesson.is_active ? 'is-success' : 'is-danger'">
+                                    {{ lesson.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </div>
 
-                        <div class="is-flex" style="gap: 8px; margin-left: auto;">
-                            <button class="button is-small is-info" @click="toggleEdit(lesson.id)">
+                            <button class="button is-small is-info mt-2" @click="toggleEdit(lesson.id)">
                                 {{ editingId === lesson.id ? 'Close' : 'Edit' }}
                             </button>
 
@@ -107,16 +136,11 @@
                                 <LessonEditForm :lesson="lesson" @saved="onLessonSaved" @cancel="editingId = null" />
                             </div>
 
-                            <!-- <button class="button is-small is-danger" @click="deleteLesson(lesson.id)">
-                                Delete
-                            </button> -->
                         </div>
-
                     </div>
-
                 </div>
-            </div>
 
+            </div>
         </div>
 
         <!-- EMPTY STATE -->
@@ -143,8 +167,15 @@ const loading = ref(false);
 
 const gradeId = route.params.grade_id;
 const subjectId = route.params.subject_id;
+const openTopics = ref({});
 
 const editingId = ref(null);
+
+function toggleTopic(topic) {
+    openTopics.value[topic] = !openTopics.value[topic];
+}
+
+const isTopicOpen = (topic) => openTopics.value[topic] === true;
 
 const toggleEdit = async (id) => {
     // If we are closing the current edit, just null it out
@@ -202,6 +233,22 @@ const deleteLesson = async (id) => {
         await fetchLessons();
     }
 };
+
+const groupedLessons = computed(() => {
+    const groups = {};
+
+    lessons.value.forEach((lesson) => {
+        const topic = lesson.topic || "General";
+
+        if (!groups[topic]) groups[topic] = [];
+        groups[topic].push(lesson);
+    });
+
+    return Object.entries(groups).map(([topic, lessons]) => ({
+        topic,
+        lessons
+    }));
+});
 
 function goBack() {
     router.back();
@@ -276,5 +323,34 @@ onMounted(() => {
         align-items: flex-start;
         gap: 10px;
     }
+}
+
+.topic-row {
+    cursor: pointer;
+    border: none;
+
+}
+
+.topic-row td {
+    padding-top: 16px;
+    padding-bottom: 6px;
+}
+
+.topic-header {
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.topic-card {
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.topic-card:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.06);
 }
 </style>
