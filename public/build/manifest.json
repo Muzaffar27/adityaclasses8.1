@@ -1,6 +1,6 @@
 {
   "resources/js/app.js": {
-    "file": "assets/app-DzFcj-Aq.js",
+    "file": "assets/app-DCG7SIMH.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -8,11 +8,11 @@
       "resources/js/components/MyCourse.vue"
     ],
     "css": [
-      "assets/app-CsO4vhaG.css"
+      "assets/app-BuwSSb2i.css"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-BDrfftw5.js",
+    "file": "assets/MyCourse-C16vICwP.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -20,7 +20,7 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/MyCourse-CDfLs6P4.css"
+      "assets/MyCourse-CDBzqJGn.css"
     ]
   }
 }

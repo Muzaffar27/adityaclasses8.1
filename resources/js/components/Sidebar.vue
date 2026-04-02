@@ -83,20 +83,20 @@
             </ul>
 
 
-            <p class="menu-label">Student Space</p>
-            <ul class="menu-list mt-2">
-                <!-- <li>
+            <!-- <p class="menu-label">Student Space</p>
+            <ul class="menu-list mt-2"> -->
+            <!-- <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <ClockIcon class="icon" />
                         <span>Access Requests</span>
                     </router-link>
                 </li> -->
-                <!-- <li>
+            <!-- <li>
                     <router-link :to="{ name: '' }" class="menu-link" active-class="is-active" @click="$emit('close')">
                         <UserGroupIcon class="icon" /> <span>All Students</span>
                     </router-link>
                 </li> -->
-            </ul>
+            <!-- </ul> -->
         </template>
 
         <!-- ─── ADMIN PANEL (admins only) ─── -->
