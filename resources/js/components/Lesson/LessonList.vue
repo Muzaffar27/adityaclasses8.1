@@ -51,7 +51,7 @@
                         </td>
                     </tr>
 
-                    <template v-for="group in groupedLessons" :key="group.topic">
+                    <template v-for="group in paginatedTopics" :key="group.topic">
 
                         <!-- TOPIC HEADER -->
                         <tr class="topic-row">
@@ -118,8 +118,7 @@
         <!-- ===================== -->
         <div class="is-hidden-tablet">
 
-            <div v-for="group in groupedLessons" :key="group.topic" class="mb-4">
-
+            <div v-for="group in paginatedTopics" :key="group.topic">
                 <!-- TOPIC HEADER -->
                 <div class="topic-header" @click="toggleTopic(group.topic)">
                     <strong>{{ group.topic }}</strong>
@@ -162,6 +161,37 @@
             </div>
         </div>
 
+
+        <div v-if="totalPages > 1" class="pagination-bar mt-5 is-flex is-align-items-center is-justify-content-center">
+            <!-- Prev -->
+            <button class="pagination-btn" @click="prevPage" :disabled="currentPage === 1">
+                ‹
+            </button>
+
+            <!-- Pages -->
+            <div class="pagination-pages">
+                <template v-for="(page, index) in visiblePages" :key="index">
+
+                    <!-- Ellipsis -->
+                    <span v-if="page === '...'" class="pagination-ellipsis">
+                        ...
+                    </span>
+
+                    <!-- Page Button -->
+                    <button v-else class="page-pill" :class="{ active: currentPage === page }"
+                        @click="goToPage(Number(page))">
+                        {{ page }}
+                    </button>
+
+                </template>
+            </div>
+
+            <!-- Next -->
+            <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">
+                ›
+            </button>
+        </div>
+
         <!-- EMPTY STATE -->
         <div v-if="!loading && lessons.length === 0" class="empty-state">
             No lessons found.
@@ -172,12 +202,13 @@
 
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue';
+import { ref, onMounted, computed, nextTick, watchEffect } from 'vue';
 import api from '../../api';
 import Layout from '../common/Layout.vue';
 import LessonEditForm from './LessonEditForm.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { PlusIcon } from '@heroicons/vue/24/outline';
+import { Pagination } from '../../composables/pagination';
 
 const route = useRoute();
 const router = useRouter();
@@ -192,9 +223,27 @@ const openTopics = ref({});
 const editingId = ref(null);
 const creating = ref(false);
 
+const {
+    currentPage,
+    paginatedTopics,
+    totalPages,
+    visiblePages,
+    goToPage,
+    nextPage,
+    prevPage,
+} = Pagination(lessons, 5);
+
 function toggleTopic(topic) {
     openTopics.value[topic] = !openTopics.value[topic];
 }
+
+watchEffect(() => {
+    console.log({
+        currentPage: currentPage.value,
+        totalPages: totalPages.value,
+        visiblePages: visiblePages.value
+    });
+});
 
 const isTopicOpen = (topic) => openTopics.value[topic] === true;
 
@@ -241,7 +290,9 @@ const fetchLessons = async () => {
 
         lessons.value = res.data;
 
-        console.log("Filtered lessons = ", lessons.value);
+        currentPage.value = 1;
+
+        await nextTick();
 
     } catch (error) {
         console.error(error);
@@ -259,22 +310,6 @@ const deleteLesson = async (id) => {
         await fetchLessons();
     }
 };
-
-const groupedLessons = computed(() => {
-    const groups = {};
-
-    lessons.value.forEach((lesson) => {
-        const topic = lesson.topic || "General";
-
-        if (!groups[topic]) groups[topic] = [];
-        groups[topic].push(lesson);
-    });
-
-    return Object.entries(groups).map(([topic, lessons]) => ({
-        topic,
-        lessons
-    }));
-});
 
 function goBack() {
     router.back();

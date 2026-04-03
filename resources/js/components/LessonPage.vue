@@ -51,8 +51,8 @@
             </div>
         </Transition>
 
-        <div v-if="!loading && lessons.length > 0" class="pb-6">
-            <div v-for="group in groupedLessonsList" :key="group.topic" class="mb-4">
+        <div v-if="!loading && lessons.length > 0">
+            <div v-for="group in paginatedTopics" :key="group.topic">
 
                 <div class="glass-card topic-header p-4 mb-2 clickable-card" @click.stop="toggleTopic(group.topic)">
                     <div class="is-flex is-align-items-center">
@@ -96,18 +96,53 @@
                     </div>
                 </div>
 
+
+
             </div>
         </div>
+
+        <div v-if="totalPages > 1" class="pagination-controls pagination-wrapper mt-5">
+
+            <button class="button is-small" @click="prevPage" :disabled="currentPage === 1">
+                Prev
+            </button>
+
+            <div class="mx-3 is-flex is-align-items-center">
+
+                <div class="mx-3 is-hidden-mobile is-flex is-align-items-center">
+                    <template v-for="(page, index) in visiblePages" :key="index">
+                        <span v-if="page === '...'" class="mx-2">...</span>
+
+                        <button v-else class="button is-small mx-1" :class="{ 'is-primary': currentPage === page }"
+                            @click="goToPage(page)">
+                            {{ page }}
+                        </button>
+                    </template>
+                </div>
+
+                <div class="is-hidden-tablet has-text-white">
+                    Page {{ currentPage }} / {{ totalPages }}
+                </div>
+            </div>
+
+            <button class="button is-small" @click="nextPage" :disabled="currentPage === totalPages">
+                Next
+            </button>
+        </div>
+
+
+
 
     </Layout>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import api from "../api";
 import { useRoute, useRouter } from "vue-router";
 import Layout from "./common/Layout.vue";
 import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, FolderOpenIcon } from '@heroicons/vue/24/outline';
+import { Pagination } from "../composables/Pagination";
 
 const route = useRoute();
 const router = useRouter();
@@ -123,6 +158,16 @@ const requestStatus = ref(null);
 const selectedLesson = ref(null);
 const openTopics = ref({});
 const isPlaying = ref(false);
+
+const {
+    paginatedTopics,
+    currentPage,
+    totalPages,
+    visiblePages,
+    goToPage,
+    nextPage,
+    prevPage
+} = Pagination(lessons, 5);
 
 onMounted(fetchLessons);
 
@@ -148,17 +193,11 @@ function toggleTopic(topic) {
     openTopics.value[topic] = !openTopics.value[topic];
 }
 
-const isTopicOpen = (topic) => openTopics.value[topic] === true;
-
-const groupedLessonsList = computed(() => {
-    const groups = {};
-    lessons.value.forEach((lesson) => {
-        const topic = lesson.topic || "General";
-        if (!groups[topic]) groups[topic] = [];
-        groups[topic].push(lesson);
-    });
-    return Object.entries(groups).map(([topic, lessons]) => ({ topic, lessons }));
+watch(lessons, () => {
+    currentPage.value = 1;
 });
+
+const isTopicOpen = (topic) => openTopics.value[topic] === true;
 
 function onVideoLoaded() { isVideoLoading.value = false; }
 
