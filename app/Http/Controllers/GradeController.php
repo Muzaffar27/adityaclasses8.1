@@ -24,4 +24,20 @@ class GradeController extends Controller
             ->orderByRaw('CAST(SUBSTRING(name, 7) AS UNSIGNED)')
             ->get();
     }
+
+    public function add(Request $request)
+    {
+        // 1. Validate
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:grades,name'
+        ]);
+
+        // 2. Create
+        $grade = Grade::create([
+            'name' => $validated['name']
+        ]);
+
+        // 3. Return
+        return response()->json($grade, 201);
+    }
 }

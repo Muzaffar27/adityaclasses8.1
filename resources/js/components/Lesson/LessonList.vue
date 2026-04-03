@@ -4,7 +4,16 @@
         <!-- HEADER -->
         <div class="admin-header">
             <div>
-                <p class="has-text-grey">Edit, and delete lessons</p>
+                <p class="has-text-grey">Create, edit, and delete lessons</p>
+            </div>
+
+            <div class="is-flex is-justify-content-flex-end mb-4">
+                <button class="button is-primary has-text-white" @click="createLesson">
+                    <span class="icon">
+                        <PlusIcon />
+                    </span>
+                    <span>{{ creating ? 'Close Form' : 'Add Lesson' }}</span>
+                </button>
             </div>
         </div>
 
@@ -22,6 +31,7 @@
         <!-- ===================== -->
         <div class="table-wrapper is-hidden-mobile">
 
+
             <table class="table is-fullwidth is-hoverable">
                 <thead>
                     <tr>
@@ -33,6 +43,14 @@
                 </thead>
 
                 <tbody>
+
+                    <tr v-if="creating" class="edit-row-active">
+                        <td colspan="4" style="padding: 0;">
+                            <LessonEditForm :grade_id="gradeId" :subject_id="subjectId" inline @saved="onCreated"
+                                @cancel="creating = false" />
+                        </td>
+                    </tr>
+
                     <template v-for="group in groupedLessons" :key="group.topic">
 
                         <!-- TOPIC HEADER -->
@@ -81,7 +99,7 @@
                                 <!-- ✅ NOW lesson is defined -->
                                 <tr v-if="editingId === lesson.id" class="edit-row-active">
                                     <td colspan="4" style="padding: 0;">
-                                        <LessonEditForm :lesson="lesson" @saved="onLessonSaved"
+                                        <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved"
                                             @cancel="editingId = null" />
                                     </td>
                                 </tr>
@@ -133,7 +151,8 @@
                             </button>
 
                             <div v-if="editingId === lesson.id" class="edit-row-active mt-3">
-                                <LessonEditForm :lesson="lesson" @saved="onLessonSaved" @cancel="editingId = null" />
+                                <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved"
+                                    @cancel="editingId = null" />
                             </div>
 
                         </div>
@@ -158,6 +177,7 @@ import api from '../../api';
 import Layout from '../common/Layout.vue';
 import LessonEditForm from './LessonEditForm.vue';
 import { useRoute, useRouter } from 'vue-router';
+import { PlusIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();
 const router = useRouter();
@@ -170,6 +190,7 @@ const subjectId = route.params.subject_id;
 const openTopics = ref({});
 
 const editingId = ref(null);
+const creating = ref(false);
 
 function toggleTopic(topic) {
     openTopics.value[topic] = !openTopics.value[topic];
@@ -200,6 +221,11 @@ const toggleEdit = async (id) => {
 const onLessonSaved = () => {
     editingId.value = null; // Close the form
     fetchLessons(); // Refresh the list
+};
+
+const onCreated = () => {
+    creating.value = false;
+    fetchLessons();
 };
 
 const fetchLessons = async () => {
@@ -252,6 +278,18 @@ const groupedLessons = computed(() => {
 
 function goBack() {
     router.back();
+}
+
+function createLesson() {
+    editingId.value = null;
+    creating.value = !creating.value;
+
+    nextTick(() => {
+        const form = document.querySelector('.edit-row-active');
+        if (form) {
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
 }
 
 onMounted(() => {

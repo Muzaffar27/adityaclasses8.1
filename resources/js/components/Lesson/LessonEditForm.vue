@@ -1,5 +1,5 @@
 <template>
-    <Layout :title="isEditMode ? 'Edit Lesson' : 'Create New Lesson'" :loading="loading" @back="goBack">
+    <Layout :title="isEditMode ? 'Edit Lesson' : 'Create New Lesson'" :loading="loading" :showBack="false">
         <div class="edit-form-container" :class="{ 'is-create-page': !isEditMode }">
             <div class="box is-shadowless has-background-transparent">
                 <div v-if="isEditMode" class="mb-4">
@@ -91,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import api from '../../api';
 import { useRouter } from 'vue-router';
 import { useCacheStore } from '../../stores/cache';
@@ -105,7 +105,12 @@ const { subjects, grades, loading: cacheLoading } = storeToRefs(cacheStore);
 
 const props = defineProps({
     lesson: Object,
-    default: null
+    grade_id: [String, Number],
+    subject_id: [String, Number],
+    inline: {
+        type: Boolean,
+        default: false
+    }
 });
 
 const emit = defineEmits(['saved', 'cancel']);
@@ -123,8 +128,8 @@ const getInitialData = () => {
         vimeo_url: '',
         is_active: 1,
         description: '',
-        grade_id: '',
-        subject_id: ''
+        grade_id: props.grade_id || '',
+        subject_id: props.subject_id || ''
     };
 };
 
@@ -176,20 +181,26 @@ const handleSave = async () => {
 };
 
 const handleCancel = () => {
-    if (!isEditMode.value) {
-        router.back();
-    } else {
+    localLesson.value = getInitialData();
+
+    if (props.inline) {
         emit('cancel');
+    } else {
+        router.back();
     }
 };
 
-function goBack() {
-    if (window.history.length > 1) {
-        router.back();
-    } else {
-        router.push('/subjects');
-    }
-}
+
+watch(
+    () => [props.grade_id, props.subject_id],
+    ([newGrade, newSubject]) => {
+        if (!isEditMode.value) {
+            if (newGrade) localLesson.value.grade_id = newGrade;
+            if (newSubject) localLesson.value.subject_id = newSubject;
+        }
+    },
+    { immediate: true }
+);
 
 </script>
 

@@ -1,60 +1,108 @@
 <template>
-    <Layout title="Lesson Management" :loading="loading" :showBack="false">
+    <Layout title="Lesson Management" :loading="loading" @back="goBack">
 
-        <div class="is-flex is-justify-content-flex-end mb-4">
-            <button class="button is-primary has-text-white" @click="createLesson">
-                <span class="icon">
-                    <PlusIcon />
-                </span>
-                <span>Add Lesson</span>
-            </button>
-        </div>
+        <div class="box filter-card">
 
-        <div class="box">
-
-            <h2 class="title is-5 mb-4">Lesson Filters</h2>
-
-
-            <!-- GRADE -->
-            <div class="field">
-                <label class="label">Grade</label>
-                <div class="control" :class="{ 'is-loading': loading }">
-                    <div class="select is-fullwidth">
-                        <select v-model="selectedGrade" :disabled="loading">
-                            <option disabled value="">Select Grade</option>
-                            <option v-for="grade in grades" :key="grade.id" :value="grade.id">
-                                {{ grade.name }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
+            <!-- HEADER -->
+            <div class="mb-5">
+                <p class="has-text-grey is-size-7">
+                    Select a grade and subject to manage lessons
+                </p>
             </div>
 
-            <!-- SUBJECT -->
-            <div class="field">
-                <label class="label">Subject</label>
-                <div class="control" :class="{ 'is-loading': loading }">
-                    <div class="select is-fullwidth">
-                        <select v-model="selectedSubject" :disabled="loading">
-                            <option disabled value="">Select Subject</option>
-                            <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
-                                {{ subject.name }}
-                            </option>
-                        </select>
+            <!-- GRID -->
+            <div class="columns is-variable is-3">
+
+                <!-- GRADE -->
+                <div class="column">
+                    <label class="label is-small">Grade</label>
+
+                    <div class="field has-addons">
+                        <div class="control is-expanded" :class="{ 'is-loading': loading }">
+                            <div class="select is-fullwidth is-medium">
+                                <select v-model="selectedGrade" :disabled="loading">
+                                    <option disabled value="">Select Grade</option>
+                                    <option v-for="grade in grades" :key="grade.id" :value="grade.id">
+                                        {{ grade.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="control">
+                            <button class="button is-primary is-medium has-text-white" @click="showCreateGrade = true">
+                                +
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                <!-- SUBJECT -->
+                <div class="column">
+                    <label class="label is-small">Subject</label>
+
+                    <div class="field has-addons">
+                        <div class="control is-expanded" :class="{ 'is-loading': loading }">
+                            <div class="select is-fullwidth is-medium">
+                                <select v-model="selectedSubject" :disabled="loading">
+                                    <option disabled value="">Select Subject</option>
+                                    <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
+                                        {{ subject.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="control">
+                            <button class="button is-primary is-medium has-text-white"
+                                @click="showCreateSubject = true">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- ACTION -->
-            <div class="has-text-centered mt-4">
-                <button class="button is-primary has-text-white" :disabled="!selectedGrade || !selectedSubject"
-                    @click="goToLessons">
-                    Load Lessons
+            <div class="mt-5 has-text-right">
+                <button class="button is-primary is-medium px-5 has-text-white"
+                    :disabled="!selectedGrade || !selectedSubject" @click="goToLessons">
+                    Load Lessons →
                 </button>
             </div>
 
         </div>
 
+
+        <createModal v-model="showCreateGrade" title="Create Grade">
+            <input class="input" v-model="newGradeName" placeholder="Enter grade name" @keyup.enter="createGrade" />
+
+            <template #actions>
+                <button class="button mr-2" @click="showCreateGrade = false">
+                    Cancel
+                </button>
+
+                <button class="button is-primary has-text-white" :disabled="!newGradeName" @click="createGrade">
+                    Save
+                </button>
+            </template>
+        </createModal>
+
+        <createModal v-model="showCreateSubject" title="Create Subject">
+            <input class="input" v-model="newSubjectName" placeholder="Enter subject name"
+                @keyup.enter="createSubject" />
+
+            <template #actions>
+                <button class="button mr-2" @click="showCreateSubject = false">
+                    Cancel
+                </button>
+
+                <button class="button is-primary has-text-white" :disabled="!newSubjectName" @click="createSubject">
+                    Save
+                </button>
+            </template>
+        </createModal>
     </Layout>
 </template>
 
@@ -62,9 +110,10 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Layout from '../common/Layout.vue';
-import { PlusIcon } from '@heroicons/vue/24/outline';
 import { useCacheStore } from '../../stores/cache';
 import { storeToRefs } from 'pinia';
+import createModal from '../common/createModal.vue';
+import axios from 'axios';
 
 const router = useRouter();
 
@@ -74,9 +123,79 @@ const { subjects, grades, loading } = storeToRefs(cacheStore);
 const selectedGrade = ref("");
 const selectedSubject = ref("");
 
+const showCreateGrade = ref(false);
+const showCreateSubject = ref(false);
+
+const newGradeName = ref('');
+const newSubjectName = ref('');
+
+const creatingGrade = ref(false);
+const creatingSubject = ref(false);
+
 onMounted(async () => {    // One call to rule them all
     await cacheStore.fetchAllMetadata();
 });
+
+const createGrade = async () => {
+    if (!newGradeName.value || creatingGrade.value) return;
+
+    creatingGrade.value = true;
+
+    try {
+        const res = await axios.post('/api/addGrade', {
+            name: newGradeName.value
+        });
+
+        const newGrade = res.data;
+
+        // ✅ update store directly (no refetch)
+        cacheStore.grades.push(newGrade);
+
+        // ✅ auto select
+        selectedGrade.value = newGrade.id;
+
+        // UX flow
+        showCreateGrade.value = false;
+        newGradeName.value = '';
+
+        // optional: guide next step
+        showCreateSubject.value = true;
+
+    } catch (error) {
+        console.error(error);
+        alert("Failed to create grade");
+    } finally {
+        creatingGrade.value = false;
+    }
+};
+
+const createSubject = async () => {
+    if (!newSubjectName.value || creatingSubject.value) return;
+
+    creatingSubject.value = true;
+
+    try {
+        const res = await axios.post('/api/addSubject', {
+            name: newSubjectName.value
+        });
+
+        const newSubject = res.data;
+
+        // ✅ update store directly
+        cacheStore.subjects.push(newSubject);
+
+        selectedSubject.value = newSubject.id;
+
+        showCreateSubject.value = false;
+        newSubjectName.value = '';
+
+    } catch (error) {
+        console.error(error);
+        alert("Failed to create subject");
+    } finally {
+        creatingSubject.value = false;
+    }
+};
 
 function goToLessons() {
     // Ensure the values exist before pushing to avoid the error
@@ -94,8 +213,21 @@ function goToLessons() {
     });
 }
 
-function createLesson() {
-    router.push({ name: 'lessonCreate' });
+function goBack() {
+    if (window.history.length > 1) {
+        router.back();
+    } else {
+        router.push('/subjects');
+    }
 }
 
 </script>
+
+<style>
+.filter-card {
+    border-radius: 16px;
+    padding: 1.8rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+}
+</style>

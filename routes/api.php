@@ -22,9 +22,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
 //Grade routes
 Route::get('/grades', [GradeController::class, 'get']);
+Route::post('/addGrade', [GradeController::class, 'add']);
 
 //Subject routes
 Route::get('/subjects', [SubjectController::class, 'get']);
+Route::post('/addSubject', [SubjectController::class, 'add']);
 
 //Lesson routes
 Route::middleware('auth:sanctum')->get('/lessons', [LessonController::class, 'get']);
