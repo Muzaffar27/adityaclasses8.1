@@ -5,13 +5,15 @@ use App\Http\Controllers\LessonController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LessonAccessController;
-
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 
+//User routes
+Route::get('/getStudents', [UserController::class, 'getStudents']);
+Route::post('/students/{id}/reset-password', [UserController::class, 'resetPassword']);
 
 //Lessons routes
 Route::get('/lessons', [LessonController::class, 'get']);

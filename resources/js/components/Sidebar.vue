@@ -77,7 +77,16 @@
                 <li>
                     <router-link :to="{ name: 'lessonManagement' }" class="menu-link" active-class="is-active"
                         @click="$emit('close')">
-                        <Squares2X2Icon class="icon" /> <span>Lesson Management</span>
+                        <BookOpenIcon class="icon" /> <span>Lesson Management</span>
+                    </router-link>
+                </li>
+            </ul>
+
+            <ul class="menu-list mt-2">
+                <li>
+                    <router-link :to="{ name: 'studentManagement' }" class="menu-link" active-class="is-active"
+                        @click="$emit('close')">
+                        <UserGroupIcon class="icon" /> <span>Student Administration</span>
                     </router-link>
                 </li>
             </ul>
@@ -148,15 +157,10 @@ import {
     HomeIcon,
     Squares2X2Icon,
     PlayCircleIcon,
-    DocumentArrowDownIcon,
-    CloudArrowUpIcon,
-    UserGroupIcon,
     Cog6ToothIcon,
-    ArrowRightCircleIcon,
-    MagnifyingGlassIcon,
-    ClockIcon,
-    ClipboardDocumentListIcon,
     ArrowRightOnRectangleIcon,
+    BookOpenIcon,
+    UserGroupIcon,
 } from '@heroicons/vue/24/outline';
 
 defineProps(['isOpen']);

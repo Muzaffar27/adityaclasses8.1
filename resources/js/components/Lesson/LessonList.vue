@@ -231,7 +231,7 @@ const {
     goToPage,
     nextPage,
     prevPage,
-} = Pagination(lessons, 5);
+} = Pagination(lessons, 5, { type: 'grouped' });
 
 function toggleTopic(topic) {
     openTopics.value[topic] = !openTopics.value[topic];
