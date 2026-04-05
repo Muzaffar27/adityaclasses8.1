@@ -1,18 +1,19 @@
 {
   "resources/js/app.js": {
-    "file": "assets/app-DCG7SIMH.js",
+    "file": "assets/app-DVwa-oXO.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "dynamicImports": [
-      "resources/js/components/MyCourse.vue"
+      "resources/js/components/MyCourse.vue",
+      "resources/js/components/StudentManagement.vue"
     ],
     "css": [
-      "assets/app-BuwSSb2i.css"
+      "assets/app-D1pTVk1q.css"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-C16vICwP.js",
+    "file": "assets/MyCourse-xPH7hvxj.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -21,6 +22,18 @@
     ],
     "css": [
       "assets/MyCourse-CDBzqJGn.css"
+    ]
+  },
+  "resources/js/components/StudentManagement.vue": {
+    "file": "assets/StudentManagement-Zd11pglP.js",
+    "name": "StudentManagement",
+    "src": "resources/js/components/StudentManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/StudentManagement-BTncE43e.css"
     ]
   }
 }
