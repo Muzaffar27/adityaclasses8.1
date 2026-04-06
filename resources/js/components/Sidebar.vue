@@ -12,9 +12,9 @@
         </div>
 
         <!-- Logged-in user info -->
-        <div class="sidebar-user mb-5">
+        <div class="sidebar-user">
             <div class="sidebar-avatar">{{ userInitials }}</div>
-            <div>
+            <div class="sidebar-user-info" style="min-width:0; flex:1; display:flex; flex-direction:column; gap:4px;">
                 <p class="sidebar-user-name">{{ user?.name }}</p>
                 <p class="sidebar-user-role">{{ roleLabel }}</p>
             </div>
@@ -241,110 +241,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ── User block ───────────────────────────────────────────────────────────── */
-.sidebar-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.07);
-    border-radius: 8px;
-}
-
-.sidebar-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
-    flex-shrink: 0;
-}
-
-.sidebar-user-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: #fff;
-    margin: 0;
-    line-height: 1.3;
-}
-
-.sidebar-user-role {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.55);
-    margin: 0;
-    text-transform: capitalize;
-}
-
-/* ── Pending badge ────────────────────────────────────────────────────────── */
-.sidebar-badge {
-    margin-left: auto;
-
-    min-width: 18px;
-    height: 18px;
-    padding: 0 6px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 10px;
-    font-weight: 600;
-    color: #fff;
-
-    border-radius: 999px;
-
-    /* 🔥 glass effect */
-    background: rgba(241, 70, 104, 0.25);
-    backdrop-filter: blur(8px);
-
-    border: 1px solid rgba(241, 70, 104, 0.4);
-
-    box-shadow:
-        0 4px 10px rgba(0, 0, 0, 0.15),
-        inset 0 1px 1px rgba(255, 255, 255, 0.2);
-
-    transition: all 0.25s ease;
-}
-
-.sidebar-badge {
-    animation: badgePop 0.25s ease;
-}
-
-@keyframes badgePop {
-    from {
-        transform: scale(0.7);
-        opacity: 0;
-    }
-
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-.is-pulse {
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(241, 70, 104, 0.5);
-    }
-
-    70% {
-        box-shadow: 0 0 0 8px rgba(241, 70, 104, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(241, 70, 104, 0);
-    }
-}
-
 /* ── Logout button (matches menu-link look) ───────────────────────────────── */
 .sidebar-logout {
     width: 100%;

@@ -5,33 +5,25 @@
 
             <!-- Left: Account Info -->
             <div class="column is-4">
-                <div class="box is-shadowless has-background-transparent">
-
-                    <div class="has-text-centered mb-4">
-                        <div class="profile-avatar mx-auto mb-3">{{ userInitials }}</div>
-                        <p class="has-text-white has-text-weight-semibold is-size-5">{{ user.name }}</p>
-                        <p style="color: rgba(255,255,255,0.45); font-size: 0.85rem">{{ user.email }}</p>
-                        <span class="tag is-dark-accent mt-2" style="text-transform: capitalize">{{ user.role }}</span>
+                <div class="box is-shadowless">
+                    <div class="has-text-centered mb-5">
+                        <div class="profile-avatar mx-auto mb-4">{{ userInitials }}</div>
+                        <p class="has-text-white is-size-4 has-text-weight-bold mb-1">{{ user.name }}</p>
+                        <p style="color: rgba(255,255,255,0.4); font-size: 0.9rem">{{ user.email }}</p>
+                        <span class="tag is-dark-accent mt-3">{{ user.role }}</span>
                     </div>
 
-                    <hr style="background: rgba(255,255,255,0.07); height: 1px; border: none;">
-
-                    <div class="profile-meta mt-3">
+                    <div class="profile-meta mt-5">
                         <div class="profile-meta-row">
-                            <span class="profile-meta-label">Member since</span>
-                            <span class="profile-meta-value">{{ joinedDate }}</span>
+                            <span class="profile-meta-label">Joined:</span>
+                            <span class="profile-meta-value ml-2">{{ joinedDate }}</span>
                         </div>
-                        <!-- <div class="profile-meta-row">
-                            <span class="profile-meta-label">Email status</span>
-                            <span v-if="user.email_verified_at" class="tag is-success is-light is-small">Verified</span>
-                            <span v-else class="tag is-warning is-light is-small">Unverified</span>
-                        </div> -->
                         <div class="profile-meta-row">
-                            <span class="profile-meta-label">Role</span>
-                            <span class="profile-meta-value" style="text-transform: capitalize">{{ user.role }}</span>
+                            <span class="profile-meta-label">Email Verification:</span>
+                            <span class="tag is-success is-light is-small ml-2" style="font-size: 0.65rem">Pending
+                            </span>
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -307,15 +299,71 @@ async function deleteAccount() {
 </script>
 
 <style scoped>
+/* --- Labels & Inputs --- */
 .label.is-small {
-    color: white;
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 600;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.02em;
 }
 
+.input.is-small {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.input.is-small:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* --- Avatar Enhancement --- */
+.profile-avatar {
+    width: 80px;
+    /* Slightly larger for profile page */
+    height: 80px;
+    border-radius: 20px;
+    /* Squircle looks more modern than circle */
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(79, 70, 229, 0.05));
+    border: 1px solid rgba(79, 70, 229, 0.4);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 800;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-avatar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+}
+
+/* --- Box Refinement --- */
+.box.is-shadowless {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+/* --- Animations --- */
 @keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-12px);
     }
 
     to {
@@ -324,40 +372,12 @@ async function deleteAccount() {
     }
 }
 
-.profile-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: rgba(79, 70, 229, 0.25);
-    border: 2px solid rgba(79, 70, 229, 0.5);
-    color: #a5b4fc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    font-weight: 700;
-}
-
-.profile-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
 .profile-meta-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
 }
 
-.profile-meta-label {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.8rem;
-}
-
-.profile-meta-value {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.82rem;
-    font-weight: 500;
+.profile-meta-row:last-child {
+    border-bottom: none;
 }
 </style>
