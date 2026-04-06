@@ -9,6 +9,13 @@ use App\Models\LessonAccess;
 class LessonAccessController extends Controller
 {
 
+    public function count(Request $request)
+    {
+        return response()->json([
+            'count' => LessonAccess::where('status', 'pending')->count()
+        ]);
+    }
+
     public function request(Request $request)
     {
         $userId = auth()->id();

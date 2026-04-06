@@ -6,20 +6,24 @@ use App\Http\Controllers\GradeController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LessonAccessController;
 use App\Http\Controllers\UserController;
+use App\Models\Lesson;
 use Illuminate\Support\Facades\Route;
 
+//Auth
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me',      [AuthController::class, 'me']);
+});
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 
 //User routes
 Route::get('/getStudents', [UserController::class, 'getStudents']);
 Route::post('/students/{id}/reset-password', [UserController::class, 'resetPassword']);
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::put('/updateUserInfo', [UserController::class, 'updateUserInfo']);
     Route::put('/updateUserPwd', [UserController::class, 'updateUserPwd']);
 });
-
 
 //Lessons routes
 Route::get('/lessons', [LessonController::class, 'get']);
@@ -48,9 +52,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lesson-access/list_request', [LessonAccessController::class, 'listRequests']);
     Route::post('/lesson-access/accept-multiple', [LessonAccessController::class, 'acceptMultiple']);
     Route::post('/lesson-access/refuse-multiple', [LessonAccessController::class, 'refuseMultiple']);
-});
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me',      [AuthController::class, 'me']);
+    Route::get('/lesson-access/count', [LessonAccessController::class, 'count']);
 });

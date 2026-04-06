@@ -83,11 +83,13 @@ import api from "../api";
 import { computed } from "vue";
 import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/vue/24/outline";
 import Layout from "./common/Layout.vue";
+import { useCacheStore } from "../stores/cache";
 
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 const requests = ref([]);
+const cache = useCacheStore();
 
 const loading = ref(false);
 
@@ -166,6 +168,7 @@ function acceptRequest(id) {
     withLoader(loadingAccept, id, async () => {
         await api.post("/lesson-access/accept", { id });
         requests.value = requests.value.filter(r => r.id !== id);
+        cache.decrementPending(1);
     });
 }
 
@@ -173,6 +176,7 @@ function refuseRequest(id) {
     withLoader(loadingRefuse, id, async () => {
         await api.post("/lesson-access/refuse", { id });
         requests.value = requests.value.filter(r => r.id !== id);
+        cache.decrementPending(1);
     });
 }
 
@@ -183,6 +187,7 @@ function acceptStudent(student) {
         await api.post("/lesson-access/accept-multiple", { ids });
 
         requests.value = requests.value.filter(r => !ids.includes(r.id));
+        cache.decrementPending(ids.length);
     });
 }
 
@@ -193,6 +198,7 @@ function refuseStudent(student) {
         await api.post("/lesson-access/refuse-multiple", { ids });
 
         requests.value = requests.value.filter(r => !ids.includes(r.id));
+        cache.decrementPending(ids.length);
     });
 }
 

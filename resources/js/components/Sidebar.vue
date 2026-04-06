@@ -72,6 +72,10 @@
                     <router-link :to="{ name: 'request-access' }" class="menu-link" active-class="is-active"
                         @click="$emit('close')">
                         <Squares2X2Icon class="icon" /> <span>Request Access </span>
+
+                        <span v-if="pendingCount > 0" class="sidebar-badge" :class="{ 'is-pulse': pendingCount > 0 }">
+                            {{ pendingCount }}
+                        </span>
                     </router-link>
                 </li>
             </ul>
@@ -158,9 +162,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';// adjust path to your Pinia auth store
+import { useCacheStore } from '../stores/cache';
 import GlassModal from './common/GlassModal.vue';
 import {
     HomeIcon,
@@ -178,8 +183,12 @@ defineEmits(['close']);
 
 const router = useRouter();
 const auth = useAuthStore();
+const cache = useCacheStore();
+
 const showLogoutModal = ref(false)
 const logoutLoading = ref(false)
+const pendingCount = computed(() => cache.pendingReq);
+let interval = null;
 
 // ── User info ──────────────────────────────────────────────────────────────
 const user = computed(() => auth.user);
@@ -220,6 +229,14 @@ async function handleLogoutConfirm() {
         showLogoutModal.value = false
     }
 }
+
+onMounted(() => {
+    cache.startPolling()
+})
+
+onUnmounted(() => {
+    cache.stopPolling()
+})
 
 </script>
 
@@ -266,14 +283,66 @@ async function handleLogoutConfirm() {
 /* ── Pending badge ────────────────────────────────────────────────────────── */
 .sidebar-badge {
     margin-left: auto;
-    background: #f14668;
-    /* Bulma danger */
-    color: #fff;
+
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
     font-size: 10px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 10px;
-    line-height: 1.4;
+    font-weight: 600;
+    color: #fff;
+
+    border-radius: 999px;
+
+    /* 🔥 glass effect */
+    background: rgba(241, 70, 104, 0.25);
+    backdrop-filter: blur(8px);
+
+    border: 1px solid rgba(241, 70, 104, 0.4);
+
+    box-shadow:
+        0 4px 10px rgba(0, 0, 0, 0.15),
+        inset 0 1px 1px rgba(255, 255, 255, 0.2);
+
+    transition: all 0.25s ease;
+}
+
+.sidebar-badge {
+    animation: badgePop 0.25s ease;
+}
+
+@keyframes badgePop {
+    from {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.is-pulse {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(241, 70, 104, 0.5);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(241, 70, 104, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(241, 70, 104, 0);
+    }
 }
 
 /* ── Logout button (matches menu-link look) ───────────────────────────────── */
