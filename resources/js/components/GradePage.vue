@@ -1,5 +1,5 @@
 <template>
-    <Layout title="School Grades" :loading="loading" @back="goBack">
+    <Layout title="School Grades" :loading="loading">
 
         <div class="columns is-mobile is-multiline">
             <div class="column is-12-mobile is-4-tablet" v-for="grade in grades" :key="grade.id">
@@ -73,14 +73,6 @@ function goToLesson(gradeId) {
             subjectId: subjectId
         }
     });
-}
-
-function goBack() {
-    if (window.history.length > 1) {
-        router.back();
-    } else {
-        router.push('/subjects');
-    }
 }
 
 function getColor(id) {

@@ -1,5 +1,5 @@
 <template>
-    <Layout title="Lesson List" :loading="loading" @back="goBack">
+    <Layout title="Lesson List" :loading="loading">
 
         <!-- HEADER -->
         <div class="admin-header">
@@ -311,9 +311,6 @@ const deleteLesson = async (id) => {
     }
 };
 
-function goBack() {
-    router.back();
-}
 
 function createLesson() {
     editingId.value = null;

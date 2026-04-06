@@ -1,5 +1,5 @@
 <template>
-    <Layout title="Lesson Management" :loading="loading" @back="goBack">
+    <Layout title="Lesson Management" :loading="loading">
 
         <div class="box filter-card">
 
@@ -211,14 +211,6 @@ function goToLessons() {
             subject_id: selectedSubject.value
         }
     });
-}
-
-function goBack() {
-    if (window.history.length > 1) {
-        router.back();
-    } else {
-        router.push('/subjects');
-    }
 }
 
 </script>

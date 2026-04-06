@@ -5,7 +5,7 @@
       <div class="header-bar">
 
         <div class="left-section">
-          <div v-if="showBack" class="back-btn" @click="$emit('back')">
+          <div v-if="showBack" class="back-btn" @click="goBack">
             <ArrowLeftIcon class="back-icon" />
           </div>
         </div>
@@ -35,6 +35,10 @@
 <script setup>
 import { ArrowLeftIcon } from "@heroicons/vue/24/outline";
 import Loader from "./Loader.vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
 defineProps({
   title: String,
   loading: Boolean,
@@ -44,7 +48,16 @@ defineProps({
   }
 });
 
-defineEmits(['back']);
+function goBack() {
+  const canGoBack = window.history.state?.back;
+
+  if (canGoBack) {
+    router.back();
+  } else {
+    router.replace({ name: 'home' });
+  }
+}
+
 </script>
 
 <style>

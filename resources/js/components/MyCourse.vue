@@ -1,5 +1,5 @@
 <template>
-    <Layout title="Enrolled Courses" :loading="loading" :showBack="false">
+    <Layout title="Enrolled Courses" :loading="loading">
 
         <div v-if="loading" class="columns is-multiline is-mobile">
             <div v-for="i in 3" :key="i" class="column is-12-mobile is-4-tablet">

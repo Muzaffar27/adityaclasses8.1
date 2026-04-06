@@ -1,6 +1,6 @@
 <template>
 
-    <Layout title="Access Requests" :loading="loading" @back="goBack">
+    <Layout title="Access Requests" :loading="loading">
 
         <div v-if="!loading && groupedRequests.length === 0" class="has-text-centered mt-6">
             <p class="has-text-grey">No access requests.</p>
@@ -202,13 +202,6 @@ function refuseStudent(student) {
     });
 }
 
-function goBack() {
-    if (window.history.length > 1) {
-        router.back();
-    } else {
-        router.push('/');
-    }
-}
 </script>
 
 <style>

@@ -1,5 +1,5 @@
 <template>
-    <Layout title="Lessons" :loading="loading" @back="goBack">
+    <Layout title="Lessons" :loading="loading">
 
         <template #actions>
             <div v-if="!loading">
@@ -239,7 +239,6 @@ function getVimeoThumbnail(url) {
     return `https://vumbnail.com/${id}.jpg`;
 }
 
-const goBack = () => router.back();
 </script>
 
 <style scoped>

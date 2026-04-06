@@ -1,5 +1,5 @@
 <template>
-    <Layout title="My Profile" :loading="false" :showBack="false">
+    <Layout title="My Profile" :loading="false">
 
         <div class="columns">
 

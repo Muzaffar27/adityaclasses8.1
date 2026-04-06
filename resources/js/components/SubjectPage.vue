@@ -1,5 +1,5 @@
 <template>
-  <Layout title="School subjects" :loading="loading" :showBack="false">
+  <Layout title="School subjects" :loading="loading">
     <div class="columns is-mobile is-multiline">
       <div class="column is-12-mobile is-4-tablet" v-for="subject in subjects" :key="subject.id">
         <div class="card glass-card clickable-card fixed-card" @click="goToGrades(subject.id)">
