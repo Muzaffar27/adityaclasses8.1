@@ -144,25 +144,30 @@
             <router-link :to="{ name: 'profile' }" class="menu-link" @click="$emit('close')">
                 <Cog6ToothIcon class="icon" /> <span>Profile</span>
             </router-link>
-            <button class="menu-link sidebar-logout" @click="logout">
-                <ArrowRightOnRectangleIcon class="icon" /> <span>Log out</span>
+
+            <button class="menu-link sidebar-logout" @click="showLogoutModal = true">
+                <ArrowRightStartOnRectangleIcon class="icon" /> <span>Log out</span>
             </button>
+
         </div>
 
     </aside>
+
+    <GlassModal v-model="showLogoutModal" type="confirm" title="Log out" message="Are you sure you want to log out?"
+        confirmText="Yes, Log out" cancelText="Cancel" :loading="logoutLoading" @confirm="handleLogoutConfirm" />
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';// adjust path to your Pinia auth store
-
+import GlassModal from './common/GlassModal.vue';
 import {
     HomeIcon,
     Squares2X2Icon,
     PlayCircleIcon,
     Cog6ToothIcon,
-    ArrowRightOnRectangleIcon,
+    ArrowRightStartOnRectangleIcon,
     BookOpenIcon,
     UserGroupIcon,
     XMarkIcon
@@ -173,6 +178,8 @@ defineEmits(['close']);
 
 const router = useRouter();
 const auth = useAuthStore();
+const showLogoutModal = ref(false)
+const logoutLoading = ref(false)
 
 // ── User info ──────────────────────────────────────────────────────────────
 const user = computed(() => auth.user);
@@ -202,9 +209,16 @@ const roleLabel = computed(() => ({
 // const pendingCount = computed(() => auth.pendingRequestsCount ?? 0);
 
 // ── Logout ─────────────────────────────────────────────────────────────────
-async function logout() {
-    await auth.logout();          // clears token/user in store + calls API
-    router.push({ name: 'login' });
+async function handleLogoutConfirm() {
+    logoutLoading.value = true
+
+    try {
+        await auth.logout()
+        router.push({ name: 'login' })
+    } finally {
+        logoutLoading.value = false
+        showLogoutModal.value = false
+    }
 }
 
 </script>
