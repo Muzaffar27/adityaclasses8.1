@@ -1,19 +1,27 @@
 {
+  "public/menu_logo.png": {
+    "file": "assets/menu_logo-MfA_J7Od.png",
+    "src": "public/menu_logo.png"
+  },
   "resources/js/app.js": {
-    "file": "assets/app-DVwa-oXO.js",
+    "file": "assets/app-CTF9ObDS.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "dynamicImports": [
       "resources/js/components/MyCourse.vue",
-      "resources/js/components/StudentManagement.vue"
+      "resources/js/components/StudentManagement.vue",
+      "resources/js/components/Profile.vue"
     ],
     "css": [
-      "assets/app-D1pTVk1q.css"
+      "assets/app-D3iTW7yL.css"
+    ],
+    "assets": [
+      "assets/menu_logo-MfA_J7Od.png"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-xPH7hvxj.js",
+    "file": "assets/MyCourse-CnyIhlwZ.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -21,11 +29,23 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/MyCourse-CDBzqJGn.css"
+      "assets/MyCourse-e8PqbuyJ.css"
+    ]
+  },
+  "resources/js/components/Profile.vue": {
+    "file": "assets/Profile-BJz5-ouK.js",
+    "name": "Profile",
+    "src": "resources/js/components/Profile.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/Profile-Lk7FyYbm.css"
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-Zd11pglP.js",
+    "file": "assets/StudentManagement-D5TfM6yR.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -33,7 +53,7 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/StudentManagement-BTncE43e.css"
+      "assets/StudentManagement-DCjo2CWd.css"
     ]
   }
 }
