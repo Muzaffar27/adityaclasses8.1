@@ -66,6 +66,12 @@ const routes = [
         component: () => import("../components/StudentManagement.vue"),
     },
     {
+        path: "/profile",
+        name: "profile",
+        component: () => import("../components/Profile.vue"),
+    },
+
+    {
         path: "/subject",
         name: "subject",
         component: SubjectPage,

@@ -2,9 +2,13 @@
     <aside class="sidebar" :class="{ 'is-open': isOpen }">
 
         <!-- Logo + close -->
-        <div class="is-flex is-justify-content-space-between is-align-items-center mb-6">
-            <div class="has-text-white is-size-5 has-text-weight-bold">Aditya Classes</div>
-            <button class="button is-ghost has-text-white is-hidden-desktop" @click="$emit('close')">✕</button>
+        <div class="is-relative is-flex is-justify-content-center is-align-items-center ">
+            <router-link :to="{ name: 'home' }" class="sidebar-logo-container">
+                <img src="../../../public/menu_logo.png" alt="Aditya Classes" class="sidebar-logo" />
+            </router-link>
+            <button class="button is-ghost is-hidden-desktop close-btn" @click="$emit('close')" aria-label="Close menu">
+                <XMarkIcon class="icon-sm" />
+            </button>
         </div>
 
         <!-- Logged-in user info -->
@@ -137,8 +141,8 @@
 
         <!-- ─── BOTTOM: Settings + Logout ─── -->
         <div class="sidebar-bottom">
-            <router-link :to="{ name: '' }" class="menu-link" @click="$emit('close')">
-                <Cog6ToothIcon class="icon" /> <span>Settings</span>
+            <router-link :to="{ name: 'profile' }" class="menu-link" @click="$emit('close')">
+                <Cog6ToothIcon class="icon" /> <span>Profile</span>
             </router-link>
             <button class="menu-link sidebar-logout" @click="logout">
                 <ArrowRightOnRectangleIcon class="icon" /> <span>Log out</span>
@@ -161,6 +165,7 @@ import {
     ArrowRightOnRectangleIcon,
     BookOpenIcon,
     UserGroupIcon,
+    XMarkIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps(['isOpen']);
@@ -271,5 +276,30 @@ async function logout() {
 .sidebar-logout:hover {
     color: #fff;
     background: rgba(255, 255, 255, 0.08);
+}
+
+.close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: white !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.icon-sm {
+    width: 18px;
+    height: 18px;
 }
 </style>

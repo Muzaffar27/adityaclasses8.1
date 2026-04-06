@@ -5,10 +5,6 @@
             <button class="button is-primary mr-3" @click="mobileMenuOpen = true">
                 <span class="icon">☰</span>
             </button>
-
-            <div class="has-text-white has-text-weight-bold is-size-5">
-                Aditya Classes
-            </div>
         </nav>
 
         <Sidebar :isOpen="mobileMenuOpen" @close="mobileMenuOpen = false" />

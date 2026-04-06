@@ -15,6 +15,12 @@ Route::post('/login',    [AuthController::class, 'login']);
 Route::get('/getStudents', [UserController::class, 'getStudents']);
 Route::post('/students/{id}/reset-password', [UserController::class, 'resetPassword']);
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::put('/updateUserInfo', [UserController::class, 'updateUserInfo']);
+    Route::put('/updateUserPwd', [UserController::class, 'updateUserPwd']);
+});
+
+
 //Lessons routes
 Route::get('/lessons', [LessonController::class, 'get']);
 

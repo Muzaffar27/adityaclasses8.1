@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
 
 
 class UserController extends Controller
@@ -16,6 +17,49 @@ class UserController extends Controller
         return User::where('role', 'student')->get();
     }
 
+    public function updateUserInfo(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
+    }
+
+    public function updateUserPwd(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        // Check current password
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'errors' => [
+                    'current_password' => ['Current password is incorrect']
+                ]
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password'])
+        ]);
+
+        return response()->json([
+            'message' => 'Password updated successfully'
+        ]);
+    }
 
     public function resetPassword($id)
     {
