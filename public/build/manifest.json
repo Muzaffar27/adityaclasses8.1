@@ -4,7 +4,7 @@
     "src": "public/menu_logo.png"
   },
   "resources/js/app.js": {
-    "file": "assets/app-CTF9ObDS.js",
+    "file": "assets/app-xo2iH-JW.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -14,14 +14,14 @@
       "resources/js/components/Profile.vue"
     ],
     "css": [
-      "assets/app-D3iTW7yL.css"
+      "assets/app-TMfhkkrg.css"
     ],
     "assets": [
       "assets/menu_logo-MfA_J7Od.png"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-CnyIhlwZ.js",
+    "file": "assets/MyCourse-BP268Ans.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -33,7 +33,7 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-BJz5-ouK.js",
+    "file": "assets/Profile-B82MQDEL.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -41,11 +41,11 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/Profile-Lk7FyYbm.css"
+      "assets/Profile-DoDIjq7R.css"
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-D5TfM6yR.js",
+    "file": "assets/StudentManagement-Bm5v2EOK.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
