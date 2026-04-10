@@ -714,3 +714,26 @@ html, body, .section, .main-content-wrapper {
     font-family: monospace;
     color: #fff;
 }
+
+.password-wrapper {
+    position: relative;
+}
+
+.input-field {
+    padding-right: 40px; /* space for icon */
+}
+
+.eye-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    color: #888;
+}
+
+.eye-icon:hover {
+    color: #333;
+}

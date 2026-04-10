@@ -167,7 +167,7 @@ const {
     goToPage,
     nextPage,
     prevPage
-} = Pagination(lessons, 5, { type: 'grouped' });
+} = Pagination(lessons, 7, { type: 'grouped' });
 
 onMounted(fetchLessons);
 

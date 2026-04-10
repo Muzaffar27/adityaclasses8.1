@@ -47,9 +47,15 @@ class AuthController extends Controller
 
         $user = User::where('email', $data['email'])->first();
 
-        if (!$user || !Hash::check($data['password'], $user->password)) {
+        if (!$user) {
             throw ValidationException::withMessages([
-                'email' => ['These credentials do not match our records.'],
+                'email' => ['Email not found.'],
+            ]);
+        }
+
+        if (!Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Incorrect password.'],
             ]);
         }
 

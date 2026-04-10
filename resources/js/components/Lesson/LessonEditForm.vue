@@ -1,5 +1,5 @@
 <template>
-    <Layout :title="isEditMode ? 'Edit Lesson' : 'Create New Lesson'" :loading="loading">
+    <Layout :title="isEditMode ? 'Edit Lesson' : 'Create New Lesson'" :loading="loading" :showBack="!isEditMode">
         <div class="edit-form-container" :class="{ 'is-create-page': !isEditMode }">
             <div class="box is-shadowless has-background-transparent">
                 <div v-if="isEditMode" class="mb-4">

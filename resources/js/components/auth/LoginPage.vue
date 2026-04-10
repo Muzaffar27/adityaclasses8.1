@@ -9,13 +9,21 @@
                 <div class="field">
                     <label>Email</label>
                     <input v-model="form.email" type="email" placeholder="you@email.com" class="input-field" />
-                    <p v-if="errors.email" class="error-text">{{ errors.email }}</p>
+                    <p v-if="errors.email" class="error-text ml-2">{{ errors.email[0] }}</p>
                 </div>
 
                 <div class="field">
                     <label>Password</label>
-                    <input v-model="form.password" type="password" placeholder="Your password" class="input-field" />
-                    <p v-if="errors.password" class="error-text">{{ errors.password }}</p>
+
+                    <div class="password-wrapper">
+                        <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
+                            placeholder="Your password" class="input-field" />
+
+                        <component :is="showPassword ? EyeSlashIcon : EyeIcon" class="eye-icon mt-1"
+                            @click="showPassword = !showPassword" title="Toggle password visibility" />
+                    </div>
+
+                    <p v-if="errors.password" class="error-text ml-2">{{ errors.password[0] }}</p>
                 </div>
 
                 <div class="remember">
@@ -24,8 +32,6 @@
                         Remember me
                     </label>
                 </div>
-
-                <p v-if="generalError" class="error-text">{{ generalError }}</p>
 
                 <button type="submit" class="login-btn" :disabled="loading">
                     {{ loading ? 'Logging in...' : 'Login' }}
@@ -46,6 +52,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -53,12 +60,15 @@ const auth = useAuthStore()
 const form = reactive({
     email: '',
     password: '',
-    remember: false,
+    remember: true,
 })
 
 const errors = reactive({})
 const generalError = ref('')
+
 const loading = ref(false)
+
+const showPassword = ref(false)
 
 async function submit() {
     Object.keys(errors).forEach(k => delete errors[k])
@@ -73,8 +83,8 @@ async function submit() {
         })
         router.push({ name: 'home' })
     } catch (err) {
-        if (err.validationErrors) {
-            Object.assign(errors, err.validationErrors)
+        if (err.response && err.response.data.errors) {
+            Object.assign(errors, err.response.data.errors)
         } else {
             generalError.value = 'Invalid credentials. Please try again.'
         }
