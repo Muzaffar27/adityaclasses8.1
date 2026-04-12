@@ -52,5 +52,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lesson-access/list_request', [LessonAccessController::class, 'listRequests']);
     Route::post('/lesson-access/accept-multiple', [LessonAccessController::class, 'acceptMultiple']);
     Route::post('/lesson-access/refuse-multiple', [LessonAccessController::class, 'refuseMultiple']);
-    Route::get('/lesson-access/count', [LessonAccessController::class, 'count']);
+    // Route::get('/lesson-access/count', [LessonAccessController::class, 'count']);
 });

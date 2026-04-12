@@ -73,9 +73,9 @@
                         @click="$emit('close')">
                         <Squares2X2Icon class="icon" /> <span>Request Access </span>
 
-                        <span v-if="pendingCount > 0" class="sidebar-badge" :class="{ 'is-pulse': pendingCount > 0 }">
+                        <!-- <span v-if="pendingCount > 0" class="sidebar-badge" :class="{ 'is-pulse': pendingCount > 0 }">
                             {{ pendingCount }}
-                        </span>
+                        </span> -->
                     </router-link>
                 </li>
             </ul>
@@ -187,7 +187,7 @@ const cache = useCacheStore();
 
 const showLogoutModal = ref(false)
 const logoutLoading = ref(false)
-const pendingCount = computed(() => cache.pendingReq);
+// const pendingCount = computed(() => cache.pendingReq);
 let interval = null;
 
 // ── User info ──────────────────────────────────────────────────────────────
@@ -230,13 +230,13 @@ async function handleLogoutConfirm() {
     }
 }
 
-onMounted(() => {
-    cache.startPolling()
-})
+// onMounted(() => {
+//     cache.startPolling()
+// })
 
-onUnmounted(() => {
-    cache.stopPolling()
-})
+// onUnmounted(() => {
+//     cache.stopPolling()
+// })
 
 </script>
 
