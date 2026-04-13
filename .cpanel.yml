@@ -4,11 +4,12 @@ deployment:
     - export REPOPATH=/home/adityaclasses/repositories/adityaclasses8.1
     - export PROJECTPATH=/home/adityaclasses/adityaclasses_project
     - export PUBLICPATH=/home/adityaclasses/public_html
-    - export PHP=/opt/cpanel/ea-php82/root/usr/bin/php
     - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
 
-    # List all files in composer folder
-    - /usr/bin/find /opt/cpanel/composer -type f >> /home/adityaclasses/deploy_log.txt
+    # Debug: find composer and php
+    - /usr/bin/which composer >> /home/adityaclasses/deploy_log.txt
+    - /usr/bin/which php >> /home/adityaclasses/deploy_log.txt
+    - php -v >> /home/adityaclasses/deploy_log.txt
 
     # Backup .env and index.php
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
