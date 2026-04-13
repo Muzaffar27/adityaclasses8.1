@@ -20,6 +20,9 @@ deployment:
     # Restore .env
     - /bin/cp /home/adityaclasses/.env.backup $PROJECTPATH/.env
 
+    # Reinstall vendor using PHP 8.2 so platform_check is correct
+    - $PHP /usr/local/bin/composer install --no-dev --optimize-autoloader --working-dir=$PROJECTPATH
+
     # Clear public_html
     - /bin/find $PUBLICPATH -mindepth 1 -delete
 
