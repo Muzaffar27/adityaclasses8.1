@@ -19,6 +19,10 @@ deployment:
     # Restore .env
     - /bin/cp /home/adityaclasses/.env.backup $PROJECTPATH/.env
 
+    # Fix platform PHP version check
+    - /bin/rm -f $PROJECTPATH/vendor/composer/platform_check.php
+    - /bin/sed -i "s/require __DIR__ . '\/platform_check.php';//" $PROJECTPATH/vendor/composer/autoload_real.php
+
     # Delete build folder in public_html
     - /bin/rm -rf $PUBLICPATH/build
 
