@@ -1,5 +1,20 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/adityaclasses/public_html
+    - export REPOPATH=/home/adityaclasses/repositories/adityaclasses8.1
+    - export PROJECTPATH=/home/adityaclasses/adityaclasses_project
     - /bin/echo "Deploy started" > /home/adityaclasses/deploy_log.txt
+
+    # Backup .env
+    - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
+
+    # Clear project folder (except .env)
+    - /bin/find $PROJECTPATH -mindepth 1 -not -name '.env' -delete
+
+    # Copy new files from repo to project
+    - /bin/cp -R $REPOPATH/. $PROJECTPATH
+
+    # Restore .env
+    - /bin/cp /home/adityaclasses/.env.backup $PROJECTPATH/.env
+
+    - /bin/echo "Deploy finished" >> /home/adityaclasses/deploy_log.txt
