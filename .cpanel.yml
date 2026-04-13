@@ -7,6 +7,9 @@ deployment:
     - export PHP=/opt/cpanel/ea-php82/root/usr/bin/php
     - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
 
+    # Find composer
+    - /usr/bin/find /usr /opt /home/adityaclasses -name "composer" 2>/dev/null >> /home/adityaclasses/deploy_log.txt
+
     # Backup .env and index.php
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
     - /bin/cp $PUBLICPATH/index.php /home/adityaclasses/index.php.backup
@@ -19,9 +22,6 @@ deployment:
 
     # Restore .env
     - /bin/cp /home/adityaclasses/.env.backup $PROJECTPATH/.env
-
-    # Reinstall vendor using PHP 8.2 so platform_check is correct
-    - $PHP /usr/local/bin/composer install --no-dev --optimize-autoloader --working-dir=$PROJECTPATH
 
     # Clear public_html
     - /bin/find $PUBLICPATH -mindepth 1 -delete
