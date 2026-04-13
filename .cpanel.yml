@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/adityaclasses/public_html
+    - /bin/echo "Deploy started" > /home/adityaclasses/deploy_log.txt
