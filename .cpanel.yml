@@ -3,7 +3,8 @@ deployment:
   tasks:
     - export REPOPATH=/home/adityaclasses/repositories/adityaclasses8.1
     - export PROJECTPATH=/home/adityaclasses/adityaclasses_project
-    - /bin/echo "Deploy started" > /home/adityaclasses/deploy_log.txt
+    - export PUBLICPATH=/home/adityaclasses/public_html
+    - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
 
     # Backup .env
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
@@ -17,4 +18,10 @@ deployment:
     # Restore .env
     - /bin/cp /home/adityaclasses/.env.backup $PROJECTPATH/.env
 
-    - /bin/echo "Deploy finished" >> /home/adityaclasses/deploy_log.txt
+    # Clear public_html
+    - /bin/find $PUBLICPATH -mindepth 1 -delete
+
+    # Copy Laravel public folder to public_html
+    - /bin/cp -R $PROJECTPATH/public/. $PUBLICPATH
+
+    - /bin/echo "Deploy finished at $(/bin/date '+%Y-%m-%d %H:%M:%S')" >> /home/adityaclasses/deploy_log.txt
