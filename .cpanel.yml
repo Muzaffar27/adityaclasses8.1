@@ -6,11 +6,6 @@ deployment:
     - export PUBLICPATH=/home/adityaclasses/public_html
     - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
 
-    # Debug: find composer and php
-    - /usr/bin/which composer >> /home/adityaclasses/deploy_log.txt
-    - /usr/bin/which php >> /home/adityaclasses/deploy_log.txt
-    - php -v >> /home/adityaclasses/deploy_log.txt
-
     # Backup .env and index.php
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
     - /bin/cp $PUBLICPATH/index.php /home/adityaclasses/index.php.backup
@@ -18,19 +13,19 @@ deployment:
     # Clear project folder (except .env)
     - /bin/find $PROJECTPATH -mindepth 1 -not -name '.env' -delete
 
-    # Copy new files from repo to project
+    # Copy repo files to project folder
     - /bin/cp -R $REPOPATH/. $PROJECTPATH
 
     # Restore .env
     - /bin/cp /home/adityaclasses/.env.backup $PROJECTPATH/.env
 
-    # Clear public_html
-    - /bin/find $PUBLICPATH -mindepth 1 -delete
+    # Delete build folder in public_html
+    - /bin/rm -rf $PUBLICPATH/build
 
-    # Copy Laravel public folder to public_html
+    # Copy public folder from project to public_html
     - /bin/cp -R $PROJECTPATH/public/. $PUBLICPATH
 
-    # Restore modified index.php
+    # Restore index.php
     - /bin/cp /home/adityaclasses/index.php.backup $PUBLICPATH/index.php
 
     - /bin/echo "Deploy finished at $(/bin/date '+%Y-%m-%d %H:%M:%S')" >> /home/adityaclasses/deploy_log.txt
