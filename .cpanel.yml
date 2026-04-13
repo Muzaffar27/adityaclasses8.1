@@ -5,10 +5,11 @@ deployment:
     - export PROJECTPATH=/home/adityaclasses/adityaclasses_project
     - export PUBLICPATH=/home/adityaclasses/public_html
     - export PHP=/opt/cpanel/ea-php82/root/usr/bin/php
+    - export COMPOSER=/opt/cpanel/composer/bin/composer
     - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
 
-    # Find composer
-    - /bin/echo "Composer test: $(/opt/cpanel/composer/bin/composer --version)" >> /home/adityaclasses/deploy_log.txt
+    # Test composer
+    - $PHP $COMPOSER --version >> /home/adityaclasses/deploy_log.txt
 
     # Backup .env and index.php
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
