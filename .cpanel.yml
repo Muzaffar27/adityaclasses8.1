@@ -8,7 +8,7 @@ deployment:
     - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
 
     # Find composer
-    - /usr/bin/find /usr /opt /home/adityaclasses -name "composer" 2>/dev/null >> /home/adityaclasses/deploy_log.txt
+    - /bin/echo "Composer test: $(/opt/cpanel/composer/bin/composer --version)" >> /home/adityaclasses/deploy_log.txt
 
     # Backup .env and index.php
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
