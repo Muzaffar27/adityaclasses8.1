@@ -6,14 +6,10 @@ deployment:
     - export PUBLICPATH=/home/adityaclasses/public_html
     - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
 
-    # Debug: check htaccess for php version
-    - /bin/grep -i "php" $PUBLICPATH/.htaccess >> /home/adityaclasses/deploy_log.txt
-    - /bin/cat $PUBLICPATH/.user.ini >> /home/adityaclasses/deploy_log.txt
-    - /bin/cat $PUBLICPATH/php.ini >> /home/adityaclasses/deploy_log.txt
-
-    # Backup .env and index.php
+    # Backup .env, index.php and php.ini
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
     - /bin/cp $PUBLICPATH/index.php /home/adityaclasses/index.php.backup
+    - /bin/cp $PUBLICPATH/php.ini /home/adityaclasses/php.ini.backup
 
     # Clear project folder (except .env)
     - /bin/find $PROJECTPATH -mindepth 1 -not -name '.env' -delete
@@ -34,7 +30,8 @@ deployment:
     # Copy public folder from project to public_html
     - /bin/cp -R $PROJECTPATH/public/. $PUBLICPATH
 
-    # Restore index.php
+    # Restore index.php and php.ini
     - /bin/cp /home/adityaclasses/index.php.backup $PUBLICPATH/index.php
+    - /bin/cp /home/adityaclasses/php.ini.backup $PUBLICPATH/php.ini
 
     - /bin/echo "Deploy finished at $(/bin/date '+%Y-%m-%d %H:%M:%S')" >> /home/adityaclasses/deploy_log.txt
