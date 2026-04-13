@@ -6,10 +6,9 @@ deployment:
     - export PUBLICPATH=/home/adityaclasses/public_html
     - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
 
-    # Backup .env, index.php and php.ini
+    # Backup .env and index.php
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
     - /bin/cp $PUBLICPATH/index.php /home/adityaclasses/index.php.backup
-    - /bin/cp $PUBLICPATH/php.ini /home/adityaclasses/php.ini.backup
 
     # Clear project folder (except .env)
     - /bin/find $PROJECTPATH -mindepth 1 -not -name '.env' -delete
@@ -30,8 +29,12 @@ deployment:
     # Copy public folder from project to public_html
     - /bin/cp -R $PROJECTPATH/public/. $PUBLICPATH
 
-    # Restore index.php and php.ini
+    # Restore index.php
     - /bin/cp /home/adityaclasses/index.php.backup $PUBLICPATH/index.php
-    - /bin/cp /home/adityaclasses/php.ini.backup $PUBLICPATH/php.ini
+
+    # Force PHP 8.2
+    - /bin/echo "AddHandler application/x-httpd-ea-php82 .php" > $PUBLICPATH/.htaccess_php
+    - /bin/cat $PUBLICPATH/.htaccess_php $PUBLICPATH/.htaccess > /home/adityaclasses/htaccess_combined && /bin/mv /home/adityaclasses/htaccess_combined $PUBLICPATH/.htaccess
+    - /bin/rm -f $PUBLICPATH/.htaccess_php
 
     - /bin/echo "Deploy finished at $(/bin/date '+%Y-%m-%d %H:%M:%S')" >> /home/adityaclasses/deploy_log.txt
