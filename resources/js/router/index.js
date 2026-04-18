@@ -11,7 +11,6 @@ import AccessRequestPage from "../components/AccessRequestPage.vue";
 
 import lessonList from "../components/Lesson/LessonList.vue";
 import LessonManagePage from "../components/Lesson/LessonManagePage.vue";
-import { patchProp } from "vue";
 
 const routes = [
     {
@@ -80,6 +79,12 @@ const routes = [
         path: "/createPackage",
         name: "createPackage",
         component: () => import("../components/PackageBuilder.vue"),
+    },
+    {
+        path: "/tutorSpace",
+        name: "tutorSpace",
+        component: () => import("../components/TutorSpace.vue"),
+        meta: { requiresAuth: true },
     },
     {
         path: "/subject",

@@ -1,228 +1,209 @@
 <template>
-    <Layout title="Lesson List" :loading="loading">
 
-        <!-- HEADER -->
-        <div class="admin-header">
-            <div>
-                <p class="has-text-grey">Create, edit, and delete lessons</p>
-            </div>
-
-            <div class="is-flex is-justify-content-flex-end mb-4">
-                <button class="button is-primary has-text-white" @click="createLesson">
-                    <span class="icon">
-                        <PlusIcon />
-                    </span>
-                    <span>{{ creating ? 'Close Form' : 'Add Lesson' }}</span>
-                </button>
-            </div>
+    <!-- HEADER -->
+    <div class="admin-header">
+        <div>
+            <p class="has-text-grey">Create, edit, and delete lessons</p>
         </div>
 
-        <div v-if="lessons.length > 0" class="mb-3 has-text-grey is-size-7">
-            Showing lessons for:
-            <strong>{{ gradeName }}</strong> •
-            <strong>{{ subjectName }}</strong>
+        <div class="is-flex is-justify-content-flex-end mb-4">
+            <button class="button is-primary has-text-white" @click="createLesson">
+                <span class="icon">
+                    <PlusIcon />
+                </span>
+                <span>{{ creating ? 'Close Form' : 'Add Lesson' }}</span>
+            </button>
         </div>
-        <div v-else-if="!loading" class="mb-3 has-text-grey is-size-7">
-            No lessons found for this selection.
-        </div>
+    </div>
 
-        <!-- ===================== -->
-        <!-- DESKTOP TABLE VIEW -->
-        <!-- ===================== -->
-        <div class="table-wrapper is-hidden-mobile">
+    <!-- INFO -->
+    <div v-if="lessons.length > 0" class="mb-3 has-text-grey is-size-7">
+        Showing lessons for:
+        <strong>{{ gradeName }}</strong> •
+        <strong>{{ subjectName }}</strong>
+    </div>
 
+    <div v-else-if="!loading" class="mb-3 has-text-grey is-size-7">
+        No lessons found for this selection.
+    </div>
 
-            <table class="table is-fullwidth is-hoverable">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Part</th>
-                        <th>Active</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+    <!-- TABLE -->
+    <div class="table-wrapper is-hidden-mobile">
 
-                <tbody>
+        <table class="table is-fullwidth is-hoverable">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Part</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
 
-                    <tr v-if="creating" class="edit-row-active">
-                        <td colspan="4" style="padding: 0;">
-                            <LessonEditForm :grade_id="gradeId" :subject_id="subjectId" inline @saved="onCreated"
-                                @cancel="creating = false" />
+            <tbody>
+
+                <!-- CREATE ROW -->
+                <tr v-if="creating" class="edit-row-active">
+                    <td colspan="4" style="padding: 0;">
+                        <LessonEditForm :grade_id="gradeId" :subject_id="subjectId" inline @saved="onCreated"
+                            @cancel="creating = false" />
+                    </td>
+                </tr>
+
+                <!-- GROUPED TOPICS -->
+                <template v-for="group in paginatedTopics" :key="group.topic">
+
+                    <!-- TOPIC -->
+                    <tr class="topic-row">
+                        <td colspan="4">
+                            <div class="glass-card topic-card is-flex is-align-items-center is-justify-content-space-between"
+                                @click="toggleTopic(group.topic)">
+                                <div>
+                                    <strong class="has-text-white">{{ group.topic }}</strong>
+                                    <p class="is-size-7 has-text-grey">
+                                        {{ group.lessons.length }} lessons
+                                    </p>
+                                </div>
+
+                                <span class="tag is-dark-accent">
+                                    {{ isTopicOpen(group.topic) ? 'Hide' : 'Show' }}
+                                </span>
+                            </div>
                         </td>
                     </tr>
 
-                    <template v-for="group in paginatedTopics" :key="group.topic">
+                    <!-- LESSONS -->
+                    <template v-if="isTopicOpen(group.topic)">
+                        <template v-for="lesson in group.lessons" :key="lesson.id">
 
-                        <!-- TOPIC HEADER -->
-                        <tr class="topic-row">
-                            <td colspan="4">
-                                <div class="glass-card topic-card is-flex is-align-items-center is-justify-content-space-between"
-                                    @click="toggleTopic(group.topic)">
-                                    <div>
-                                        <strong class="has-text-white">{{ group.topic }}</strong>
-                                        <p class="is-size-7 has-text-grey">
-                                            {{ group.lessons.length }} lessons
-                                        </p>
-                                    </div>
+                            <tr>
+                                <td>
+                                    <strong class="ml-6">
+                                        {{ lesson.title }}
+                                    </strong>
+                                </td>
 
-                                    <span class="tag is-dark-accent">
-                                        {{ isTopicOpen(group.topic) ? 'Hide' : 'Show' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+                                <td :class="{ 'has-text-grey-light is-italic': !lesson.part_number }">
+                                    {{ lesson.part_number ?? 'N/A' }}
+                                </td>
 
-                        <!-- LESSONS -->
-                        <template v-if="isTopicOpen(group.topic)">
-                            <template v-for="lesson in group.lessons" :key="lesson.id">
+                                <td>{{ lesson.is_active ? 'Yes' : 'No' }}</td>
 
-                                <tr>
-                                    <td>
-                                        <strong class="ml-6" style="display:inline-block;">
-                                            {{ lesson.title }}
-                                        </strong>
-                                    </td>
+                                <td>
+                                    <button class="button is-small" @click.stop="toggleEdit(lesson.id)">
+                                        {{ editingId === lesson.id ? 'Close' : 'Edit' }}
+                                    </button>
+                                </td>
+                            </tr>
 
-                                    <td :class="{ 'has-text-grey-light is-italic': !lesson.part_number }">
-                                        {{ lesson.part_number ?? 'N/A' }}
-                                    </td>
+                            <!-- EDIT FORM -->
+                            <tr v-if="editingId === lesson.id" class="edit-row-active">
+                                <td colspan="4" style="padding: 0;">
+                                    <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved"
+                                        @cancel="editingId = null" />
+                                </td>
+                            </tr>
 
-                                    <td>{{ lesson.is_active ? 'Yes' : 'No' }}</td>
-
-                                    <td>
-                                        <button class="button is-small" @click.stop="toggleEdit(lesson.id)">
-                                            {{ editingId === lesson.id ? 'Close' : 'Edit' }}
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                <!-- ✅ NOW lesson is defined -->
-                                <tr v-if="editingId === lesson.id" class="edit-row-active">
-                                    <td colspan="4" style="padding: 0;">
-                                        <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved"
-                                            @cancel="editingId = null" />
-                                    </td>
-                                </tr>
-
-                            </template>
                         </template>
-
                     </template>
-                </tbody>
-            </table>
-
-        </div>
-
-        <!-- ===================== -->
-        <!-- MOBILE CARD VIEW -->
-        <!-- ===================== -->
-        <div class="is-hidden-tablet">
-
-            <div v-for="group in paginatedTopics" :key="group.topic">
-                <!-- TOPIC HEADER -->
-                <div class="topic-header" @click="toggleTopic(group.topic)">
-                    <strong>{{ group.topic }}</strong>
-                    <span class="ml-2 has-text-grey">
-                        ({{ group.lessons.length }})
-                    </span>
-                </div>
-
-                <!-- LESSONS -->
-                <div v-if="isTopicOpen(group.topic)">
-                    <div v-for="lesson in group.lessons" :key="lesson.id" class="mobile-card">
-
-                        <div class=" card-content">
-
-                            <strong>{{ lesson.title }}</strong>
-
-                            <div class="mt-2">
-                                <span class="tag is-warning is-light">
-                                    Part: {{ lesson.part_number ?? 'N/A' }}
-                                </span>
-
-                                <span class="tag ml-1" :class="lesson.is_active ? 'is-success' : 'is-danger'">
-                                    {{ lesson.is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </div>
-
-                            <button class="button is-small is-info mt-2" @click="toggleEdit(lesson.id)">
-                                {{ editingId === lesson.id ? 'Close' : 'Edit' }}
-                            </button>
-
-                            <div v-if="editingId === lesson.id" class="edit-row-active mt-3">
-                                <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved"
-                                    @cancel="editingId = null" />
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-
-        <div v-if="totalPages > 1" class="pagination-bar mt-5 is-flex is-align-items-center is-justify-content-center">
-            <!-- Prev -->
-            <button class="pagination-btn" @click="prevPage" :disabled="currentPage === 1">
-                ‹
-            </button>
-
-            <!-- Pages -->
-            <div class="pagination-pages">
-                <template v-for="(page, index) in visiblePages" :key="index">
-
-                    <!-- Ellipsis -->
-                    <span v-if="page === '...'" class="pagination-ellipsis">
-                        ...
-                    </span>
-
-                    <!-- Page Button -->
-                    <button v-else class="page-pill" :class="{ active: currentPage === page }"
-                        @click="goToPage(Number(page))">
-                        {{ page }}
-                    </button>
 
                 </template>
+
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- MOBILE -->
+    <div class="is-hidden-tablet">
+
+        <div v-for="group in paginatedTopics" :key="group.topic">
+
+            <div class="topic-header" @click="toggleTopic(group.topic)">
+                <strong>{{ group.topic }}</strong>
+                <span class="ml-2 has-text-grey">
+                    ({{ group.lessons.length }})
+                </span>
             </div>
 
-            <!-- Next -->
-            <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">
-                ›
-            </button>
+            <div v-if="isTopicOpen(group.topic)">
+                <div v-for="lesson in group.lessons" :key="lesson.id" class="mobile-card">
+
+                    <div class="card-content">
+
+                        <strong>{{ lesson.title }}</strong>
+
+                        <div class="mt-2">
+                            <span class="tag is-warning is-light">
+                                Part: {{ lesson.part_number ?? 'N/A' }}
+                            </span>
+
+                            <span class="tag ml-1" :class="lesson.is_active ? 'is-success' : 'is-danger'">
+                                {{ lesson.is_active ? 'Active' : 'Inactive' }}
+                            </span>
+                        </div>
+
+                        <button class="button is-small is-info mt-2" @click="toggleEdit(lesson.id)">
+                            {{ editingId === lesson.id ? 'Close' : 'Edit' }}
+                        </button>
+
+                        <div v-if="editingId === lesson.id" class="edit-row-active mt-3">
+                            <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved" @cancel="editingId = null" />
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PAGINATION -->
+    <div v-if="totalPages > 1" class="pagination-bar mt-5 is-flex is-justify-content-center">
+
+        <button class="pagination-btn" @click="prevPage" :disabled="currentPage === 1">‹</button>
+
+        <div class="pagination-pages">
+            <template v-for="(page, index) in visiblePages" :key="index">
+                <span v-if="page === '...'" class="pagination-ellipsis">...</span>
+
+                <button v-else class="page-pill" :class="{ active: currentPage === page }"
+                    @click="goToPage(Number(page))">
+                    {{ page }}
+                </button>
+            </template>
         </div>
 
-        <!-- EMPTY STATE -->
-        <div v-if="!loading && lessons.length === 0" class="empty-state">
-            No lessons found.
-        </div>
+        <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">›</button>
+    </div>
 
-    </Layout>
 </template>
 
-
 <script setup>
-import { ref, onMounted, computed, nextTick, watchEffect } from 'vue';
+import { ref, computed, nextTick, watch, toRefs } from 'vue';
 import api from '../../api';
-import Layout from '../common/Layout.vue';
 import LessonEditForm from './LessonEditForm.vue';
-import { useRoute, useRouter } from 'vue-router';
 import { PlusIcon } from '@heroicons/vue/24/outline';
 import { Pagination } from '../../composables/pagination';
 
-const route = useRoute();
-const router = useRouter();
+/* PROPS (from TutorSpace) */
+const props = defineProps({
+    grade_id: [String, Number],
+    subject_id: [String, Number]
+});
 
+/* ✅ reactive props */
+const { grade_id: gradeId, subject_id: subjectId } = toRefs(props);
+
+/* STATE */
 const lessons = ref([]);
 const loading = ref(false);
-
-const gradeId = route.params.grade_id;
-const subjectId = route.params.subject_id;
 const openTopics = ref({});
-
 const editingId = ref(null);
 const creating = ref(false);
 
+/* PAGINATION */
 const {
     currentPage,
     paginatedTopics,
@@ -233,106 +214,107 @@ const {
     prevPage,
 } = Pagination(lessons, 5, { type: 'grouped' });
 
+/* WATCH props (CRITICAL FIX) */
+watch(
+    [gradeId, subjectId],
+    ([g, s]) => {
+        if (!g || !s) return;
+        fetchLessons();
+    },
+    { immediate: true }
+);
+
+/* METHODS */
 function toggleTopic(topic) {
     openTopics.value[topic] = !openTopics.value[topic];
 }
 
-watchEffect(() => {
-    console.log({
-        currentPage: currentPage.value,
-        totalPages: totalPages.value,
-        visiblePages: visiblePages.value
-    });
-});
-
 const isTopicOpen = (topic) => openTopics.value[topic] === true;
 
 const toggleEdit = async (id) => {
-    // If we are closing the current edit, just null it out
     if (editingId.value === id) {
         editingId.value = null;
         return;
     }
 
-    // Set the ID to open the form
     editingId.value = id;
 
-    // 2. Wait for Vue to render the LessonEditForm
     await nextTick();
 
-    // 3. Find the newly opened edit row and scroll to it
-    const editRow = document.querySelector('.edit-row-active');
-    if (editRow) {
-        editRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    const el = document.querySelector('.edit-row-active');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
 const onLessonSaved = () => {
-    editingId.value = null; // Close the form
-    fetchLessons(); // Refresh the list
+    editingId.value = null;
+    fetchLessons();
 };
 
 const onCreated = () => {
     creating.value = false;
     fetchLessons();
 };
+function extractTopicNumber(topic) {
+    const match = topic.match(/^(\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+}
 
-const fetchLessons = async () => {
+async function fetchLessons() {
     loading.value = true;
 
     try {
         const res = await api.get("/admin/lessons", {
             params: {
-                grade_id: gradeId,
-                subject_id: subjectId
+                grade_id: gradeId.value,
+                subject_id: subjectId.value
             }
         });
 
-        lessons.value = res.data;
+        console.log("Lessons = ", res.data);
+
+        const sorted = [...res.data].sort((a, b) => {
+            const aNum = extractTopicNumber(a.topic);
+            const bNum = extractTopicNumber(b.topic);
+
+            // 1. No-number topics first
+            if (aNum === null && bNum !== null) return -1;
+            if (aNum !== null && bNum === null) return 1;
+
+            // 2. both no numbers → alphabetical
+            if (aNum === null && bNum === null) {
+                return a.topic.localeCompare(b.topic);
+            }
+
+            // 3. both numbered → numeric sort
+            return aNum - bNum;
+        });
+
+        lessons.value = sorted;
 
         currentPage.value = 1;
 
         await nextTick();
 
-    } catch (error) {
-        console.error(error);
+    } catch (e) {
+        console.error(e);
     } finally {
         loading.value = false;
     }
-};
-
-const gradeName = computed(() => lessons.value[0]?.grade?.name || '');
-const subjectName = computed(() => lessons.value[0]?.subject?.name || '');
-
-const deleteLesson = async (id) => {
-    if (confirm("Are you sure?")) {
-        await api.delete(`/admin/lessons/${id}`);
-        await fetchLessons();
-    }
-};
-
+}
 
 function createLesson() {
     editingId.value = null;
     creating.value = !creating.value;
 
     nextTick(() => {
-        const form = document.querySelector('.edit-row-active');
-        if (form) {
-            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        const el = document.querySelector('.edit-row-active');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 }
 
-onMounted(() => {
-    if (!gradeId || !subjectId) {
-        console.warn("Missing filters");
-        return;
-    }
-
-    fetchLessons();
-});
-
+/* COMPUTED */
+const gradeName = computed(() => lessons.value[0]?.grade?.name || '');
+const subjectName = computed(() => lessons.value[0]?.subject?.name || '');
 </script>
 
 <style scoped>
@@ -350,18 +332,6 @@ onMounted(() => {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.actions {
-    display: flex;
-    gap: 8px;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 30px;
-    color: #888;
-}
-
-/* MOBILE CARD STYLE */
 .mobile-card {
     border-radius: 14px;
     padding: 14px;
@@ -369,58 +339,9 @@ onMounted(() => {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 
-.card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-}
-
-.card-bottom {
-    margin-top: 8px;
-}
-
-.mobile-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-/* HEADER FIX FOR MOBILE */
-@media (max-width: 768px) {
-    .admin-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-}
-
-.topic-row {
-    cursor: pointer;
-    border: none;
-
-}
-
-.topic-row td {
-    padding-top: 16px;
-    padding-bottom: 6px;
-}
-
-.topic-header {
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
 .topic-card {
     padding: 12px 16px;
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.topic-card:hover {
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.06);
 }
 </style>

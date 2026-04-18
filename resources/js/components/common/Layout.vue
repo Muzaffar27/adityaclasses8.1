@@ -9,6 +9,7 @@
               <ArrowLeftIcon class="h-icon" />
             </div>
           </transition>
+
         </div>
 
         <div class="header-center">
@@ -19,7 +20,15 @@
         </div>
 
         <div class="header-side-right">
+
+          <div v-if="!isStudent" class="admin-toggle-bar mr-2 ">
+            <button class="button is-small is-warning" @click=enterAdmin>
+              Tutor Space
+            </button>
+          </div>
+
           <div class="user-identity-chip">
+
             <span class="initials">{{ userInitials }}</span>
             <div class="online-indicator"></div>
           </div>
@@ -51,6 +60,7 @@ import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
 const router = useRouter();
+const user = computed(() => auth.user);
 
 defineProps({
   title: String,
@@ -71,6 +81,17 @@ function goBack() {
   const canGoBack = window.history.state?.back;
   canGoBack ? router.back() : router.replace({ name: 'home' });
 }
+
+function enterAdmin() {
+  console.log("Tutor space");
+
+  router.push({
+    name: "tutorSpace"
+  });
+}
+
+const isStudent = computed(() => user.value?.role === 'student');
+
 </script>
 
 <style scoped>
@@ -254,6 +275,7 @@ function goBack() {
   color: #fff;
   margin-bottom: 1.5rem;
   text-align: left;
+  margin-left: 0.5rem;
 }
 
 /* Loader centering */

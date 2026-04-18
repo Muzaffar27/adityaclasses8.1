@@ -18,7 +18,7 @@
             <!-- HEADER -->
             <div class="admin-header is-flex is-justify-content-space-between is-align-items-center mb-3 mt-5">
                 <div>
-                    <h1 class="title is-5 has-text-white mb-1 mt-2">
+                    <h1 class="title is-5 has-text-white mb-1 mt-2 is-flex is-align-items-center">
                         Package
 
                         <button v-if="!isStudent" class="ml-2 button is-primary is-small"

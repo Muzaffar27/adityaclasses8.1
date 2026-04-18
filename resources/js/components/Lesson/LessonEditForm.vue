@@ -1,93 +1,91 @@
 <template>
-    <Layout :title="isEditMode ? 'Edit Lesson' : 'Create New Lesson'" :loading="loading" :showBack="!isEditMode">
-        <div class="edit-form-container" :class="{ 'is-create-page': !isEditMode }">
-            <div class="box is-shadowless has-background-transparent">
-                <div v-if="isEditMode" class="mb-4">
-                    <h3 class="is-size-6 has-text-weight-bold">
-                        Editing: <span class="has-text-primary">{{ lesson.title }}</span>
-                    </h3>
-                </div>
-
-                <div class="columns is-multiline">
-                    <template v-if="!isEditMode">
-                        <div class="column is-6">
-                            <label class="label is-small">Grade</label>
-                            <div class="control" :class="{ 'is-loading': cacheLoading }">
-                                <div class="select is-small is-fullwidth">
-                                    <select v-model="localLesson.grade_id" :disabled="cacheLoading">
-                                        <option value="" disabled>Select Grade</option>
-                                        <option v-for="grade in grades" :key="grade.id" :value="grade.id">
-                                            {{ grade.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="column is-6">
-                            <label class="label is-small">Subject</label>
-                            <div class="control" :class="{ 'is-loading': cacheLoading }">
-                                <div class="select is-small is-fullwidth">
-                                    <select v-model="localLesson.subject_id" :disabled="cacheLoading">
-                                        <option value="" disabled>Select Subject</option>
-                                        <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
-                                            {{ subject.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <div class="column is-6">
-                        <label class="label is-small">Lesson Title</label>
-                        <input class="input is-small" v-model="localLesson.title" placeholder="e.g. Intro to Algebra">
-                    </div>
-                    <div class="column is-6">
-                        <label class="label is-small">Topic</label>
-                        <input class="input is-small" v-model="localLesson.topic" placeholder="e.g. Mathematics">
-                    </div>
-                    <div class="column is-3">
-                        <label class="label is-small">Part #</label>
-                        <input class="input is-small" type="number" v-model="localLesson.part_number">
-                    </div>
-                    <div class="column is-6">
-                        <label class="label is-small">Vimeo URL</label>
-                        <input class="input is-small" v-model="localLesson.vimeo_url"
-                            placeholder="https://player.vimeo.com/...">
-                    </div>
-                    <div class="column is-3">
-                        <label class="label is-small">Show/Hidden</label>
-                        <div class="field mt-2">
-                            <label class="switch">
-                                <input type="checkbox" v-model="localLesson.is_active" :true-value="1" :false-value="0">
-                                <span class="slider round"></span>
-                                <span class="switch-label">{{ localLesson.is_active ? 'Active' : 'Inactive' }}</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="column is-12">
-                        <label class="label is-small">Description</label>
-                        <textarea class="textarea is-small" v-model="localLesson.description" rows="3"></textarea>
-                    </div>
-                </div>
-
-                <hr class="my-4" style="height: 1px; background-color: #dbdbdb;">
-
-                <div class="buttons is-right">
-                    <button class="button is-small is-light" @click="handleCancel">
-                        Cancel
-                    </button>
-
-                    <button class="button is-small is-primary has-text-white" :class="{ 'is-loading': loading }"
-                        @click="handleSave">
-                        <span>{{ lesson?.id ? 'Update Lesson' : 'Create Lesson' }}</span>
-                    </button>
-                </div>
-
+    <div class="edit-form-container" :class="{ 'is-create-page': !isEditMode }">
+        <div class="box is-shadowless has-background-transparent">
+            <div v-if="isEditMode" class="mb-4">
+                <h3 class="is-size-6 has-text-weight-bold">
+                    Editing: <span class="has-text-primary">{{ lesson.title }}</span>
+                </h3>
             </div>
+
+            <div class="columns is-multiline">
+                <template v-if="!isEditMode">
+                    <div class="column is-6">
+                        <label class="label is-small">Grade</label>
+                        <div class="control" :class="{ 'is-loading': cacheLoading }">
+                            <div class="select is-small is-fullwidth">
+                                <select v-model="localLesson.grade_id" :disabled="cacheLoading">
+                                    <option value="" disabled>Select Grade</option>
+                                    <option v-for="grade in grades" :key="grade.id" :value="grade.id">
+                                        {{ grade.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column is-6">
+                        <label class="label is-small">Subject</label>
+                        <div class="control" :class="{ 'is-loading': cacheLoading }">
+                            <div class="select is-small is-fullwidth">
+                                <select v-model="localLesson.subject_id" :disabled="cacheLoading">
+                                    <option value="" disabled>Select Subject</option>
+                                    <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
+                                        {{ subject.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="column is-6">
+                    <label class="label is-small">Lesson Title</label>
+                    <input class="input is-small" v-model="localLesson.title" placeholder="e.g. Intro to Algebra">
+                </div>
+                <div class="column is-6">
+                    <label class="label is-small">Topic</label>
+                    <input class="input is-small" v-model="localLesson.topic" placeholder="e.g. Mathematics">
+                </div>
+                <div class="column is-3">
+                    <label class="label is-small">Part #</label>
+                    <input class="input is-small" type="number" v-model="localLesson.part_number">
+                </div>
+                <div class="column is-6">
+                    <label class="label is-small">Vimeo URL</label>
+                    <input class="input is-small" v-model="localLesson.vimeo_url"
+                        placeholder="https://player.vimeo.com/...">
+                </div>
+                <div class="column is-3">
+                    <label class="label is-small">Show/Hidden</label>
+                    <div class="field mt-2">
+                        <label class="switch">
+                            <input type="checkbox" v-model="localLesson.is_active" :true-value="1" :false-value="0">
+                            <span class="slider round"></span>
+                            <span class="switch-label">{{ localLesson.is_active ? 'Active' : 'Inactive' }}</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="column is-12">
+                    <label class="label is-small">Description</label>
+                    <textarea class="textarea is-small" v-model="localLesson.description" rows="3"></textarea>
+                </div>
+            </div>
+
+            <hr class="my-4" style="height: 1px; background-color: #dbdbdb;">
+
+            <div class="buttons is-right">
+                <button class="button is-small is-light" @click="handleCancel">
+                    Cancel
+                </button>
+
+                <button class="button is-small is-primary has-text-white" :class="{ 'is-loading': loading }"
+                    @click="handleSave">
+                    <span>{{ lesson?.id ? 'Update Lesson' : 'Create Lesson' }}</span>
+                </button>
+            </div>
+
         </div>
-    </Layout>
+    </div>
 </template>
 
 <script setup>
@@ -96,7 +94,6 @@ import api from '../../api';
 import { useRouter } from 'vue-router';
 import { useCacheStore } from '../../stores/cache';
 import { storeToRefs } from 'pinia';
-import Layout from '../common/Layout.vue';
 
 const router = useRouter();
 const cacheStore = useCacheStore();
