@@ -8,7 +8,7 @@
             <!-- SUBJECT TABS -->
             <div class="tabs is-toggle is-fullwidth">
                 <ul>
-                    <li class="mt-1 ml-3" v-for="sub in subjects" :key="sub.id"
+                    <li class="mt-1 ml-3" v-for="sub in filteredSubjects" :key="sub.id"
                         :class="{ 'is-active': selectedSubjectId === sub.id }" @click="selectSubject(sub.id)">
                         <a>{{ sub.name }}</a>
                     </li>
@@ -20,11 +20,6 @@
                 <div>
                     <h1 class="title is-5 has-text-white mb-1 mt-2 is-flex is-align-items-center">
                         Package
-
-                        <button v-if="!isStudent" class="ml-2 button is-primary is-small"
-                            @click="$router.push({ name: 'createPackage' })">
-                            <span class="icon has-text-white">+</span>
-                        </button>
                     </h1>
 
                     <p class="has-text-grey is-size-7">
@@ -153,16 +148,13 @@ import { useRoute } from 'vue-router'
 import Layout from './common/Layout.vue'
 import api from "../api"
 import { useCacheStore } from "../stores/cache"
-import { useAuthStore } from '../stores/auth';
 
 import { storeToRefs } from "pinia"
 import Loader from './common/Loader.vue'
 
 // store
 const cacheStore = useCacheStore()
-const auth = useAuthStore();
 
-const user = computed(() => auth.user);
 const { subjects, grades } = storeToRefs(cacheStore)
 
 // state
@@ -174,7 +166,6 @@ const selectedPackageId = ref(null)
 const selectedSubjectId = ref(null)
 const selectedItemIds = ref([])
 
-const isStudent = computed(() => user.value?.role === 'student');
 
 // route
 const route = useRoute()
@@ -182,7 +173,11 @@ const gradeId = route.params.id
 
 // 👉 OPTIONAL: filter subjects if needed
 const filteredSubjects = computed(() => {
-    return subjects.value || []
+    const excluded = ['mechanics', 'statistics 1', 'statistics 2']
+
+    return (subjects.value || []).filter(sub => {
+        return !excluded.includes(sub.name.toLowerCase().trim())
+    })
 })
 
 const dynamicTotal = computed(() => {

@@ -1,142 +1,137 @@
 <template>
-    <Layout title="Create Package">
+    <div class="package-container p-3">
 
-        <div class="package-container p-3">
-
-            <!-- HEADER -->
-            <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
-                <div>
-                    <h1 class="title is-5 has-text-white mb-1">Create Package</h1>
-                    <p class="has-text-grey is-size-7">Bundle subjects into packages</p>
-                </div>
-
-                <button class="login-btn action-btn px-5" style="max-width: 180px;" @click="submit">
-                    + Create
-                </button>
+        <!-- HEADER -->
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+            <div>
+                <h1 class="title is-5 has-text-white mb-1">Create Package</h1>
+                <p class="has-text-grey is-size-7">Bundle subjects into packages</p>
             </div>
 
-            <!-- SINGLE CARD -->
-            <div class="glass-card compact-card p-4">
-
-                <!-- ROW 1 -->
-                <div class="columns is-mobile is-variable is-2 mb-2">
-                    <div class="column is-6">
-                        <label class="custom-label">Package Name</label>
-                        <input class="input custom-input" v-model="form.name" />
-                    </div>
-
-                    <div class="column is-3">
-                        <label class="custom-label">Package Grade</label>
-                        <select v-model="form.grade_id" class="input custom-input">
-                            <option :value="null">Grade</option>
-                            <option v-for="g in grades" :key="g.id" :value="g.id">
-                                {{ g.name }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="column is-3">
-                        <label class="custom-label">Package Subject</label>
-                        <select v-model="form.subject_id" class="input custom-input">
-                            <option :value="null">Select Subject</option>
-                            <option v-for="s in subjects" :key="s.id" :value="s.id">
-                                {{ s.name }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="column is-3">
-                        <label class="custom-label">Base Rs</label>
-                        <input class="input custom-input" type="number" v-model="form.base_price" />
-                    </div>
-                </div>
-
-                <hr class="mini-divider" />
-
-                <!-- ROW 2 -->
-                <div class="is-flex is-gap-2 is-align-items-end mb-2">
-
-                    <div style="flex: 1;">
-                        <label class="custom-label">Price</label>
-                        <input class="input custom-input" type="number" v-model="newItem.price" />
-                    </div>
-
-                    <div style="flex: 2;">
-                        <label class="custom-label">Grade</label>
-                        <select v-model="newItem.grade_id" class="input custom-input">
-                            <option :value="null">Default</option>
-                            <option v-for="g in grades" :key="g.id" :value="g.id">
-                                {{ g.name }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <button class="button is-primary is-small" style="height: 34px;"
-                        :disabled="!newItem.subjects.length" @click="addItem">
-                        Add
-                    </button>
-
-                </div>
-
-                <!-- SUBJECTS (compact row) -->
-                <div class="subjects-row mb-2">
-                    <label v-for="s in subjects" :key="s.id" class="subject-pill-glass"
-                        :class="{ 'is-active': newItem.subjects.includes(s.id) }">
-
-                        <input type="checkbox" :value="s.id" v-model="newItem.subjects" />
-                        <span>{{ s.name }}</span>
-                    </label>
-                </div>
-
-                <hr class="mini-divider" />
-
-                <!-- SUMMARY INLINE -->
-                <div class="summary-inline">
-
-                    <div v-if="form.items.length === 0" class="has-text-grey is-size-7">
-                        No items yet
-                    </div>
-
-                    <div v-else class="items-mini">
-
-                        <div v-for="(item, index) in form.items" :key="index" class="item-mini">
-
-                            <div class="is-flex is-flex-direction-column">
-                                <strong class="price">Rs {{ item.price }}</strong>
-                                <span v-if="item.grade_id" class="has-text-grey is-size-7" style="font-size: 0.6rem;">
-                                    {{ getGradeName(item.grade_id) }}
-                                </span>
-                            </div>
-
-                            <div class="subjects">
-                                <span v-for="s in item.subjects" :key="s" class="tag is-dark-accent is-">
-                                    {{ getSubjectName(s) }}
-                                </span>
-                            </div>
-
-                            <button class="delete-btn" @click="removeItem(index)">✕</button>
-
-                        </div>
-
-                    </div>
-
-                    <div class="total-bar mt-2">
-                        <span>Total</span>
-                        <strong>Rs {{ total }}</strong>
-                    </div>
-
-                </div>
-
-            </div>
+            <button class="login-btn action-btn px-5" style="max-width: 180px;" @click="submit">
+                + Create
+            </button>
         </div>
 
-    </Layout>
+        <!-- SINGLE CARD -->
+        <div class="glass-card compact-card p-4">
+
+            <!-- ROW 1 -->
+            <div class="columns is-mobile is-variable is-2 mb-2">
+                <div class="column is-6">
+                    <label class="custom-label">Package Name</label>
+                    <input class="input custom-input" v-model="form.name" />
+                </div>
+
+                <div class="column is-3">
+                    <label class="custom-label">Package Grade</label>
+                    <select v-model="form.grade_id" class="input custom-input">
+                        <option :value="null">Grade</option>
+                        <option v-for="g in grades" :key="g.id" :value="g.id">
+                            {{ g.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="column is-3">
+                    <label class="custom-label">Package Subject</label>
+                    <select v-model="form.subject_id" class="input custom-input">
+                        <option :value="null">Select Subject</option>
+                        <option v-for="s in subjects" :key="s.id" :value="s.id">
+                            {{ s.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="column is-3">
+                    <label class="custom-label">Base Rs</label>
+                    <input class="input custom-input" type="number" v-model="form.base_price" />
+                </div>
+            </div>
+
+            <hr class="mini-divider" />
+
+            <!-- ROW 2 -->
+            <div class="is-flex is-gap-2 is-align-items-end mb-2">
+
+                <div style="flex: 1;">
+                    <label class="custom-label">Price</label>
+                    <input class="input custom-input" type="number" v-model="newItem.price" />
+                </div>
+
+                <div style="flex: 2;">
+                    <label class="custom-label">Grade</label>
+                    <select v-model="newItem.grade_id" class="input custom-input">
+                        <option :value="null">Default</option>
+                        <option v-for="g in grades" :key="g.id" :value="g.id">
+                            {{ g.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <button class="button is-primary is-small" style="height: 34px;" :disabled="!newItem.subjects.length"
+                    @click="addItem">
+                    Add
+                </button>
+
+            </div>
+
+            <!-- SUBJECTS (compact row) -->
+            <div class="subjects-row mb-2">
+                <label v-for="s in subjects" :key="s.id" class="subject-pill-glass"
+                    :class="{ 'is-active': newItem.subjects.includes(s.id) }">
+
+                    <input type="checkbox" :value="s.id" v-model="newItem.subjects" />
+                    <span>{{ s.name }}</span>
+                </label>
+            </div>
+
+            <hr class="mini-divider" />
+
+            <!-- SUMMARY INLINE -->
+            <div class="summary-inline">
+
+                <div v-if="form.items.length === 0" class="has-text-grey is-size-7">
+                    No items yet
+                </div>
+
+                <div v-else class="items-mini">
+
+                    <div v-for="(item, index) in form.items" :key="index" class="item-mini">
+
+                        <div class="is-flex is-flex-direction-column">
+                            <strong class="price">Rs {{ item.price }}</strong>
+                            <span v-if="item.grade_id" class="has-text-grey is-size-7" style="font-size: 0.6rem;">
+                                {{ getGradeName(item.grade_id) }}
+                            </span>
+                        </div>
+
+                        <div class="subjects">
+                            <span v-for="s in item.subjects" :key="s" class="tag is-dark-accent is-">
+                                {{ getSubjectName(s) }}
+                            </span>
+                        </div>
+
+                        <button class="delete-btn" @click="removeItem(index)">✕</button>
+
+                    </div>
+
+                </div>
+
+                <div class="total-bar mt-2">
+                    <span>Total</span>
+                    <strong>Rs {{ total }}</strong>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import api from "../api";
-import Layout from "./common/Layout.vue";
 import { useCacheStore } from "../stores/cache";
 import { storeToRefs } from "pinia";
 

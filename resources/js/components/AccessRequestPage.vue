@@ -1,79 +1,76 @@
 <template>
 
-    <Layout title="Access Requests" :loading="loading">
+    <div v-if="!loading && groupedRequests.length === 0" class="has-text-centered mt-6">
+        <p class="has-text-grey">No access requests.</p>
+    </div>
 
-        <div v-if="!loading && groupedRequests.length === 0" class="has-text-centered mt-6">
-            <p class="has-text-grey">No access requests.</p>
-        </div>
+    <div v-else-if="loading">
+        <Loader />
+    </div>
 
+    <div v-else>
+        <div v-for="student in groupedRequests" :key="student.student_id" class="card mb-4 p-4">
 
-        <div v-else>
-            <div v-for="student in groupedRequests" :key="student.student_id" class="card mb-4 p-4">
+            <!-- Student header -->
+            <nav class="student-header" @click="toggleRequests(student.student_id)">
+                <div class="left">
+                    <span class="icon">
+                        <ChevronRightIcon v-if="!expandedStudents.has(student.student_id)" />
+                        <ChevronDownIcon v-else />
+                    </span>
 
-                <!-- Student header -->
-                <nav class="student-header" @click="toggleRequests(student.student_id)">
-                    <div class="left">
-                        <span class="icon">
-                            <ChevronRightIcon v-if="!expandedStudents.has(student.student_id)" />
-                            <ChevronDownIcon v-else />
-                        </span>
+                    <p class="student-name">{{ student.student_name }}</p>
 
-                        <p class="student-name">{{ student.student_name }}</p>
+                    <span class="tag is-warning is-light is-rounded">
+                        {{ student.accessRequests.length }}
+                    </span>
+                </div>
 
-                        <span class="tag is-warning is-light is-rounded">
-                            {{ student.accessRequests.length }}
-                        </span>
-                    </div>
+                <div class="right">
 
-                    <div class="right">
+                    <button class="button is-success is-small"
+                        :class="{ 'is-loading': loadingStudentsAccept.has(student.student_id) }"
+                        :disabled="loadingStudentsAccept.has(student.student_id)" @click.stop="acceptStudent(student)">
+                        Accept All
+                    </button>
 
-                        <button class="button is-success is-small"
-                            :class="{ 'is-loading': loadingStudentsAccept.has(student.student_id) }"
-                            :disabled="loadingStudentsAccept.has(student.student_id)"
-                            @click.stop="acceptStudent(student)">
-                            Accept All
+                    <button class="button is-danger is-small"
+                        :class="{ 'is-loading': loadingStudentsRefuse.has(student.student_id) }"
+                        :disabled="loadingStudentsRefuse.has(student.student_id)" @click.stop="refuseStudent(student)">
+                        Refuse All
+                    </button>
+
+                </div>
+            </nav>
+
+            <div v-if="expandedStudents.has(student.student_id)" class="mt-3">
+                <div v-for="req in student.accessRequests" :key="req.id"
+                    class="is-flex is-justify-content-space-between is-align-items-center  py-1 border-bottom">
+
+                    <p class="is-size-7 ml-5 has-text-white">
+                        📘 {{ req.subject_name }}
+                        <span class="has-text-grey">• {{ req.grade_name }}</span>
+                    </p>
+
+                    <div class="buttons">
+
+                        <button class="button is-success is-small is-rounded"
+                            :class="{ 'is-loading': loadingAccept.has(req.id) }" :disabled="loadingAccept.has(req.id)"
+                            @click="acceptRequest(req.id)">
+                            Accept
                         </button>
 
-                        <button class="button is-danger is-small"
-                            :class="{ 'is-loading': loadingStudentsRefuse.has(student.student_id) }"
-                            :disabled="loadingStudentsRefuse.has(student.student_id)"
-                            @click.stop="refuseStudent(student)">
-                            Refuse All
+                        <button class="button is-danger is-small is-rounded"
+                            :class="{ 'is-loading': loadingRefuse.has(req.id) }" :disabled="loadingRefuse.has(req.id)"
+                            @click="refuseRequest(req.id)">
+                            Refuse
                         </button>
 
-                    </div>
-                </nav>
-
-                <div v-if="expandedStudents.has(student.student_id)" class="mt-3">
-                    <div v-for="req in student.accessRequests" :key="req.id"
-                        class="is-flex is-justify-content-space-between is-align-items-center  py-1 border-bottom">
-
-                        <p class="is-size-7 ml-5 has-text-white">
-                            📘 {{ req.subject_name }}
-                            <span class="has-text-grey">• {{ req.grade_name }}</span>
-                        </p>
-
-                        <div class="buttons">
-
-                            <button class="button is-success is-small is-rounded"
-                                :class="{ 'is-loading': loadingAccept.has(req.id) }"
-                                :disabled="loadingAccept.has(req.id)" @click="acceptRequest(req.id)">
-                                Accept
-                            </button>
-
-                            <button class="button is-danger is-small is-rounded"
-                                :class="{ 'is-loading': loadingRefuse.has(req.id) }"
-                                :disabled="loadingRefuse.has(req.id)" @click="refuseRequest(req.id)">
-                                Refuse
-                            </button>
-
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-    </Layout>
+    </div>
 </template>
 
 <script setup>
@@ -82,12 +79,9 @@ import { ref, onMounted } from "vue";
 import api from "../api";
 import { computed } from "vue";
 import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/vue/24/outline";
-import Layout from "./common/Layout.vue";
 import { useCacheStore } from "../stores/cache";
+import Loader from "./common/Loader.vue";
 
-import { useRouter } from "vue-router";
-
-const router = useRouter();
 const requests = ref([]);
 const cache = useCacheStore();
 

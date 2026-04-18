@@ -67,8 +67,7 @@
     <p class="section-label mb-3">Demo courses</p>
     <div class="mb-5">
       <div v-if="courses.length">
-        <div v-for="course in courses" :key="course.id" class="course-row mb-2"
-          @click="$router.push({ name: 'myCourses' })">
+        <div v-for="course in courses" :key="course.id" class="course-row mb-2" @click="openDemo(course)">
           <div :class="['course-dot', course.colorClass]">{{ course.emoji }}</div>
           <div style="flex:1; min-width:0;">
             <p class="has-text-weight-semibold is-size-7 mb-0">{{ course.title }}</p>
@@ -80,10 +79,10 @@
         <div class="course-row course-row--dashed">
           <div class="course-dot" style="background:rgba(245,158,11,0.1);">➕</div>
           <div style="flex:1;">
-            <p class="is-size-7 has-text-weight-semibold mb-0">Want more courses?</p>
-            <p class="is-size-7 has-text-grey-light">'Browse by Grade' above for more</p>
+            <p class="is-size-7 has-text-weight-semibold mb-0">Looking for more lessons?</p>
+            <p class="is-size-7 has-text-grey-light">Pick your grade above and continue learning</p>
           </div>
-          <span class="course-tag course-tag--amber">Request</span>
+          <span class="course-tag course-tag--amber">Continue</span>
         </div>
       </div>
       <div v-else class="empty-container has-text-centered">
@@ -152,11 +151,43 @@
 
     </div>
 
+    <Transition name="fade">
+      <div v-if="selectedDemoVideo" class="video-modal" @click.self="closeDemo">
+
+        <div class="video-box glass-card">
+
+          <div class="video-header p-4 is-flex is-align-items-center">
+            <h3 class="has-text-white is-size-6">
+              {{ selectedDemoVideo.title }}
+            </h3>
+
+            <button class="close-btn ml-auto" @click="closeDemo">
+              ✕
+            </button>
+          </div>
+
+          <div class="video-container">
+
+            <!-- thumbnail -->
+            <div v-if="!isDemoPlaying" class="video-placeholder" @click="startDemoVideo">
+              <div class="play-overlay">▶</div>
+            </div>
+
+            <!-- iframe -->
+            <iframe v-else :src="demoVideoUrl" class="video-frame" frameborder="0"
+              allow="autoplay; fullscreen; picture-in-picture" allowfullscreen />
+
+          </div>
+
+        </div>
+
+      </div>
+    </Transition>
   </Layout>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import Layout from './common/Layout.vue';
 import { useRouter } from "vue-router";
 import { useCacheStore } from "../stores/cache";
@@ -170,6 +201,9 @@ const cacheStore = useCacheStore();
 const { grades } = storeToRefs(cacheStore);
 const loading = ref(false);
 
+const selectedDemoVideo = ref(null);
+const isDemoPlaying = ref(false);
+
 const announcement = ref({
   title: "New batch starting 15 July!",
   body: "Grade 9 & 10 Science — Limited seats. Contact Mr. Aditya to reserve yours."
@@ -181,6 +215,31 @@ const stats = ref([
   { value: "5★", label: "Rated" }
 ]);
 
+function openDemo(course) {
+  selectedDemoVideo.value = null;
+  isDemoPlaying.value = false;
+
+  // force re-render cycle
+  setTimeout(() => {
+    selectedDemoVideo.value = course;
+  }, 0);
+}
+
+function closeDemo() {
+  selectedDemoVideo.value = null;
+  isDemoPlaying.value = false;
+}
+
+function startDemoVideo() {
+  isDemoPlaying.value = true;
+  isVideoLoading.value = true;
+}
+
+const demoVideoUrl = computed(() => {
+  if (!selectedDemoVideo.value?.video) return '';
+
+  return `${selectedDemoVideo.value.video}?autoplay=1&muted=0`;
+});
 
 function selectGrade(grade) {
   let $gradeId = grade.id;
@@ -190,6 +249,28 @@ function selectGrade(grade) {
     params: { id: $gradeId }
   });
 }
+const courses = ref([
+  {
+    id: 1,
+    title: "Mathematics",
+    subject: "Grade 12",
+    meta: "Simultaneous Equations",
+    emoji: "📐",
+    colorClass: "cd-math",
+    tagClass: "",
+    video: "https://player.vimeo.com/video/1075679310?title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+  },
+  {
+    id: 2,
+    title: "Accounts",
+    subject: "Grade 10",
+    meta: "Double Entry",
+    emoji: "🔬",
+    colorClass: "cd-sci",
+    tagClass: "green",
+    video: "https://player.vimeo.com/video/820746971?h=f2f8ed7cf3"
+  }
+]);
 
 onMounted(async () => {
   loading.value = true;
@@ -201,10 +282,6 @@ onMounted(async () => {
   }
 });
 
-const courses = ref([
-  { id: 1, title: "Mathematics — Grade 10", subject: "Math", meta: "12 lessons · 3 remaining", emoji: "📐", colorClass: "cd-math", tagClass: "" },
-  { id: 2, title: "Physics Basics", subject: "Physics", meta: "8 lessons · In progress", emoji: "🔬", colorClass: "cd-sci", tagClass: "green" },
-]);
 </script>
 
 <style scoped>
@@ -585,5 +662,62 @@ const courses = ref([
 
 .section-label.section-secondary::after {
   background: rgba(245, 158, 11, 0.25);
+}
+
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.video-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+}
+
+.video-box {
+  width: 100%;
+  max-width: 850px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0f172a !important;
+
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .video-box {
+    width: 95%;
+    border-radius: 12px;
+  }
+}
+
+.video-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 </style>

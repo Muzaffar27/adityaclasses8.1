@@ -42,12 +42,14 @@ import Layout from './common/Layout.vue';
 /* tools */
 import LessonTool from "./tools/LessonTool.vue";
 import LessonList from "./Lesson/LessonList.vue";
+import AccessRequestPage from "./AccessRequestPage.vue";
+import PackageBuilder from "./PackageBuilder.vue";
 
 const tools = [
     { key: "announcement", label: "Announcement", icon: "📢" },
-    { key: "stats", label: "Stats", icon: "📊" },
     { key: "lessons", label: "Lessons", icon: "📚" },
-    { key: "grades", label: "Grades", icon: "🎓" },
+    { key: "access", label: "Student Access", icon: "👥" },
+    { key: "package", label: "Package", icon: "📂" }
 ];
 
 /* 🔥 NEW: central state */
@@ -59,7 +61,9 @@ const currentView = ref({
 /* component map */
 const toolMap = {
     lessons: LessonTool,
-    lessonList: LessonList
+    lessonList: LessonList,
+    access: AccessRequestPage,
+    package: PackageBuilder
 };
 
 /* active component */
