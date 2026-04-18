@@ -20,21 +20,43 @@ class LessonAccessController extends Controller
     {
         $userId = auth()->id();
 
-        DB::table('lesson_access')->updateOrInsert(
-            [
+        $incoming = collect($request->all())
+            ->unique(fn($item) => $item['subject_id'] . '-' . $item['grade_id']);
+
+        // 🔍 get already approved access
+        $existingApproved = DB::table('lesson_access')
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->get()
+            ->map(fn($item) => $item->subject_id . '-' . $item->grade_id)
+            ->toArray();
+
+        // ❌ remove approved ones from request
+        $filtered = $incoming->reject(function ($req) use ($existingApproved) {
+            return in_array($req['subject_id'] . '-' . $req['grade_id'], $existingApproved);
+        });
+
+        $data = $filtered->map(function ($req) use ($userId) {
+            return [
                 'user_id' => $userId,
-                'subject_id' => $request->subject_id,
-                'grade_id' => $request->grade_id,
-            ],
-            [
+                'subject_id' => $req['subject_id'],
+                'grade_id' => $req['grade_id'],
                 'status' => 'pending',
-                'updated_at' => now(),
                 'created_at' => now(),
-            ]
-        );
+                'updated_at' => now(),
+            ];
+        })->values()->toArray();
+
+        if (!empty($data)) {
+            DB::table('lesson_access')->upsert(
+                $data,
+                ['user_id', 'subject_id', 'grade_id'],
+                ['status', 'updated_at']
+            );
+        }
 
         return response()->json([
-            'message' => 'Request sent'
+            'message' => 'Request processed'
         ]);
     }
 

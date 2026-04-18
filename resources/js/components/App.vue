@@ -1,16 +1,15 @@
 <template>
     <div class="app-layout">
 
-        <nav class="navbar is-hidden-desktop has-background-dark is-fixed-top p-3 is-flex is-align-items-center">
+        <!-- <nav class="navbar is-hidden-desktop has-background-dark is-fixed-top p-3 is-flex is-align-items-center">
             <button class="button is-primary mr-3" @click="mobileMenuOpen = true">
                 <span class="icon">☰</span>
             </button>
-        </nav>
+        </nav> -->
 
-        <Sidebar :isOpen="mobileMenuOpen" @close="mobileMenuOpen = false" />
+        <!-- <Sidebar :isOpen="mobileMenuOpen" @close="mobileMenuOpen = false" /> -->
 
-        <main class="main-content">
-
+        <main>
             <router-view v-slot="{ Component }">
                 <transition name="fade" mode="out-in">
                     <component :is="Component" />
@@ -24,7 +23,7 @@
 <script setup>
 
 import { ref } from 'vue';
-import Sidebar from './Sidebar.vue';
+// import Sidebar from './Sidebar.vue';
 
 const mobileMenuOpen = ref(false);
 </script>

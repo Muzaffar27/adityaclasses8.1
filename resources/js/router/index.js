@@ -11,6 +11,7 @@ import AccessRequestPage from "../components/AccessRequestPage.vue";
 
 import lessonList from "../components/Lesson/LessonList.vue";
 import LessonManagePage from "../components/Lesson/LessonManagePage.vue";
+import { patchProp } from "vue";
 
 const routes = [
     {
@@ -70,7 +71,16 @@ const routes = [
         name: "profile",
         component: () => import("../components/Profile.vue"),
     },
-
+    {
+        path: "/package/:id",
+        name: "package",
+        component: () => import("../components/PackagePage.vue"),
+    },
+    {
+        path: "/createPackage",
+        name: "createPackage",
+        component: () => import("../components/PackageBuilder.vue"),
+    },
     {
         path: "/subject",
         name: "subject",

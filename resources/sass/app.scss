@@ -321,6 +321,22 @@ $link: $primary;
             box-shadow: 0 0 0 0 rgba(241, 70, 104, 0);
         }
     }
+
+    .card-pulse {
+        animation: cardPulse 1.8s infinite;
+    }
+    
+    @keyframes cardPulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 16px rgba(79, 70, 229, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+        }
+    }
     /* ── Bottom actions always stick to the bottom ── */
     .sidebar-bottom {
         margin-top: auto;
@@ -329,32 +345,6 @@ $link: $primary;
     }
 }
 
-/* ── Main content area ────────────────────────────────────────────────────── */
-.main-content {
-    margin-left: $sidebar-width;
-    min-height: 100vh;
-    transition: margin 0.3s ease;
-
-    @media screen and (max-width: 1023px) {
-        margin-left: 0;
-        padding-top: 60px;
-    }
-}
-
-html, body, .section, .main-content-wrapper {
-    background-color: hsl(221, 14%, 9%,1) !important;
-    color: hsl(0, 0%, 90%) !important;
-}
-
-/* Force Bulma surfaces */
-.section,
-.hero,
-.card,
-.box,
-.navbar,
-.container {
-    background-color: transparent !important;
-}
 
 /* ── Sidebar overlay (mobile) ─────────────────────────────────────────────── */
 .sidebar-overlay {
@@ -736,4 +726,71 @@ html, body, .section, .main-content-wrapper {
 
 .eye-icon:hover {
     color: #333;
+}
+
+.check-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* hide default */
+.check-pill input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* base box */
+.check-ui {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+/* hover */
+.check-pill:hover .check-ui {
+  border-color: rgba(79, 70, 229, 0.6);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* checked state */
+.check-pill input:checked + .check-ui {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+/* check icon */
+.check-ui::after {
+  content: "";
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.15s ease;
+}
+
+/* show checkmark */
+.check-pill input:checked + .check-ui::after {
+  transform: rotate(45deg) scale(1);
+}
+
+/* subtle click feedback */
+.check-pill:active .check-ui {
+  transform: scale(0.92);
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\GradeController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LessonAccessController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PackageController;
 use App\Models\Lesson;
 use Illuminate\Support\Facades\Route;
 
@@ -54,3 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/lesson-access/refuse-multiple', [LessonAccessController::class, 'refuseMultiple']);
     // Route::get('/lesson-access/count', [LessonAccessController::class, 'count']);
 });
+
+//Package routes
+Route::get('/packages', [PackageController::class, 'index']);
+Route::post('/packages/store', [PackageController::class, 'store']);

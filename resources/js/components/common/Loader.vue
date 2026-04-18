@@ -17,8 +17,8 @@ $primary: #4f46e5;
     justify-content: center;
     width: 100%;
     height: 100%;
-    /* Since .main-content has min-height: 100vh, we match it */
-    min-height: 80vh;
+
+    min-height: 150px;
     background: transparent;
 
     backdrop-filter: blur(4px);

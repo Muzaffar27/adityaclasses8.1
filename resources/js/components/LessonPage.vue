@@ -1,7 +1,7 @@
 <template>
     <Layout title="Lessons" :loading="loading">
 
-        <template #actions>
+        <!-- <template #actions>
             <div v-if="!loading">
                 <button v-if="hasAccess" class="button is-dark is-light is-rounded">
                     <span class="icon is-small mr-1">✅</span> Access
@@ -13,7 +13,7 @@
                     <span class="icon is-small mr-1">🔒</span> Request
                 </button>
             </div>
-        </template>
+        </template> -->
 
         <Transition name="fade">
             <div v-if="selectedLesson" class="video-modal" @click.self="closeLesson">
@@ -177,11 +177,40 @@ async function fetchLessons() {
         const { data } = await api.get("/lessons", {
             params: { subject_id: subjectId, grade_id: gradeId },
         });
-        lessons.value = data.lessons || [];
+
+        let rawLessons = data.lessons || [];
+
+        // ✅ SORT HERE
+        rawLessons.sort((a, b) => {
+            const getNum = (topic) => {
+                const match = topic?.match(/^(\d+)/);
+                return match ? parseInt(match[1]) : null;
+            };
+
+            const numA = getNum(a.topic);
+            const numB = getNum(b.topic);
+
+            // 1. no-number topics come first
+            if (numA === null && numB !== null) return -1;
+            if (numA !== null && numB === null) return 1;
+
+            // 2. both no-number → keep original order
+            if (numA === null && numB === null) return 0;
+
+            // 3. both numbered → sort ascending
+            return numA - numB;
+        });
+
+        lessons.value = rawLessons;
+
         hasAccess.value = data.access?.has_access || false;
         requestStatus.value = data.access?.status || null;
-    } catch (e) { console.error(e); }
-    finally { loading.value = false; }
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        loading.value = false;
+    }
 }
 
 const videoUrl = computed(() => {

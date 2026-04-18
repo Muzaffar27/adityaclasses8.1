@@ -164,7 +164,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';// adjust path to your Pinia auth store
+import { useAuthStore } from '../stores/auth';
 import { useCacheStore } from '../stores/cache';
 import GlassModal from './common/GlassModal.vue';
 import {
@@ -187,8 +187,7 @@ const cache = useCacheStore();
 
 const showLogoutModal = ref(false)
 const logoutLoading = ref(false)
-// const pendingCount = computed(() => cache.pendingReq);
-let interval = null;
+
 
 // ── User info ──────────────────────────────────────────────────────────────
 const user = computed(() => auth.user);
