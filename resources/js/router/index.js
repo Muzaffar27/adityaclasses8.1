@@ -17,7 +17,6 @@ const routes = [
         path: "/",
         name: "home",
         component: HomePage,
-        meta: { requiresAuth: true },
     },
     {
         path: "/register",
@@ -59,16 +58,19 @@ const routes = [
         path: "/myCourses",
         name: "myCourses",
         component: () => import("../components/MyCourse.vue"),
+        meta: { requiresAuth: true },
     },
     {
         path: "/students",
         name: "studentManagement",
         component: () => import("../components/StudentManagement.vue"),
+        meta: { requiresAuth: true },
     },
     {
         path: "/profile",
         name: "profile",
         component: () => import("../components/Profile.vue"),
+        meta: { requiresAuth: true },
     },
     {
         path: "/package/:id",
@@ -79,6 +81,7 @@ const routes = [
         path: "/createPackage",
         name: "createPackage",
         component: () => import("../components/PackageBuilder.vue"),
+        meta: { requiresAuth: true },
     },
     {
         path: "/tutorSpace",
@@ -100,11 +103,13 @@ const routes = [
         path: "/lessons/:subjectId/:gradeId",
         name: "lesson",
         component: LessonPage,
+        meta: { requiresAuth: true },
     },
     {
         path: "/request-access",
         name: "request-access",
         component: AccessRequestPage,
+        meta: { requiresAuth: true },
     },
     {
         path: "/:catchAll(.*)",

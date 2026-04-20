@@ -21,13 +21,13 @@
 
         <div class="header-side-right">
 
-          <div v-if="!isStudent" class="admin-toggle-bar mr-2 ">
+          <div v-if="auth.isAdmin || auth.isTutor" class="admin-toggle-bar mr-2 ">
             <button class="button is-small is-warning" @click=enterAdmin>
               Tutor Space
             </button>
           </div>
 
-          <div class="user-identity-chip">
+          <div v-if="auth.isLoggedIn" class="user-identity-chip">
 
             <span class="initials">{{ userInitials }}</span>
             <div class="online-indicator"></div>
@@ -60,7 +60,6 @@ import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
 const router = useRouter();
-const user = computed(() => auth.user);
 
 defineProps({
   title: String,
@@ -89,8 +88,6 @@ function enterAdmin() {
     name: "tutorSpace"
   });
 }
-
-const isStudent = computed(() => user.value?.role === 'student');
 
 </script>
 

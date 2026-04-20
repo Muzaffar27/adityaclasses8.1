@@ -44,6 +44,7 @@ import LessonTool from "./tools/LessonTool.vue";
 import LessonList from "./Lesson/LessonList.vue";
 import AccessRequestPage from "./AccessRequestPage.vue";
 import PackageBuilder from "./PackageBuilder.vue";
+import Announcement from "./Announcement.vue";
 
 const tools = [
     { key: "announcement", label: "Announcement", icon: "📢" },
@@ -63,7 +64,8 @@ const toolMap = {
     lessons: LessonTool,
     lessonList: LessonList,
     access: AccessRequestPage,
-    package: PackageBuilder
+    package: PackageBuilder,
+    announcement: Announcement
 };
 
 /* active component */

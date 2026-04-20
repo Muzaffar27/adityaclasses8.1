@@ -14,7 +14,9 @@
     <div class="columns is-mobile mb-5">
       <div class="column" v-for="stat in stats" :key="stat.label">
         <div class="stat-pill has-text-centered">
-          <p class="stat-num">{{ stat.value }}</p>
+          <p :class="stat.isText ? 'stat-text' : 'stat-num'">
+            {{ stat.value }}
+          </p>
           <p class="stat-lbl">{{ stat.label }}</p>
         </div>
       </div>
@@ -26,16 +28,13 @@
       <div class="learning-left">
         <p class="section-label section-primary mb-3">My Learning</p>
 
-        <div
+        <!-- ✅ LOGGED IN -->
+        <div v-if="auth.isLoggedIn"
           class="glass-card clickable-card star-card p-4 is-flex is-align-items-center is-justify-content-center has-text-centered"
           @click="$router.push({ name: 'myCourses' })">
-
           <div>
-
             <div class="mb-2">
-              <span class="tag is-primary is-light is-rounded is-medium">
-                ▶
-              </span>
+              <span class="tag is-primary is-light is-rounded is-medium">▶</span>
             </div>
 
             <p class="has-text-weight-semibold is-size-7 mb-1">
@@ -46,6 +45,25 @@
             </p>
           </div>
         </div>
+
+        <!-- 🚀 NOT LOGGED IN -->
+        <div v-else
+          class="glass-card clickable-card p-4 is-flex is-align-items-center is-justify-content-center has-text-centered"
+          @click="$router.push({ name: 'login' })">
+          <div>
+            <div class="mb-2">
+              <span class="tag is-warning is-light is-rounded is-medium">🔒</span>
+            </div>
+
+            <p class="has-text-weight-semibold is-size-7 mb-1">
+              Access Your Courses
+            </p>
+            <p class="is-size-7 has-text-grey-light">
+              Login to continue learning
+            </p>
+          </div>
+        </div>
+
       </div>
 
       <!-- RIGHT: Grades -->
@@ -64,7 +82,7 @@
     </div>
 
     <!-- Enrolled Courses -->
-    <p class="section-label mb-3">Demo courses</p>
+    <p class="section-label mb-3">Watch how lessons are explained before enrolling</p>
     <div class="mb-5">
       <div v-if="courses.length">
         <div v-for="course in courses" :key="course.id" class="course-row mb-2" @click="openDemo(course)">
@@ -90,8 +108,22 @@
       </div>
     </div>
 
+
+    <div v-if="!auth.isLoggedIn" class="glass-card p-5 has-text-centered mt-5">
+      <h3 class="title is-6 has-text-white mb-2">
+        Ready to Start Learning?
+      </h3>
+      <p class="is-size-7 has-text-grey-light mb-3">
+        Join now and get access to structured lessons and tutor support.
+      </p>
+
+      <button class="button is-primary is-rounded has-text-white" @click="$router.push({ name: 'login' })">
+        Create Account
+      </button>
+    </div>
+
     <!-- Info Cards -->
-    <p class="section-label mb-3">About Aditya Classes</p>
+    <p class="section-label mb-3 mt-5">About Aditya Classes</p>
     <div class="columns is-multiline">
 
       <div class="column is-12-mobile is-6-tablet is-4-desktop">
@@ -108,17 +140,16 @@
           <div class="info-icon ic-teal mb-3">👨‍🏫</div>
           <h3 class="title is-6 has-text-white mb-2">Your Tutor</h3>
           <p class="is-size-7 mb-1"><span class="contact-label">Name</span> Mr. Aditya</p>
-          <p class="is-size-7 mb-1"><span class="contact-label">Phone</span> +230 5XXX XXXX</p>
-          <p class="is-size-7"><span class="contact-label">Email</span> aditya@example.com</p>
+          <p class="is-size-7 mb-1"><span class="contact-label">Phone</span> +230 5947 3797</p>
+          <p class="is-size-7"><span class="contact-label">Email</span> adityaera22@mail.com</p>
         </div>
       </div>
 
       <div class="column is-12-mobile is-12-tablet is-4-desktop">
         <div class="glass-card p-4">
           <div class="info-icon ic-amber mb-3">📍</div>
-          <h3 class="title is-6 has-text-white mb-2">Schedule & Location</h3>
-          <p class="is-size-7 has-text-grey-light">Rose Hill & online · Sat 9am–1pm · Sun 2pm–6pm. Recordings available
-            within 24 hrs for missed sessions.</p>
+          <h3 class="title is-6 has-text-white mb-2">Location</h3>
+          <p class="is-size-7 has-text-grey-light">Quartier-Militaire & online · Recordings available</p>
         </div>
       </div>
 
@@ -126,8 +157,7 @@
         <div class="glass-card p-4">
           <div class="info-icon ic-indigo mb-3">📚</div>
           <h3 class="title is-6 has-text-white mb-2">Subjects</h3>
-          <p class="is-size-7 has-text-grey-light">Maths · Physics · Chemistry · Biology · French · English · Accounting
-            · Economics</p>
+          <p class="is-size-7 has-text-grey-light">Maths · Add Maths · Accounting</p>
         </div>
       </div>
 
@@ -135,7 +165,7 @@
         <div class="glass-card p-4">
           <div class="info-icon ic-pink mb-3">💬</div>
           <h3 class="title is-6 has-text-white mb-2">Need Help?</h3>
-          <p class="is-size-7 has-text-grey-light">WhatsApp Mr. Aditya or use the Request Access form. All inquiries
+          <p class="is-size-7 has-text-grey-light">WhatsApp Mr Aditya. All inquiries
             answered within 24 hrs.</p>
         </div>
       </div>
@@ -191,28 +221,36 @@ import { ref, onMounted, computed } from "vue";
 import Layout from './common/Layout.vue';
 import { useRouter } from "vue-router";
 import { useCacheStore } from "../stores/cache";
+import { useAuthStore } from "../stores/auth";
 
 import { storeToRefs } from "pinia";
 import Loader from "./common/Loader.vue";
 
 const router = useRouter();
-const cacheStore = useCacheStore();
 
-const { grades } = storeToRefs(cacheStore);
+const cache = useCacheStore();
+const auth = useAuthStore();
+
+const { grades } = storeToRefs(cache);
 const loading = ref(false);
 
 const selectedDemoVideo = ref(null);
 const isDemoPlaying = ref(false);
 
+// const announcement = ref({
+//   title: "New batch starting 15 July!",
+//   body: "Grade 9 & 10 Science — Limited seats. Contact Mr. Aditya to reserve yours."
+// });
+
 const announcement = ref({
-  title: "New batch starting 15 July!",
-  body: "Grade 9 & 10 Science — Limited seats. Contact Mr. Aditya to reserve yours."
+  title: "Official Platform Launch",
+  body: "The new learning platform is now live. If you experience any issues, kindly send a screenshot or error details via WhatsApp so they can be resolved promptly."
 });
 
 const stats = ref([
-  { value: "120+", label: "Students" },
-  { value: "8", label: "Subjects" },
-  { value: "5★", label: "Rated" }
+  { value: "150+", label: "Active Students", isText: false },
+  { value: "Maths • Add Maths • Accounts", label: "Core Subjects", isText: true },
+  { value: "Exam Ready", label: "Full Coverage", isText: true }
 ]);
 
 function openDemo(course) {
@@ -276,7 +314,7 @@ onMounted(async () => {
   loading.value = true;
 
   try {
-    await cacheStore.fetchAllMetadata();
+    await cache.fetchAllMetadata();
   } finally {
     loading.value = false;
   }
@@ -343,12 +381,25 @@ onMounted(async () => {
   padding: 12px 8px;
 }
 
+/* BIG KPI NUMBERS */
 .stat-num {
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 1.4rem;
+  font-weight: 650;
   color: #a5b4fc;
   margin: 0 0 2px;
   line-height: 1;
+}
+
+/* VALUE / MESSAGE */
+.stat-text {
+  font-size: 0.85rem;
+  /* 👈 smaller is important */
+  font-weight: 600;
+  /* 👈 not same as numbers */
+  color: #c7d2fe;
+  /* slightly softer */
+  margin: 0 0 2px;
+  line-height: 1.3;
 }
 
 .stat-lbl {
