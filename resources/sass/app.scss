@@ -794,3 +794,94 @@ $link: $primary;
 .check-pill:active .check-ui {
   transform: scale(0.92);
 }
+
+
+.ann-default {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: #a5b4fc;
+  }
+  
+  .ann-success {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: #86efac;
+  }
+  
+  .ann-danger {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: #fca5a5;
+  }
+  
+  .ann-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+  }
+
+  //custom checkbox css 
+  .custom-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  
+    cursor: pointer;
+    user-select: none;
+  
+    font-size: 0.75rem;
+    color: #cbd5e1;
+  }
+  
+  /* hide default checkbox */
+  .custom-checkbox input {
+    display: none;
+  }
+  
+  /* fake box */
+  .checkmark {
+    width: 18px;
+    height: 18px;
+  
+    border-radius: 6px;
+  
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    transition: all 0.2s ease;
+  }
+  
+  /* check icon */
+  .checkmark::after {
+    content: "✔";
+    font-size: 12px;
+    color: transparent;
+    transform: scale(0.6);
+    transition: all 0.2s ease;
+  }
+  
+  /* checked state */
+  .custom-checkbox input:checked + .checkmark {
+    background: rgba(99, 102, 241, 0.25);
+    border-color: #6366f1;
+  }
+  
+  .custom-checkbox input:checked + .checkmark::after {
+    color: #a5b4fc;
+    transform: scale(1);
+  }
+  
+  /* label text */
+  .label-text {
+    transition: color 0.2s ease;
+  }
+  
+  /* optional: highlight when active */
+  .custom-checkbox input:checked ~ .label-text {
+    color: #a5b4fc;
+    font-weight: 600;
+  }

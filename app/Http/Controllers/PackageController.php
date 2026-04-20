@@ -78,6 +78,46 @@ class PackageController extends Controller
         });
     }
 
+    public function update(Request $request, $id)
+    {
+        $package = Package::findOrFail($id);
+
+        DB::transaction(function () use ($request, $package) {
+
+            $package->update([
+                'name' => $request->name,
+                'grade_id' => $request->grade_id,
+                'subject_id' => $request->subject_id,
+                'base_price' => $request->base_price,
+            ]);
+
+            PackageItem::where('package_id', $package->id)->delete();
+
+            $total = (float) $request->base_price; // 👈 start with base
+
+            foreach ($request->items as $item) {
+                foreach ($item['subjects'] as $subjectId) {
+
+                    PackageItem::create([
+                        'package_id' => $package->id,
+                        'price' => $item['price'],
+                        'grade_id' => $item['grade_id'],
+                        'subject_id' => $subjectId,
+                    ]);
+                }
+
+                $total += (float) $item['price']; // 👈 add item price once per item
+            }
+
+            // ✅ THIS WAS MISSING
+            $package->update([
+                'total_price' => $total
+            ]);
+        });
+
+        return response()->json($package->load('items'));
+    }
+
     public function index(Request $request)
     {
         $request->validate([
@@ -98,5 +138,12 @@ class PackageController extends Controller
     public function show($id)
     {
         return Package::with('items')->findOrFail($id);
+    }
+
+    public function adminIndex()
+    {
+        return Package::with(['subject', 'items.subject', 'items'])
+            ->orderBy('id', 'desc')
+            ->get();
     }
 }

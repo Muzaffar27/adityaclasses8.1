@@ -2,12 +2,11 @@
   <Layout title="Home" :showBack="false">
 
     <!-- Announcement -->
-    <div class="announcement-bar mb-5" v-if="announcement">
+    <div v-if="announcement?.enabled" class="announcement-bar mb-5">
       <span class="ann-icon">📢</span>
       <div>
         <p class="ann-title">{{ announcement.title }}</p>
         <p class="ann-body">{{ announcement.body }}</p>
-        <!-- <p class="ann-paragraph">{{ announcement.paragraph }}</p> -->
       </div>
     </div>
 
@@ -223,6 +222,7 @@ import Layout from './common/Layout.vue';
 import { useRouter } from "vue-router";
 import { useCacheStore } from "../stores/cache";
 import { useAuthStore } from "../stores/auth";
+import api from "../api";
 
 import { storeToRefs } from "pinia";
 import Loader from "./common/Loader.vue";
@@ -238,15 +238,19 @@ const loading = ref(false);
 const selectedDemoVideo = ref(null);
 const isDemoPlaying = ref(false);
 
-// const announcement = ref({
-//   title: "New batch starting 15 July!",
-//   body: "Grade 9 & 10 Science — Limited seats. Contact Mr. Aditya to reserve yours."
-// });
+const announcement = ref(null);
 
-const announcement = ref({
-  title: "Official Platform Launch",
-  body: "The new learning platform is now live. If you experience any issues, kindly send a screenshot or error details via WhatsApp so they can be resolved promptly.",
-  // paragraph: "🛑 Package request is currently being processed. Please wait before submitting package request."
+const announcementClass = computed(() => {
+  switch (announcement.value?.type) {
+    case "success":
+      return "ann-success";
+    case "danger":
+      return "ann-danger";
+    case "warning":
+      return "ann-warning";
+    default:
+      return "ann-default";
+  }
 });
 
 const stats = ref([
@@ -317,6 +321,10 @@ onMounted(async () => {
 
   try {
     await cache.fetchAllMetadata();
+
+    const res = await api.get("/announcement");
+    announcement.value = res.data;
+
   } finally {
     loading.value = false;
   }

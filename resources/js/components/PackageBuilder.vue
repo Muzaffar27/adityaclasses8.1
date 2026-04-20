@@ -3,36 +3,54 @@
 
         <!-- HEADER -->
         <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+
             <div>
-                <h1 class="title is-5 has-text-white mb-1">Create Package</h1>
-                <p class="has-text-grey is-size-7">Bundle subjects into packages</p>
+                <h1 class="title is-5 has-text-white mb-1">
+                    {{ isEdit ? "Edit Package" : "Create Package" }}
+                </h1>
+                <p class="has-text-grey is-size-7">
+                    Bundle subjects into structured packages
+                </p>
             </div>
 
-            <button class="login-btn action-btn px-5" style="max-width: 180px;" @click="submit">
-                + Create
+            <button class="login-btn action-btn px-5" style="max-width: 85px;" @click="submit" :disabled="loading">
+                <span v-if="!loading">
+                    {{ isEdit ? "Update" : "Create" }}
+                </span>
+                <span v-else>
+                    Loading..
+                </span>
             </button>
+
+
         </div>
 
-        <!-- SINGLE CARD -->
+        <!-- CARD -->
         <div class="glass-card compact-card p-4">
 
-            <!-- ROW 1 -->
+            <!-- =========================
+                 MAIN PACKAGE INFO (KEEP ALL)
+                 ========================= -->
             <div class="columns is-mobile is-variable is-2 mb-2">
+
+                <!-- NAME -->
                 <div class="column is-6">
                     <label class="custom-label">Package Name</label>
                     <input class="input custom-input" v-model="form.name" />
                 </div>
 
+                <!-- MAIN GRADE (✔ RESTORED) -->
                 <div class="column is-3">
                     <label class="custom-label">Package Grade</label>
                     <select v-model="form.grade_id" class="input custom-input">
-                        <option :value="null">Grade</option>
+                        <option :value="null">Select Grade</option>
                         <option v-for="g in grades" :key="g.id" :value="g.id">
                             {{ g.name }}
                         </option>
                     </select>
                 </div>
 
+                <!-- MAIN SUBJECT (✔ RESTORED) -->
                 <div class="column is-3">
                     <label class="custom-label">Package Subject</label>
                     <select v-model="form.subject_id" class="input custom-input">
@@ -43,24 +61,28 @@
                     </select>
                 </div>
 
-                <div class="column is-3">
-                    <label class="custom-label">Base Rs</label>
+                <!-- BASE PRICE -->
+                <!-- <div class="column is-3">
+                    <label class="custom-label">Base Price (Rs)</label>
                     <input class="input custom-input" type="number" v-model="form.base_price" />
-                </div>
+                </div> -->
+
             </div>
 
             <hr class="mini-divider" />
 
-            <!-- ROW 2 -->
+            <!-- =========================
+                 ITEM CREATOR
+                 ========================= -->
             <div class="is-flex is-gap-2 is-align-items-end mb-2">
 
-                <div style="flex: 1;">
-                    <label class="custom-label">Price</label>
+                <div style="flex:1;">
+                    <label class="custom-label">Item Price</label>
                     <input class="input custom-input" type="number" v-model="newItem.price" />
                 </div>
 
-                <div style="flex: 2;">
-                    <label class="custom-label">Grade</label>
+                <div style="flex:2;">
+                    <label class="custom-label">Grade Override</label>
                     <select v-model="newItem.grade_id" class="input custom-input">
                         <option :value="null">Default</option>
                         <option v-for="g in grades" :key="g.id" :value="g.id">
@@ -69,60 +91,65 @@
                     </select>
                 </div>
 
-                <button class="button is-primary is-small" style="height: 34px;" :disabled="!newItem.subjects.length"
-                    @click="addItem">
-                    Add
+                <button class="button is-primary is-small has-text-white" style="height:34px;"
+                    :disabled="!newItem.subjects.length" @click="handleItemSave">
+                    {{ editingIndex === null ? "Add" : "Update" }}
                 </button>
 
             </div>
 
-            <!-- SUBJECTS (compact row) -->
+            <!-- SUBJECTS -->
             <div class="subjects-row mb-2">
                 <label v-for="s in subjects" :key="s.id" class="subject-pill-glass"
                     :class="{ 'is-active': newItem.subjects.includes(s.id) }">
-
-                    <input type="checkbox" :value="s.id" v-model="newItem.subjects" />
+                    <input type="radio" name="single-subject" :value="s.id" v-model="singleSubject"
+                        @change="selectSubject(s.id)" />
                     <span>{{ s.name }}</span>
                 </label>
             </div>
 
             <hr class="mini-divider" />
 
-            <!-- SUMMARY INLINE -->
-            <div class="summary-inline">
+            <div style="flex:1;">
+                <label class="custom-label">Click on an item to modify the Price, Grade or Subject</label>
+            </div>
+            <!-- =========================
+                 ITEMS LIST
+                 ========================= -->
+            <div class="items-mini is-clickable">
 
-                <div v-if="form.items.length === 0" class="has-text-grey is-size-7">
-                    No items yet
-                </div>
+                <div v-for="(item, index) in form.items" :key="index" class="item-mini"
+                    :class="{ editing: editingIndex === index }" @click="loadItem(index)">
 
-                <div v-else class="items-mini">
+                    <!-- PRICE -->
+                    <div class="is-flex is-flex-direction-column">
+                        <strong class="price">Rs {{ item.price }}</strong>
 
-                    <div v-for="(item, index) in form.items" :key="index" class="item-mini">
-
-                        <div class="is-flex is-flex-direction-column">
-                            <strong class="price">Rs {{ item.price }}</strong>
-                            <span v-if="item.grade_id" class="has-text-grey is-size-7" style="font-size: 0.6rem;">
-                                {{ getGradeName(item.grade_id) }}
-                            </span>
-                        </div>
-
-                        <div class="subjects">
-                            <span v-for="s in item.subjects" :key="s" class="tag is-dark-accent is-">
-                                {{ getSubjectName(s) }}
-                            </span>
-                        </div>
-
-                        <button class="delete-btn" @click="removeItem(index)">✕</button>
-
+                        <span v-if="item.grade_id" class="has-text-grey is-size-7" style="font-size:0.6rem;">
+                            {{ getGradeName(item.grade_id) }}
+                        </span>
                     </div>
 
+                    <!-- SUBJECTS -->
+                    <div class="subjects">
+                        <span v-for="s in item.subjects" :key="s" class="tag is-dark-accent">
+                            {{ getSubjectName(s) }}
+                        </span>
+                    </div>
+
+                    <!-- DELETE -->
+                    <button class="delete-btn" @click.stop="removeItem(index)">
+                        ✕
+                    </button>
+
                 </div>
 
-                <div class="total-bar mt-2">
-                    <span>Total</span>
-                    <strong>Rs {{ total }}</strong>
-                </div>
+            </div>
 
+            <!-- TOTAL -->
+            <div class="total-bar mt-2">
+                <span>Total</span>
+                <strong>Rs {{ total }}</strong>
             </div>
 
         </div>
@@ -138,57 +165,147 @@ import { storeToRefs } from "pinia";
 const cacheStore = useCacheStore();
 const { subjects, grades } = storeToRefs(cacheStore);
 
+const props = defineProps({
+    editPackage: Object
+});
+
+const isEdit = computed(() => !!props.editPackage);
+const editingIndex = ref(null);
+const singleSubject = ref(null);
+const loading = ref(false);
+
+/* =========================
+   FULL PACKAGE MODEL (RESTORED)
+   ========================= */
 const form = ref({
     name: "",
-    grade_id: null,
-    subject_id: null,
+    grade_id: null,     // ✔ MAIN PACKAGE GRADE
+    subject_id: null,   // ✔ MAIN PACKAGE SUBJECT
     base_price: 0,
-    items: [],
+    items: []
 });
 
 const newItem = ref({
     price: 0,
     subjects: [],
-    grade_id: null,
+    grade_id: null
 });
 
+/* =========================
+   TOTAL
+   ========================= */
 const total = computed(() => {
-    let sum = Number(form.value.base_price);
-    form.value.items.forEach(i => sum += Number(i.price));
+    let sum = Number(form.value.base_price || 0);
+
+    form.value.items.forEach(i => {
+        sum += Number(i.price || 0);
+    });
+
     return sum;
 });
 
-function addItem() {
-    if (!form.value.grade_id) return alert("Select grade first");
-    if (!newItem.value.subjects.length) return alert("Select subjects");
+/* =========================
+   ITEM SAVE (ADD / EDIT)
+   ========================= */
+function handleItemSave() {
 
-    form.value.items.push({
-        type: "subject",
+    if (!form.value.grade_id) {
+        return alert("Select package grade");
+    }
+
+    if (!form.value.subject_id) {
+        return alert("Select package subject");
+    }
+
+    if (!newItem.value.subjects.length) {
+        return alert("Select item subjects");
+    }
+
+    const payload = {
         price: newItem.value.price,
         grade_id: newItem.value.grade_id,
         subjects: [...newItem.value.subjects],
-    });
+        type: "subject"
+    };
 
-    newItem.value = { price: 0, subjects: [], grade_id: null };
-}
-
-function removeItem(index) {
-    form.value.items.splice(index, 1);
-}
-
-async function submit() {
-    if (!form.value.subject_id) {
-        return alert("Select main subject for package");
+    if (editingIndex.value !== null) {
+        form.value.items[editingIndex.value] = payload;
+        editingIndex.value = null;
+    } else {
+        form.value.items.push(payload);
     }
 
+    resetItem();
+}
+
+function selectSubject(id) {
+    singleSubject.value = id;
+    newItem.value.subjects = [id]; // FORCE SINGLE SUBJECT ONLY
+}
+
+/* =========================
+   EDIT ITEM
+   ========================= */
+function loadItem(index) {
+    const item = form.value.items[index];
+
+    newItem.value = {
+        price: item.price,
+        grade_id: item.grade_id,
+        subjects: [...item.subjects]
+    };
+
+    singleSubject.value = item.subjects[0] || null;
+
+    editingIndex.value = index;
+}
+/* =========================
+   DELETE
+   ========================= */
+function removeItem(index) {
+    form.value.items.splice(index, 1);
+
+    if (editingIndex.value === index) {
+        resetItem();
+    }
+}
+
+/* =========================
+   RESET
+   ========================= */
+function resetItem() {
+    newItem.value = {
+        price: 0,
+        subjects: [],
+        grade_id: null
+    };
+    editingIndex.value = null;
+}
+
+/* =========================
+   SUBMIT
+   ========================= */
+async function submit() {
+    loading.value = true;
+
     try {
-        await api.post("/packages/store", form.value);
-        alert("Package created!");
+        if (isEdit.value) {
+            await api.put(`/packages/update/${props.editPackage.id}`, form.value);
+        } else {
+            await api.post("/packages/store", form.value);
+        }
+        alert("Saved!");
     } catch (e) {
         console.error(e);
     }
+    finally {
+        loading.value = false;
+    }
 }
 
+/* =========================
+   HELPERS
+   ========================= */
 function getSubjectName(id) {
     return subjects.value.find(s => s.id === id)?.name || id;
 }
@@ -197,11 +314,33 @@ function getGradeName(id) {
     return grades.value.find(g => g.id === id)?.name || id;
 }
 
+/* =========================
+   INIT EDIT MODE
+   ========================= */
 onMounted(async () => {
     await cacheStore.fetchAllMetadata();
+
+    if (props.editPackage) {
+
+        form.value = {
+            name: props.editPackage.name,
+            grade_id: props.editPackage.grade_id,     // ✔ RESTORED
+            subject_id: props.editPackage.subject_id, // ✔ RESTORED
+            base_price: props.editPackage.base_price,
+            items: []
+        };
+
+        props.editPackage.items.forEach(i => {
+            form.value.items.push({
+                price: i.price,
+                grade_id: i.grade_id,
+                subjects: [i.subject_id],
+                type: "subject"
+            });
+        });
+    }
 });
 </script>
-
 
 <style scoped>
 .package-container {
@@ -287,7 +426,9 @@ onMounted(async () => {
 }
 
 .subject-pill-glass:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(15, 15, 20, 0.55);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .subject-pill-glass.is-active {
@@ -327,6 +468,14 @@ onMounted(async () => {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
     gap: 10px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.item-mini:hover {
+    transform: translateY(-4px);
+    background: rgba(15, 15, 20, 0.55);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .item-mini .is-size-7 {

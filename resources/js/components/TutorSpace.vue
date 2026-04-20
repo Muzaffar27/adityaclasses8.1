@@ -45,17 +45,19 @@ import LessonList from "./Lesson/LessonList.vue";
 import AccessRequestPage from "./AccessRequestPage.vue";
 import PackageBuilder from "./PackageBuilder.vue";
 import Announcement from "./Announcement.vue";
+import PackageList from "./PackageList.vue";
 
 const tools = [
     { key: "announcement", label: "Announcement", icon: "📢" },
     { key: "lessons", label: "Lessons", icon: "📚" },
     { key: "access", label: "Student Access", icon: "👥" },
-    { key: "package", label: "Package", icon: "📂" }
+    { key: "package", label: "Package", icon: "📂" },
+    { key: "packageList", label: "Package List", icon: "📦" }
 ];
 
 /* 🔥 NEW: central state */
 const currentView = ref({
-    name: "lessons",
+    name: "announcement",
     props: {}
 });
 
@@ -65,6 +67,7 @@ const toolMap = {
     lessonList: LessonList,
     access: AccessRequestPage,
     package: PackageBuilder,
+    packageList: PackageList,
     announcement: Announcement
 };
 

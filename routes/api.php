@@ -7,7 +7,7 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LessonAccessController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PackageController;
-use App\Models\Lesson;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 //Auth
@@ -59,3 +59,31 @@ Route::middleware('auth:sanctum')->group(function () {
 //Package routes
 Route::get('/packages', [PackageController::class, 'index']);
 Route::post('/packages/store', [PackageController::class, 'store']);
+Route::put('/packages/update/{id}', [PackageController::class, 'update']);
+Route::get('/packages/admin', [PackageController::class, 'adminIndex']);
+
+
+//announcement 
+Route::get('/announcement', function () {
+    $path = config_path('announcement.json');
+
+    if (!file_exists($path)) {
+        return response()->json([
+            "enabled" => false
+        ]);
+    }
+
+    return response()->json(
+        json_decode(file_get_contents($path), true)
+    );
+});
+
+Route::post('/announcement/save', function (Request $request) {
+
+    file_put_contents(
+        config_path('announcement.json'),
+        json_encode($request->all(), JSON_PRETTY_PRINT)
+    );
+
+    return response()->json(["status" => "saved"]);
+});
