@@ -7,7 +7,7 @@
       <div>
         <p class="ann-title">{{ announcement.title }}</p>
         <p class="ann-body">{{ announcement.body }}</p>
-        <p class="ann-paragraph">{{ announcement.paragraph }}</p>
+        <!-- <p class="ann-paragraph">{{ announcement.paragraph }}</p> -->
       </div>
     </div>
 
@@ -246,7 +246,7 @@ const isDemoPlaying = ref(false);
 const announcement = ref({
   title: "Official Platform Launch",
   body: "The new learning platform is now live. If you experience any issues, kindly send a screenshot or error details via WhatsApp so they can be resolved promptly.",
-  paragraph: "🛑 Package request is currently being processed. Please wait before submitting package request."
+  // paragraph: "🛑 Package request is currently being processed. Please wait before submitting package request."
 });
 
 const stats = ref([
