@@ -6,7 +6,7 @@ import App from "./components/App.vue";
 import "../sass/app.scss";
 import { useAuthStore } from "./stores/auth";
 
-document.documentElement.classList.add("theme-dark");
+// document.documentElement.classList.add("theme-dark");
 
 const app = createApp(App);
 const pinia = createPinia();
