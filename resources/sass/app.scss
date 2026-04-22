@@ -6,9 +6,9 @@ $link: $primary;
 // 2. Import Bulma
 @import "bulma/bulma";
 
-// html.theme-dark {
-//     color-scheme: dark;
-// }
+html.theme-dark {
+    color-scheme: dark;
+}
 
 :root {
     --bulma-primary-h: 235deg;
