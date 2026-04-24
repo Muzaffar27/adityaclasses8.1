@@ -3,8 +3,8 @@
     "file": "assets/GlassModal-B6BmS1dc.css",
     "src": "_GlassModal-!~{008}~.js"
   },
-  "_GlassModal-D-bQsYSX.js": {
-    "file": "assets/GlassModal-D-bQsYSX.js",
+  "_GlassModal-dnyhY510.js": {
+    "file": "assets/GlassModal-dnyhY510.js",
     "name": "GlassModal",
     "imports": [
       "resources/js/app.js"
@@ -13,12 +13,24 @@
       "assets/GlassModal-B6BmS1dc.css"
     ]
   },
+  "public/images/home/1.jpg": {
+    "file": "assets/1-CyBtzJc2.jpg",
+    "src": "public/images/home/1.jpg"
+  },
+  "public/images/home/2.jpg": {
+    "file": "assets/2-CEBYQyF6.jpg",
+    "src": "public/images/home/2.jpg"
+  },
+  "public/images/home/3.jpg": {
+    "file": "assets/3-B1jaAjpi.jpg",
+    "src": "public/images/home/3.jpg"
+  },
   "public/menu_logo.png": {
     "file": "assets/menu_logo-MfA_J7Od.png",
     "src": "public/menu_logo.png"
   },
   "resources/js/app.js": {
-    "file": "assets/app-CRkMMk3g.js",
+    "file": "assets/app-Dl_S-z2b.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -31,14 +43,17 @@
       "resources/js/components/TutorSpace.vue"
     ],
     "css": [
-      "assets/app-CMai-AsP.css"
+      "assets/app-Cflw4uIA.css"
     ],
     "assets": [
-      "assets/menu_logo-MfA_J7Od.png"
+      "assets/menu_logo-MfA_J7Od.png",
+      "assets/1-CyBtzJc2.jpg",
+      "assets/2-CEBYQyF6.jpg",
+      "assets/3-B1jaAjpi.jpg"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-DPL15WP1.js",
+    "file": "assets/MyCourse-04R-EKl8.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -50,7 +65,7 @@
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-C553uDyz.js",
+    "file": "assets/PackageBuilder-DxaPUwtv.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -62,7 +77,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-k5y92j1_.js",
+    "file": "assets/PackagePage-DitdYm_Q.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -74,33 +89,33 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-CNQyJJwd.js",
+    "file": "assets/Profile-DNvpqFhr.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_GlassModal-D-bQsYSX.js"
+      "_GlassModal-dnyhY510.js"
     ],
     "css": [
       "assets/Profile-DoDIjq7R.css"
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-C-uEkL2K.js",
+    "file": "assets/StudentManagement-D7v1qVnt.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_GlassModal-D-bQsYSX.js"
+      "_GlassModal-dnyhY510.js"
     ],
     "css": [
       "assets/StudentManagement-DCjo2CWd.css"
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-BN8h9JJW.js",
+    "file": "assets/TutorSpace-wU_8a-HE.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,
