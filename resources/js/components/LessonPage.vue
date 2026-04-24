@@ -32,14 +32,14 @@
                     <div class="video-container">
 
                         <!-- THUMBNAIL FIRST -->
-                        <div v-if="!isPlaying" class="video-thumbnail" @click="startVideo">
+                        <!-- <div v-if="!isPlaying" class="video-thumbnail" @click="startVideo">
                             <img :src="selectedLesson?.thumbnail || getVimeoThumbnail(selectedLesson?.vimeo_url)" />
                             <div class="play-overlay">▶</div>
-                        </div>
+                        </div> -->
 
                         <!-- LOAD IFRAME ONLY AFTER CLICK -->
-                        <iframe v-else :src="videoUrl" frameborder="0" allow="autoplay; fullscreen" allowfullscreen
-                            class="video-frame" @load="onVideoLoaded" />
+                        <iframe v-if="selectedLesson" :src="videoUrl" frameborder="0" allow="autoplay; fullscreen"
+                            allowfullscreen class="video-frame" @load="onVideoLoaded" />
 
                         <div v-if="isVideoLoading" class="video-loading">
                             <div class="loader"></div>
@@ -101,7 +101,7 @@
             </div>
         </div>
 
-        <div v-if="totalPages > 1" class="pagination-controls pagination-wrapper mt-5">
+        <!-- <div v-if="totalPages > 1" class="pagination-controls pagination-wrapper mt-5">
 
             <button class="button is-small" @click="prevPage" :disabled="currentPage === 1">
                 Prev
@@ -128,7 +128,7 @@
             <button class="button is-small" @click="nextPage" :disabled="currentPage === totalPages">
                 Next
             </button>
-        </div>
+        </div> -->
 
 
 
@@ -159,15 +159,19 @@ const selectedLesson = ref(null);
 const openTopics = ref({});
 const isPlaying = ref(false);
 
-const {
-    paginatedTopics,
-    currentPage,
-    totalPages,
-    visiblePages,
-    goToPage,
-    nextPage,
-    prevPage
-} = Pagination(lessons, 7, { type: 'grouped' });
+// const {
+//     paginatedTopics,
+//     currentPage,
+//     totalPages,
+//     visiblePages,
+//     goToPage,
+//     nextPage,
+//     prevPage
+// } = Pagination(lessons, 7, { type: 'grouped' });
+
+const paginatedTopics = computed(() => {
+    return groupLessons(lessons.value);
+});
 
 onMounted(fetchLessons);
 
@@ -222,9 +226,9 @@ function toggleTopic(topic) {
     openTopics.value[topic] = !openTopics.value[topic];
 }
 
-watch(lessons, () => {
-    currentPage.value = 1;
-});
+// watch(lessons, () => {
+//     currentPage.value = 1;
+// });
 
 const isTopicOpen = (topic) => openTopics.value[topic] === true;
 
@@ -238,15 +242,27 @@ function openLesson(lesson) {
     img.src = lesson.thumbnail || '';
 }
 
+function groupLessons(list) {
+    const map = {};
+
+    list.forEach((lesson) => {
+        if (!map[lesson.topic]) {
+            map[lesson.topic] = [];
+        }
+        map[lesson.topic].push(lesson);
+    });
+
+    return Object.keys(map).map(topic => ({
+        topic,
+        lessons: map[topic]
+    }));
+}
+
 function closeLesson() {
     selectedLesson.value = null;
     isPlaying.value = false;
 }
 
-function startVideo() {
-    isPlaying.value = true;
-    isVideoLoading.value = true;
-}
 async function requestAccess() {
     requestLoading.value = true;
     try {

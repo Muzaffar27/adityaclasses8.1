@@ -10,16 +10,30 @@
       </div>
     </div>
 
-    <!-- Stats Row -->
-    <div class="columns is-mobile mb-5">
-      <div class="column" v-for="stat in stats" :key="stat.label">
-        <div class="stat-pill has-text-centered">
-          <p :class="stat.isText ? 'stat-text' : 'stat-num'">
-            {{ stat.value }}
-          </p>
-          <p class="stat-lbl">{{ stat.label }}</p>
+    <!-- Student Showcase Row -->
+    <div class="hero-students mb-5">
+
+      <!-- LEFT BIG IMAGE -->
+      <div class="hero-main">
+        <img src="/public/images/home/1.jpg" />
+
+        <div class="hero-overlay">
+          <p class="hero-title">Master Your Subjects</p>
+          <p class="hero-sub">Structured learning built for real understanding</p>
         </div>
       </div>
+
+      <!-- RIGHT STACK -->
+      <div class="hero-side">
+        <div class="hero-small">
+          <img src="/public/images/home/2.jpg" />
+        </div>
+
+        <div class="hero-small">
+          <img src="/public/images/home/3.jpg" />
+        </div>
+      </div>
+
     </div>
 
     <div class="learning-wrapper  learning-panel" style="margin-bottom: 2.5rem;">
@@ -253,11 +267,6 @@ const announcementClass = computed(() => {
   }
 });
 
-const stats = ref([
-  { value: "150+", label: "Active Students", isText: false },
-  { value: "Maths • Add Maths • Accounts", label: "Core Subjects", isText: true },
-  { value: "Exam Ready", label: "Full Coverage", isText: true }
-]);
 
 function openDemo(course) {
   selectedDemoVideo.value = null;
@@ -386,43 +395,6 @@ onMounted(async () => {
 .ann-paragraph {
   font-size: 0.73rem;
   color: red;
-  margin: 0;
-}
-
-/* ── Stats ── */
-.stat-pill {
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  padding: 12px 8px;
-}
-
-/* BIG KPI NUMBERS */
-.stat-num {
-  font-size: 1.4rem;
-  font-weight: 650;
-  color: #a5b4fc;
-  margin: 0 0 2px;
-  line-height: 1;
-}
-
-/* VALUE / MESSAGE */
-.stat-text {
-  font-size: 0.85rem;
-  /* 👈 smaller is important */
-  font-weight: 600;
-  /* 👈 not same as numbers */
-  color: #c7d2fe;
-  /* slightly softer */
-  margin: 0 0 2px;
-  line-height: 1.3;
-}
-
-.stat-lbl {
-  font-size: 0.6rem;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
   margin: 0;
 }
 
@@ -786,5 +758,99 @@ onMounted(async () => {
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+
+/* PHOTOS */
+.hero-students {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+/* BIG IMAGE */
+.hero-main {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  height: 180px;
+
+}
+
+.hero-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* OVERLAY TEXT */
+.hero-overlay {
+  position: absolute;
+  bottom: 0;
+  padding: 16px;
+  width: 100%;
+  background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(0, 0, 0, 0.4) 50%,
+      transparent 100%);
+}
+
+.hero-title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.hero-sub {
+  font-size: 0.75rem;
+  color: #cbd5f5;
+}
+
+/* RIGHT SIDE */
+.hero-side {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  height: 180px;
+
+}
+
+.hero-small {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.hero-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.85);
+}
+
+.hero-main:hover img,
+.hero-small:hover img {
+  transform: scale(1.03);
+}
+
+.hero-main img,
+.hero-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+  /* Use 'ease-out' for a snappier, more professional feel */
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-main,
+.hero-small {
+
+  /* This prevents the "jagged corner" look on dark themes */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* This forces the browser to use hardware acceleration for smoother scaling */
+  transform: translateZ(0);
+
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 4px 15px rgba(0, 0, 0, 0.5);
 }
 </style>
