@@ -13,7 +13,7 @@
         </div>
 
         <div class="header-center">
-          <div class="logo-wrapper" @click="$router.push({ name: 'home' })">
+          <div class="logo-wrapper">
             <img src="../../../../public/menu_logo.png" class="main-logo mt-5" alt="Aditya Classes" />
             <div class="logo-glow"></div>
           </div>
@@ -22,7 +22,7 @@
         <div class="header-side-right">
 
           <div v-if="auth.isAdmin || auth.isTutor" class="admin-toggle-bar mr-2 ">
-            <button class="button is-small is-warning" @click=enterAdmin>
+            <button class="tutor-space-btn" @click=enterAdmin>
               Tutor Space
             </button>
           </div>
@@ -95,7 +95,6 @@ function enterAdmin() {
 .main-layout-wrapper {
   min-height: 100vh;
   background: transparent;
-  /* Let the global dark background show through */
 }
 
 /* ── The Floating Header ── */
@@ -105,8 +104,6 @@ function enterAdmin() {
   top: 0;
   z-index: 100;
   padding: 15px 10px;
-
-  /* The Secret Sauce: A gradient mask for smooth scrolling */
   background: linear-gradient(to bottom,
       rgba(15, 23, 42, 0.9) 0%,
       rgba(15, 23, 42, 0.7) 60%,
@@ -121,7 +118,6 @@ function enterAdmin() {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  /* Keep the header row compact and clean */
   height: 60px;
   position: relative;
   overflow: visible !important;
@@ -138,56 +134,48 @@ function enterAdmin() {
   width: 60px;
   height: 60px;
   overflow: visible !important;
+  pointer-events: none;
 }
 
 .logo-wrapper {
   position: absolute;
-  /* This centers the wrapper exactly in the middle of the header */
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-
   display: flex;
   justify-content: center;
   align-items: center;
-
-  cursor: pointer;
-  /* z-index is key to making sure it stays above the header background */
   z-index: 50;
   pointer-events: all;
+  /* ← Only the logo itself is clickable */
+  width: fit-content;
+  height: fit-content;
 }
 
 .main-logo {
-  /* This is the "Bigger" size you requested */
   height: 120px;
   width: auto;
-
   transform: scale(2);
   min-width: 120px;
-  /* Forces visibility */
-
   object-fit: contain;
   filter: drop-shadow(0 10px 25px rgba(99, 102, 241, 0.6));
-
-  /* Reset any opacity/visibility issues */
   opacity: 1 !important;
   visibility: visible !important;
+  display: block;
+  margin: 0;
+  padding: 0;
 }
-
 
 .logo-glow {
   position: absolute;
   width: 200px;
   height: 120px;
-
   background: radial-gradient(circle at center,
       rgba(255, 255, 255, 0.08) 0%,
       rgba(79, 70, 229, 0.12) 40%,
       transparent 75%);
-
   filter: blur(35px);
   opacity: 0.7;
-
   z-index: -1;
   pointer-events: none;
 }
@@ -285,6 +273,20 @@ function enterAdmin() {
 
 /* ── Mobile Adjustment ── */
 @media (max-width: 768px) {
+
+  .main-logo {
+    height: 80px;
+    /* ← Smaller base size on mobile */
+    transform: scale(1.5);
+    /* ← Less aggressive scaling */
+  }
+
+  .logo-glow {
+    width: 150px;
+    /* ← Adjust glow to match smaller logo */
+    height: 90px;
+  }
+
   .header-inner {
     padding: 0 2px;
     /* Even tighter for mobile screens */
@@ -293,5 +295,42 @@ function enterAdmin() {
   .header-side-left {
     padding-left: 2px;
   }
+
+  .tutor-space-btn {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.75rem !important;
+    min-width: 70px;
+    white-space: nowrap;
+    background: #f59e0b !important;
+    border-radius: 40px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    color: #0f172a;
+  }
+
+  /* Reduce gap between right side items */
+  .header-side-right {
+    gap: 6px;
+  }
+
+  /* Make the user chip slightly smaller on mobile */
+  .user-identity-chip {
+    width: 36px;
+    height: 36px;
+  }
+
+  .initials {
+    font-size: 12px;
+  }
+}
+
+.tutor-space-btn {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.75rem !important;
+  min-width: 70px;
+  white-space: nowrap;
+  background: #f59e0b !important;
+  border-radius: 40px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: #0f172a;
 }
 </style>

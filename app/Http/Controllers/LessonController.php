@@ -10,6 +10,13 @@ use App\Models\LessonAccess;
 class LessonController extends Controller
 {
 
+    public function all()
+    {
+        return Lesson::with(['grade', 'subject'])
+            ->orderBy('topic')
+            ->get();
+    }
+
     // LIST
     public function index(Request $request)
     {

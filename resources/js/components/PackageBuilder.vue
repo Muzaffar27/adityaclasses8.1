@@ -31,6 +31,10 @@
             <!-- =========================
                  MAIN PACKAGE INFO (KEEP ALL)
                  ========================= -->
+            <div class="section-title package-title">
+                📦 Package Details
+            </div>
+
             <div class="columns is-mobile is-variable is-2 mb-2">
 
                 <!-- NAME -->
@@ -71,24 +75,40 @@
 
             <hr class="mini-divider" />
 
+            <div class="section-title subject-title">
+                📚 Subject Details
+            </div>
+
             <!-- =========================
                  ITEM CREATOR
                  ========================= -->
-            <div class="is-flex is-gap-2 is-align-items-end mb-2">
 
-                <div style="flex:1;">
-                    <label class="custom-label">Item Price</label>
-                    <input class="input custom-input" type="number" v-model="newItem.price" />
-                </div>
+            <label class="custom-label">Subject</label>
+
+            <div class="subjects-row">
+                <label v-for="s in subjects" :key="s.id" class="subject-pill-glass"
+                    :class="{ 'is-active': newItem.subjects.includes(s.id) }">
+                    <input type="radio" name="single-subject" :value="s.id" v-model="singleSubject"
+                        @change="selectSubject(s.id)" />
+                    <span>{{ s.name }}</span>
+                </label>
+            </div>
+
+            <div class="is-flex is-gap-2 is-align-items-end mt-2">
 
                 <div style="flex:2;">
-                    <label class="custom-label">Grade Override</label>
+                    <label class="custom-label">Grade</label>
                     <select v-model="newItem.grade_id" class="input custom-input">
                         <option :value="null">Default</option>
                         <option v-for="g in grades" :key="g.id" :value="g.id">
                             {{ g.name }}
                         </option>
                     </select>
+                </div>
+
+                <div style="flex:1;">
+                    <label class="custom-label">Price</label>
+                    <input class="input custom-input" type="text" v-model="newItem.price" />
                 </div>
 
                 <button class="button is-primary is-small has-text-white" style="height:34px;"
@@ -99,16 +119,13 @@
             </div>
 
             <!-- SUBJECTS -->
-            <div class="subjects-row mb-2">
-                <label v-for="s in subjects" :key="s.id" class="subject-pill-glass"
-                    :class="{ 'is-active': newItem.subjects.includes(s.id) }">
-                    <input type="radio" name="single-subject" :value="s.id" v-model="singleSubject"
-                        @change="selectSubject(s.id)" />
-                    <span>{{ s.name }}</span>
-                </label>
-            </div>
+
 
             <hr class="mini-divider" />
+
+            <div class="section-title list-title">
+                📋 Package Contents
+            </div>
 
             <div style="flex:1;">
                 <label class="custom-label">Click on an item to modify the Price, Grade or Subject</label>
@@ -578,5 +595,34 @@ onMounted(async () => {
 .total-bar strong {
     color: #fff;
     font-size: 1.1rem;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid;
+    display: inline-block;
+}
+
+.package-title {
+    color: #3b82f6;
+    /* blue */
+    border-bottom-color: #3b82f6;
+}
+
+.subject-title {
+    color: #10b981;
+    /* green */
+    border-bottom-color: #10b981;
+    margin-top: 0.5rem;
+}
+
+.list-title {
+    color: #f59e0b;
+    /* amber / warm orange */
+    border-bottom-color: #f59e0b;
+    margin-top: 0.5rem;
 }
 </style>

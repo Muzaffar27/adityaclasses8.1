@@ -1,14 +1,18 @@
 <template>
     <Layout title="Store">
 
-        <div class="store-page container is-fluid px-5">
+        <div v-if="loading">
+            <Loader />
+        </div>
+
+        <div v-else class="store-page container is-fluid px-5">
             <h1 class="title is-5 has-text-white mb-3">
                 Select your subject
             </h1>
             <!-- SUBJECT TABS -->
-            <div class="tabs is-toggle is-fullwidth">
+            <div class="tabs is-toggle">
                 <ul>
-                    <li class="mt-1 ml-3" v-for="sub in filteredSubjects" :key="sub.id"
+                    <li class="mt-1 ml-3" v-for="sub in availableSubjects" :key="sub.id"
                         :class="{ 'is-active': selectedSubjectId === sub.id }" @click="selectSubject(sub.id)">
                         <a>{{ sub.name }}</a>
                     </li>
@@ -31,10 +35,6 @@
             <!-- ❌ NO SUBJECT SELECTED -->
             <div v-if="!selectedSubjectId" class="empty-state">
                 👆 Choose a subject above to begin
-            </div>
-
-            <div v-else-if="loading">
-                <Loader />
             </div>
 
             <!-- ✅ SUBJECT SELECTED -->
@@ -154,31 +154,73 @@ import Loader from './common/Loader.vue'
 
 // store
 const cacheStore = useCacheStore()
-
 const { subjects, grades } = storeToRefs(cacheStore)
 
 // state
 const loading = ref(false)
 const buttonLoad = ref(false)
-const packages = ref([])
+const allPackagesForGrade = ref([])
 const selectedPackage = ref(null)
 const selectedPackageId = ref(null)
 const selectedSubjectId = ref(null)
 const selectedItemIds = ref([])
+const excludedSubjects = ['mechanics', 'statistics 1', 'statistics 2']
 
 
 // route
 const route = useRoute()
 const gradeId = route.params.id
 
-// 👉 OPTIONAL: filter subjects if needed
-const filteredSubjects = computed(() => {
-    const excluded = ['mechanics', 'statistics 1', 'statistics 2']
+const availableSubjects = computed(() => {
+    if (!subjects.value) return []
 
-    return (subjects.value || []).filter(sub => {
-        return !excluded.includes(sub.name.toLowerCase().trim())
+    const subjectIdsWithPackages = new Set(allPackagesForGrade.value.map(p => p.subject_id))
+
+    // 1. Filter subjects (have packages, not excluded)
+    const filtered = subjects.value.filter(sub => {
+        const isExcluded = excludedSubjects.includes(sub.name.toLowerCase().trim())
+        return !isExcluded && subjectIdsWithPackages.has(sub.id)
     })
+
+    // 2. Define custom priority order (exact names, case-insensitive)
+    const priorityOrder = [
+        'mathematics',
+        'add maths',
+        'pure mathematics',
+        'accounts',
+        'economics'
+    ]
+
+    // 3. Separate priority subjects from others
+    const prioritySubjects = []
+    const others = []
+
+    filtered.forEach(sub => {
+        const subLower = sub.name.toLowerCase().trim()
+        const index = priorityOrder.findIndex(priority => priority === subLower)
+        if (index !== -1) {
+            prioritySubjects.push({ subject: sub, order: index })
+        } else {
+            others.push(sub)
+        }
+    })
+
+    // 4. Sort priority subjects by their defined order
+    prioritySubjects.sort((a, b) => a.order - b.order)
+    const sortedPriority = prioritySubjects.map(item => item.subject)
+
+    // 5. Sort others alphabetically
+    others.sort((a, b) => a.name.localeCompare(b.name))
+
+    // 6. Combine: priority first, then others
+    return [...sortedPriority, ...others]
 })
+
+const packages = computed(() => {
+    if (!selectedSubjectId.value) return []
+    return allPackagesForGrade.value.filter(pkg => pkg.subject_id === selectedSubjectId.value)
+})
+
 
 const dynamicTotal = computed(() => {
     if (!selectedPackage.value || !selectedPackage.value.items) return 0;
@@ -191,6 +233,12 @@ const dynamicTotal = computed(() => {
 // select subject
 function selectSubject(subjectId) {
     selectedSubjectId.value = subjectId
+    const pkgs = packages.value
+    if (pkgs.length) {
+        selectPackage(pkgs[0])
+    } else {
+        selectedPackage.value = null
+    }
 }
 
 // select package
@@ -211,67 +259,59 @@ function syncMobileSelect() {
     if (found) selectedPackage.value = found
 }
 
-// fetch packages
-async function fetchPackages() {
-    if (!selectedSubjectId.value) {
-        packages.value = []
-        selectedPackage.value = null
-        return
-    }
-
+async function fetchAllPackagesForGrade() {
+    if (!gradeId) return
     loading.value = true
     try {
         const res = await api.get('/packages', {
-            params: {
-                grade_id: gradeId,
-                subject_id: selectedSubjectId.value
-            }
+            params: { grade_id: gradeId }
         })
-
-        packages.value = res.data || []
-
-        console.log("package = ", packages.value);
-        if (packages.value.length) {
-            selectPackage(packages.value[0])
-        } else {
-            selectedPackage.value = null
-        }
-
+        allPackagesForGrade.value = res.data || []
     } catch (err) {
-        console.error("Failed to load packages:", err)
+        console.error('Failed to fetch packages for grade:', err)
+        allPackagesForGrade.value = []
     } finally {
         loading.value = false
     }
 }
 
-async function submitRequest() {
-    const selectedItems = selectedPackage.value.items
-        .filter(item => selectedItemIds.value.includes(item.id))
 
-    // extract only what you want
+async function submitRequest() {
+    if (!selectedPackage.value) return
+    const selectedItems = selectedPackage.value.items.filter(item => selectedItemIds.value.includes(item.id))
     const payload = selectedItems.map(item => ({
-        // item_id: item.id,
         subject_id: item.subject_id || item.subject?.id,
         grade_id: item.grade_id
     }))
-
-    buttonLoad.value = true;
-    const req = await api.post('/lesson-access/request', payload)
-
-    if (req.data.message) {
-        buttonLoad.value = false;
-        selectedItemIds.value = [];
-        alert("Request sent ✅")
+    buttonLoad.value = true
+    try {
+        const req = await api.post('/lesson-access/request', payload)
+        if (req.data.message) {
+            selectedItemIds.value = []
+            alert("Request sent ✅")
+        }
+    } catch (err) {
+        console.error(err)
+        alert("Failed to send request")
+    } finally {
+        buttonLoad.value = false
     }
 }
 
 // init
 onMounted(async () => {
     await cacheStore.fetchAllMetadata()
+    await fetchAllPackagesForGrade()
 })
 
-// 🔥 react when subject changes
-watch(selectedSubjectId, fetchPackages)
+watch(selectedSubjectId, () => {
+    if (packages.value.length) {
+        selectPackage(packages.value[0])
+    } else {
+        selectedPackage.value = null
+    }
+    selectedItemIds.value = []
+})
 
 watch(selectedPackage, () => {
     selectedItemIds.value = []
@@ -502,5 +542,19 @@ watch(selectedPackage, () => {
 /* Tighter vertical layout for Subject/Grade combo */
 .table td .is-flex {
     line-height: 1.2;
+}
+
+.tabs.is-toggle {
+    justify-content: center;
+}
+
+.tabs.is-toggle ul {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.tabs.is-toggle li {
+    flex: 0 0 auto;
+    /* prevents stretching */
 }
 </style>

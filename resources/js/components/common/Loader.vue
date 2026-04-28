@@ -18,12 +18,20 @@ $primary: #4f46e5;
     width: 100%;
     height: 100%;
 
-    min-height: 150px;
-    background: transparent;
+    // Fix 1: Stop the overlay from intercepting clicks
+    pointer-events: none;
 
+    // Fix 2: Keep 150px for desktop, reduce for mobile
+    min-height: 150px;
+
+    background: transparent;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
 
+    // Responsive adjustment
+    @media (max-width: 768px) {
+        min-height: 80px; // Smaller footprint on mobile
+    }
 }
 
 .loader-wrapper {
@@ -31,6 +39,11 @@ $primary: #4f46e5;
     flex-direction: column;
     align-items: center;
     gap: 1.25rem;
+
+    // Optional: Reduce gap on mobile to save more space
+    @media (max-width: 768px) {
+        gap: 0.5rem;
+    }
 }
 
 .loader-ring {

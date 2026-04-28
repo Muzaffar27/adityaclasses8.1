@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 //Lessons routes
 Route::get('/lessons', [LessonController::class, 'get']);
+Route::get('/lessons/all', [LessonController::class, 'all']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('admin/lessons', LessonController::class);

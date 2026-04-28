@@ -42,6 +42,7 @@ import Layout from './common/Layout.vue';
 /* tools */
 import LessonTool from "./tools/LessonTool.vue";
 import LessonList from "./Lesson/LessonList.vue";
+import LessonAll from "./Lesson/LessonAll.vue";
 import AccessRequestPage from "./AccessRequestPage.vue";
 import PackageBuilder from "./PackageBuilder.vue";
 import Announcement from "./Announcement.vue";
@@ -63,7 +64,7 @@ const currentView = ref({
 
 /* component map */
 const toolMap = {
-    lessons: LessonTool,
+    lessons: LessonAll,
     lessonList: LessonList,
     access: AccessRequestPage,
     package: PackageBuilder,

@@ -63,7 +63,7 @@
         <!-- 🚀 NOT LOGGED IN -->
         <div v-else
           class="glass-card clickable-card p-4 is-flex is-align-items-center is-justify-content-center has-text-centered"
-          @click="$router.push({ name: 'login' })">
+          @click="$router.push({ name: 'register' })">
           <div>
             <div class="mb-2">
               <span class="tag is-warning is-light is-rounded is-medium">🔒</span>
@@ -131,7 +131,7 @@
         Join now and get access to structured lessons and tutor support.
       </p>
 
-      <button class="button is-primary is-rounded has-text-white" @click="$router.push({ name: 'login' })">
+      <button class="button is-primary is-rounded has-text-white" @click="$router.push({ name: 'register' })">
         Create Account
       </button>
     </div>
