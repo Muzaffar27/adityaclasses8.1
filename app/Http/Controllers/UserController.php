@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Lesson;
+use App\Models\Package;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +16,65 @@ class UserController extends Controller
 
     public function getStudents()
     {
-        return User::where('role', 'student')->get();
+        $packages = Package::with(['grade', 'subject', 'items.grade', 'items.subject'])
+            ->orderBy('name')
+            ->get();
+
+        $lessonsByAccess = Lesson::select('id', 'grade_id', 'subject_id', 'topic', 'sub_topic', 'title', 'part_number', 'duration')
+            ->where('is_active', 1)
+            ->orderBy('topic')
+            ->orderBy('part_number')
+            ->get()
+            ->groupBy(fn($lesson) => $lesson->grade_id . '-' . $lesson->subject_id);
+
+        return User::with(['lessonAccess.grade', 'lessonAccess.subject'])
+            ->where('role', 'student')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($student) use ($packages, $lessonsByAccess) {
+                $student->lessonAccess->each(function ($access) use ($lessonsByAccess) {
+                    $access->lessons = $lessonsByAccess
+                        ->get($access->grade_id . '-' . $access->subject_id, collect())
+                        ->values();
+                });
+
+                $acceptedKeys = $student->lessonAccess
+                    ->where('status', 'accepted')
+                    ->map(fn($access) => $access->grade_id . '-' . $access->subject_id)
+                    ->values();
+
+                $student->package_access = $packages
+                    ->map(function ($package) use ($acceptedKeys) {
+                        $items = $package->items->filter(fn($item) => $item->grade_id && $item->subject_id);
+
+                        if ($items->isEmpty()) {
+                            return null;
+                        }
+
+                        $matchedItems = $items->filter(function ($item) use ($acceptedKeys) {
+                            return $acceptedKeys->contains($item->grade_id . '-' . $item->subject_id);
+                        });
+
+                        if ($matchedItems->isEmpty()) {
+                            return null;
+                        }
+
+                        return [
+                            'id' => $package->id,
+                            'name' => $package->name,
+                            'grade_name' => $package->grade?->name,
+                            'subject_name' => $package->subject?->name,
+                            'total_price' => $package->total_price,
+                            'status' => $matchedItems->count() === $items->count() ? 'full' : 'partial',
+                            'matched_items' => $matchedItems->count(),
+                            'total_items' => $items->count(),
+                        ];
+                    })
+                    ->filter()
+                    ->values();
+
+                return $student;
+            });
     }
 
     public function updateUserInfo(Request $request)

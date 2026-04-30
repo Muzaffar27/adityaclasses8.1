@@ -47,11 +47,13 @@ import AccessRequestPage from "./AccessRequestPage.vue";
 import PackageBuilder from "./PackageBuilder.vue";
 import Announcement from "./Announcement.vue";
 import PackageList from "./PackageList.vue";
+import StudentManagement from "./StudentManagement.vue";
 
 const tools = [
     { key: "announcement", label: "Announcement", icon: "📢" },
     { key: "lessons", label: "Lessons", icon: "📚" },
-    { key: "access", label: "Student Access", icon: "👥" },
+    { key: "students", label: "Students", icon: "🎓" },
+    { key: "access", label: "Request Access", icon: "👥" },
     { key: "package", label: "Package", icon: "📂" },
     { key: "packageList", label: "Package List", icon: "📦" }
 ];
@@ -67,6 +69,7 @@ const toolMap = {
     lessons: LessonAll,
     lessonList: LessonList,
     access: AccessRequestPage,
+    students: StudentManagement,
     package: PackageBuilder,
     packageList: PackageList,
     announcement: Announcement
@@ -81,7 +84,7 @@ const activeToolComponent = computed(() => {
 function openView(name) {
     currentView.value = {
         name,
-        props: {}
+        props: name === "students" ? { embedded: true } : {}
     };
 }
 

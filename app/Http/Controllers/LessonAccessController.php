@@ -100,6 +100,13 @@ class LessonAccessController extends Controller
         return response()->json(['message' => 'Refused']);
     }
 
+    public function destroy($id)
+    {
+        LessonAccess::findOrFail($id)->delete();
+
+        return response()->json(['message' => 'Removed']);
+    }
+
     public function listRequests()
     {
         return DB::table('lesson_access')

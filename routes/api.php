@@ -51,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/lesson-access/request', [LessonAccessController::class, 'request']);
     Route::post('/lesson-access/accept', [LessonAccessController::class, 'accept']);
     Route::post('/lesson-access/refuse', [LessonAccessController::class, 'refuse']);
+    Route::delete('/lesson-access/{id}', [LessonAccessController::class, 'destroy']);
     Route::get('/lesson-access/list_request', [LessonAccessController::class, 'listRequests']);
     Route::post('/lesson-access/accept-multiple', [LessonAccessController::class, 'acceptMultiple']);
     Route::post('/lesson-access/refuse-multiple', [LessonAccessController::class, 'refuseMultiple']);
