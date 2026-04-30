@@ -142,7 +142,7 @@ class PackageController extends Controller
 
     public function adminIndex()
     {
-        return Package::with(['subject', 'items.subject', 'items'])
+        return Package::with(['grade', 'subject', 'items.subject', 'items'])
             ->orderBy('id', 'desc')
             ->get();
     }

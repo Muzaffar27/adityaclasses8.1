@@ -1,8 +1,25 @@
 <template>
     <div class="p-3">
 
-        <div class="is-flex is-justify-content-space-between mb-3">
-            <h1 class="title is-5 has-text-white">List of Packages</h1>
+        <div class="package-list-header mb-3">
+            <div>
+                <h1 class="title is-5 has-text-white mb-1">List of Packages</h1>
+                <p class="has-text-grey-light is-size-7">{{ sortedPackages.length }} package{{ sortedPackages.length === 1 ? '' : 's' }}</p>
+            </div>
+
+            <div class="field mb-0">
+                <label class="label is-small has-text-grey-light">Sort by</label>
+                <div class="select is-small">
+                    <select v-model="sortBy">
+                        <option value="newest">Newest first</option>
+                        <option value="name">Name A-Z</option>
+                        <option value="grade">Grade</option>
+                        <option value="subject">Subject</option>
+                        <option value="priceHigh">Price high-low</option>
+                        <option value="priceLow">Price low-high</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div v-if="loading">
@@ -11,20 +28,26 @@
 
         <div v-else>
 
-            <p v-if="!packages.length" class="has-text-grey-light is-size-7">
+            <p v-if="!sortedPackages.length" class="has-text-grey-light is-size-7">
                 No packages found.
             </p>
 
-            <div v-for="pkg in packages" :key="pkg.id" class="glass-card p-3 mb-2 is-flex is-align-items-center">
+            <div v-for="pkg in sortedPackages" :key="pkg.id" class="glass-card package-row p-3 mb-2">
 
-                <div style="flex:1">
-                    <p class="has-text-white has-text-weight-semibold">
+                <div class="package-main">
+                    <p class="has-text-white has-text-weight-semibold mb-1">
                         {{ pkg.name }}
                     </p>
 
-                    <p class="has-text-grey-light is-size-7">
-                        Rs {{ pkg.total_price }}
-                    </p>
+                    <div class="package-meta">
+                        <span>{{ pkg.grade?.name || 'No grade' }}</span>
+                        <span>{{ pkg.subject?.name || 'No subject' }}</span>
+                        <span>{{ pkg.items?.length || 0 }} item{{ (pkg.items?.length || 0) === 1 ? '' : 's' }}</span>
+                    </div>
+                </div>
+
+                <div class="package-price">
+                    Rs {{ formatMoney(pkg.total_price) }}
                 </div>
 
                 <div class="buttons are-small">
@@ -46,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import api from "../api";
 import Loader from "./common/Loader.vue";
 
@@ -55,6 +78,35 @@ const emit = defineEmits(["navigate"]);
 const packages = ref([]);
 const loading = ref(false);
 const deletingId = ref(null);
+const sortBy = ref("newest");
+
+const sortedPackages = computed(() => {
+    const sorted = [...packages.value];
+
+    return sorted.sort((a, b) => {
+        if (sortBy.value === "name") {
+            return compareText(a.name, b.name);
+        }
+
+        if (sortBy.value === "grade") {
+            return compareText(a.grade?.name, b.grade?.name) || compareText(a.subject?.name, b.subject?.name) || compareText(a.name, b.name);
+        }
+
+        if (sortBy.value === "subject") {
+            return compareText(a.subject?.name, b.subject?.name) || compareText(a.grade?.name, b.grade?.name) || compareText(a.name, b.name);
+        }
+
+        if (sortBy.value === "priceHigh") {
+            return Number(b.total_price || 0) - Number(a.total_price || 0);
+        }
+
+        if (sortBy.value === "priceLow") {
+            return Number(a.total_price || 0) - Number(b.total_price || 0);
+        }
+
+        return Number(b.id || 0) - Number(a.id || 0);
+    });
+});
 
 async function fetchPackages() {
     loading.value = true;
@@ -93,5 +145,71 @@ async function deletePackage(pkg) {
     }
 }
 
+function compareText(a, b) {
+    return String(a || "").localeCompare(String(b || ""), undefined, { sensitivity: "base" });
+}
+
+function formatMoney(value) {
+    return Number(value || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    });
+}
+
 onMounted(fetchPackages);
 </script>
+
+<style scoped>
+.package-list-header,
+.package-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.package-list-header {
+    justify-content: space-between;
+}
+
+.package-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.package-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.75rem;
+}
+
+.package-meta span {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 0.15rem 0.45rem;
+}
+
+.package-price {
+    color: #fff;
+    font-weight: 700;
+    min-width: 95px;
+    text-align: right;
+}
+
+@media (max-width: 768px) {
+    .package-list-header,
+    .package-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .package-price {
+        text-align: left;
+    }
+
+    .buttons {
+        margin-bottom: 0;
+    }
+}
+</style>
