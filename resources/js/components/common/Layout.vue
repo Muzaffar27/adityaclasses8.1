@@ -13,7 +13,7 @@
         </div>
 
         <div class="header-center">
-          <div class="logo-wrapper">
+          <div class="logo-wrapper" @click="goHome">
             <img src="../../../../public/menu_logo.png" class="main-logo mt-5" alt="Aditya Classes" />
             <div class="logo-glow"></div>
           </div>
@@ -79,6 +79,10 @@ const userInitials = computed(() => {
 function goBack() {
   const canGoBack = window.history.state?.back;
   canGoBack ? router.back() : router.replace({ name: 'home' });
+}
+
+function goHome() {
+  router.push({ name: 'home' });
 }
 
 function enterAdmin() {
@@ -148,14 +152,16 @@ function enterAdmin() {
   z-index: 50;
   pointer-events: all;
   /* ← Only the logo itself is clickable */
-  width: fit-content;
-  height: fit-content;
+  width: 74px;
+  height: 54px;
+  cursor: pointer;
 }
 
 .main-logo {
   height: 120px;
   width: auto;
   transform: scale(2);
+  transform-origin: center;
   min-width: 120px;
   object-fit: contain;
   filter: drop-shadow(0 10px 25px rgba(99, 102, 241, 0.6));
@@ -164,6 +170,7 @@ function enterAdmin() {
   display: block;
   margin: 0;
   padding: 0;
+  pointer-events: none;
 }
 
 .logo-glow {
@@ -279,6 +286,11 @@ function enterAdmin() {
     /* ← Smaller base size on mobile */
     transform: scale(1.5);
     /* ← Less aggressive scaling */
+  }
+
+  .logo-wrapper {
+    width: 58px;
+    height: 46px;
   }
 
   .logo-glow {
