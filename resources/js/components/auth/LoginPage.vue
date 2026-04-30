@@ -2,7 +2,13 @@
     <div class="login-wrapper">
         <div class="login-card">
 
-            <h1 class="login-title">Welcome Back 👋</h1>
+            <div class="auth-brand">
+                <img src="../../../../public/menu_logo.png" alt="Aditya Classes">
+                <div>
+                    <h1 class="login-title">Welcome Back</h1>
+                    <p class="auth-subtitle">Continue your learning journey</p>
+                </div>
+            </div>
 
             <form @submit.prevent="submit">
 
@@ -36,6 +42,7 @@
                 <button type="submit" class="login-btn" :disabled="loading">
                     {{ loading ? 'Logging in...' : 'Login' }}
                 </button>
+                <p v-if="generalError" class="error-text mt-2">{{ generalError }}</p>
 
             </form>
 
@@ -93,3 +100,87 @@ async function submit() {
     }
 }
 </script>
+
+<style scoped>
+.login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+        radial-gradient(circle at top, rgba(79, 70, 229, 0.24), transparent 34%),
+        linear-gradient(135deg, #0f172a, #111827 52%, #020617);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(18px);
+}
+
+.auth-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.auth-brand img {
+    width: 82px;
+    height: 82px;
+    object-fit: contain;
+    transform: scale(1.8);
+    transform-origin: center;
+    filter: drop-shadow(0 10px 22px rgba(99, 102, 241, 0.45));
+    margin-bottom: 18px;
+}
+
+.login-title {
+    color: #fff;
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.auth-subtitle {
+    color: rgba(203, 213, 225, 0.8);
+    font-size: 0.78rem;
+    margin: 2px 0 0;
+}
+
+.field label,
+.remember {
+    color: rgba(203, 213, 225, 0.88);
+}
+
+.input-field {
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
+}
+
+.register-link {
+    text-align: center;
+}
+
+.register-link a {
+    color: #a5b4fc;
+}
+
+.eye-icon {
+    color: rgba(203, 213, 225, 0.8);
+}
+</style>
