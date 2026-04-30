@@ -34,6 +34,7 @@ class LessonController extends Controller
             'subject_id' => 'required',
             'title' => 'required',
             'topic' => 'nullable',
+            'sub_topic' => 'nullable',
             'part_number' => 'nullable',
             'description' => 'nullable',
             'vimeo_url' => 'nullable',

@@ -132,7 +132,12 @@
                             <template v-for="lesson in group.lessons" :key="lesson.id">
                                 <!-- LESSON ROW -->
                                 <tr>
-                                    <td><strong class="ml-6">{{ lesson.title }}</strong></td>
+                                    <td>
+                                        <strong class="ml-6">{{ lesson.title }}</strong>
+                                        <p v-if="lesson.sub_topic" class="ml-6 is-size-7 has-text-grey">
+                                            {{ lesson.sub_topic }}
+                                        </p>
+                                    </td>
                                     <td>{{ lesson.topic }}</td>
                                     <td :class="{ 'has-text-grey-light is-italic': !lesson.part_number }">
                                         {{ lesson.part_number ?? 'N/A' }}
@@ -179,6 +184,9 @@
                     <div v-for="lesson in group.lessons" :key="lesson.id" class="mobile-card">
                         <div class="card-content">
                             <strong>{{ lesson.title }}</strong>
+                            <p v-if="lesson.sub_topic" class="is-size-7 has-text-grey mt-1">
+                                {{ lesson.sub_topic }}
+                            </p>
                             <div class="mt-1">
                                 <span class="tag is-info is-light">Topic: {{ lesson.topic }}</span>
                             </div>

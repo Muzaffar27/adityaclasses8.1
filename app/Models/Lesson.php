@@ -14,6 +14,7 @@ class Lesson extends Model
         'grade_id',
         'subject_id',
         'topic',
+        'sub_topic',
         'title',
         'part_number',
         'description',

@@ -81,6 +81,9 @@
                                     <strong class="ml-6">
                                         {{ lesson.title }}
                                     </strong>
+                                    <p v-if="lesson.sub_topic" class="ml-6 is-size-7 has-text-grey">
+                                        {{ lesson.sub_topic }}
+                                    </p>
                                 </td>
 
                                 <td :class="{ 'has-text-grey-light is-italic': !lesson.part_number }">
@@ -132,6 +135,9 @@
                     <div class="card-content">
 
                         <strong>{{ lesson.title }}</strong>
+                        <p v-if="lesson.sub_topic" class="is-size-7 has-text-grey mt-1">
+                            {{ lesson.sub_topic }}
+                        </p>
 
                         <div class="mt-2">
                             <span class="tag is-warning is-light">

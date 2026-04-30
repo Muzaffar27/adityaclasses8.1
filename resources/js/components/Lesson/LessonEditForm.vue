@@ -38,18 +38,45 @@
                     </div>
                 </template>
 
-                <div class="column is-6">
+                <div class="column is-3">
+                    <label class="label is-small">Topic</label>
+                    <input class="input is-small" v-model="localLesson.topic">
+                </div>
+
+                <div class="column is-3">
+                    <label class="label is-small">Sub Topic</label>
+                    <input class="input is-small" v-model="localLesson.sub_topic">
+                </div>
+
+                <div class="column is-3">
                     <label class="label is-small">Lesson Title</label>
                     <input class="input is-small" v-model="localLesson.title" placeholder="e.g. Intro to Algebra">
                 </div>
-                <div class="column is-6">
-                    <label class="label is-small">Topic</label>
-                    <input class="input is-small" v-model="localLesson.topic" placeholder="e.g. Mathematics">
+
+                <div class="column is-1">
+                    <label class="label is-small">Part #</label>
+                    <input class="input is-small" type="text" v-model="localLesson.part_number" placeholder="Ex: 1">
                 </div>
                 <div class="column is-3">
-                    <label class="label is-small">Part #</label>
-                    <input class="input is-small" type="number" v-model="localLesson.part_number">
+                    <label class="label is-small">Duration</label>
+                    <div class="duration-grid">
+                        <div>
+                            <input class="input is-small" type="text" min="0" v-model.number="durationParts.hours">
+                            <p class="help has-text-grey-light">Hours</p>
+                        </div>
+                        <div>
+                            <input class="input is-small" type="text" min="0" max="59"
+                                v-model.number="durationParts.minutes">
+                            <p class="help has-text-grey-light">Minutes</p>
+                        </div>
+                        <div>
+                            <input class="input is-small" type="text" min="0" max="59"
+                                v-model.number="durationParts.seconds">
+                            <p class="help has-text-grey-light">Seconds</p>
+                        </div>
+                    </div>
                 </div>
+
                 <div class="column is-6">
                     <label class="label is-small">Vimeo URL</label>
                     <input class="input is-small" v-model="localLesson.vimeo_url"
@@ -121,10 +148,12 @@ const getInitialData = () => {
     return {
         title: '',
         topic: '',
+        sub_topic: '',
         part_number: 1,
         vimeo_url: '',
         is_active: 1,
         description: '',
+        duration: '',
         grade_id: props.grade_id || '',
         subject_id: props.subject_id || ''
     };
@@ -132,6 +161,7 @@ const getInitialData = () => {
 
 // Create a local copy so we don't mutate the parent's data directly
 const localLesson = ref(getInitialData());
+const durationParts = ref(parseDuration(localLesson.value.duration));
 
 // 2. Determine if we are creating or editing
 const isEditMode = computed(() => !!props.lesson?.id);
@@ -161,6 +191,8 @@ const handleSave = async () => {
     }
 
     // 3. If validation passes, proceed as normal
+    localLesson.value.duration = formatDuration(durationParts.value);
+
     loading.value = true;
     try {
         if (isEditMode.value) {
@@ -179,6 +211,7 @@ const handleSave = async () => {
 
 const handleCancel = () => {
     localLesson.value = getInitialData();
+    durationParts.value = parseDuration(localLesson.value.duration);
 
     if (props.inline) {
         emit('cancel');
@@ -198,6 +231,80 @@ watch(
     },
     { immediate: true }
 );
+
+watch(
+    () => props.lesson,
+    () => {
+        localLesson.value = getInitialData();
+        durationParts.value = parseDuration(localLesson.value.duration);
+    }
+);
+
+function parseDuration(value) {
+    if (!value) {
+        return { hours: 0, minutes: 0, seconds: 0 };
+    }
+
+    const text = String(value).trim();
+
+    if (text.includes(':')) {
+        const parts = text.split(':').map(part => Number(part) || 0);
+
+        if (parts.length === 3) {
+            return normalizeDuration({
+                hours: parts[0],
+                minutes: parts[1],
+                seconds: parts[2],
+            });
+        }
+
+        if (parts.length === 2) {
+            return normalizeDuration({
+                hours: 0,
+                minutes: parts[0],
+                seconds: parts[1],
+            });
+        }
+    }
+
+    const hours = Number(text.match(/(\d+)\s*h/i)?.[1] || 0);
+    const minutes = Number(text.match(/(\d+)\s*m/i)?.[1] || 0);
+    const seconds = Number(text.match(/(\d+)\s*s/i)?.[1] || 0);
+
+    if (hours || minutes || seconds) {
+        return normalizeDuration({ hours, minutes, seconds });
+    }
+
+    return normalizeDuration({
+        hours: 0,
+        minutes: Number(text) || 0,
+        seconds: 0,
+    });
+}
+
+function normalizeDuration(parts) {
+    const totalSeconds =
+        Math.max(Number(parts.hours) || 0, 0) * 3600 +
+        Math.max(Number(parts.minutes) || 0, 0) * 60 +
+        Math.max(Number(parts.seconds) || 0, 0);
+
+    return {
+        hours: Math.floor(totalSeconds / 3600),
+        minutes: Math.floor((totalSeconds % 3600) / 60),
+        seconds: totalSeconds % 60,
+    };
+}
+
+function formatDuration(parts) {
+    const normalized = normalizeDuration(parts);
+    const pad = value => String(value).padStart(2, '0');
+
+    if (!normalized.hours && !normalized.minutes && !normalized.seconds) {
+        return '';
+    }
+
+    return `${normalized.hours}:${pad(normalized.minutes)}:${pad(normalized.seconds)}`;
+}
 
 </script>
 
@@ -234,6 +341,18 @@ watch(
 .textarea:focus {
     border-color: #4f46e5;
     box-shadow: 0 0 0 0.125em rgba(0, 209, 178, 0.25);
+}
+
+.duration-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.duration-grid .help {
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+    text-align: center;
 }
 
 /* The switch - the box around the slider */

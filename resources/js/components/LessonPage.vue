@@ -1,20 +1,6 @@
 <template>
     <Layout title="Lessons" :loading="loading">
 
-        <!-- <template #actions>
-            <div v-if="!loading">
-                <button v-if="hasAccess" class="button is-dark is-light is-rounded">
-                    <span class="icon is-small mr-1">✅</span> Access
-                </button>
-                <button v-else-if="requestStatus === 'pending'" class="button is-warning is-light is-rounded" disabled>
-                    <span class="icon is-small mr-1">⏳</span> Pending
-                </button>
-                <button v-else class="button is-primary is-rounded" @click="requestAccess" :disabled="requestLoading">
-                    <span class="icon is-small mr-1">🔒</span> Request
-                </button>
-            </div>
-        </template> -->
-
         <Transition name="fade">
             <div v-if="selectedLesson" class="video-modal" @click.self="closeLesson">
                 <div class="video-box glass-card">
@@ -30,12 +16,6 @@
                     </div>
 
                     <div class="video-container">
-
-                        <!-- THUMBNAIL FIRST -->
-                        <!-- <div v-if="!isPlaying" class="video-thumbnail" @click="startVideo">
-                            <img :src="selectedLesson?.thumbnail || getVimeoThumbnail(selectedLesson?.vimeo_url)" />
-                            <div class="play-overlay">▶</div>
-                        </div> -->
 
                         <!-- LOAD IFRAME ONLY AFTER CLICK -->
                         <iframe v-if="selectedLesson" :src="videoUrl" frameborder="0" allow="autoplay; fullscreen"
@@ -86,8 +66,14 @@
                                             <PlayIcon class="hero-icon-sm has-text-primary" />
                                         </div>
                                         <p class="has-text-white is-size-6 mb-1">{{ lesson.title }}</p>
+                                        <p v-if="lesson.sub_topic" class="lesson-sub-topic is-size-7 mb-1">
+                                            {{ lesson.sub_topic }}
+                                        </p>
+                                        <p v-if="lesson.description" class="lesson-description is-size-7 mb-2">
+                                            {{ lesson.description }}
+                                        </p>
                                         <p class="is-size-7 has-text-grey">
-                                            Part {{ lesson.part_number || '1' }} • {{ lesson.duration || '5m' }}
+                                            Part {{ lesson.part_number || '1' }} • {{ formatDuration(lesson.duration) }}
                                         </p>
                                     </div>
                                 </div>
@@ -216,6 +202,47 @@ function groupLessons(list) {
 function closeLesson() {
     selectedLesson.value = null;
     isPlaying.value = false;
+}
+
+function formatDuration(value) {
+    if (!value) return '5 min';
+
+    const text = String(value).trim();
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+
+    if (text.includes(':')) {
+        const parts = text.split(':').map(part => Number(part) || 0);
+
+        if (parts.length === 3) {
+            [hours, minutes, seconds] = parts;
+        } else if (parts.length === 2) {
+            [minutes, seconds] = parts;
+        }
+    } else {
+        hours = Number(text.match(/(\d+)\s*h/i)?.[1] || 0);
+        minutes = Number(text.match(/(\d+)\s*m/i)?.[1] || 0);
+        seconds = Number(text.match(/(\d+)\s*s/i)?.[1] || 0);
+
+        if (!hours && !minutes && !seconds) {
+            minutes = Number(text) || 0;
+        }
+    }
+
+    const totalSeconds = Math.max(hours, 0) * 3600 + Math.max(minutes, 0) * 60 + Math.max(seconds, 0);
+
+    if (!totalSeconds) return '5 min';
+
+    hours = Math.floor(totalSeconds / 3600);
+    minutes = Math.floor((totalSeconds % 3600) / 60);
+    seconds = totalSeconds % 60;
+
+    return [
+        hours ? `${hours} hr${hours > 1 ? 's' : ''}` : '',
+        minutes ? `${minutes} min` : '',
+        seconds ? `${seconds} sec` : '',
+    ].filter(Boolean).join(' ');
 }
 
 async function requestAccess() {
@@ -377,7 +404,32 @@ function getVimeoThumbnail(url) {
 }
 
 .fixed-card {
-    height: 140px;
+    min-height: 160px;
+    height: 100%;
+}
+
+.lesson-card {
+    display: flex;
+}
+
+.lesson-card .card-content {
+    width: 100%;
+}
+
+.lesson-sub-topic {
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.lesson-description {
+    color: rgba(255, 255, 255, 0.72);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
 }
 
 .icon-circle {
@@ -405,7 +457,7 @@ function getVimeoThumbnail(url) {
 
 @media (max-width: 768px) {
     .fixed-card {
-        height: 130px;
+        min-height: 150px;
     }
 }
 
