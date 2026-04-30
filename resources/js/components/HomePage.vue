@@ -10,30 +10,18 @@
       </div>
     </div>
 
-    <!-- Student Showcase Row -->
+    <!-- Student Showcase Slider -->
     <div class="hero-students mb-5">
-
-      <!-- LEFT BIG IMAGE -->
-      <div class="hero-main">
-        <img src="/public/images/home/1.jpg" />
-
-        <div class="hero-overlay">
-          <p class="hero-title">Master Your Subjects</p>
-          <p class="hero-sub">Structured learning built for real understanding</p>
+      <div class="hero-track">
+        <div v-for="(image, index) in sliderImages" :key="`${image.src}-${index}`" class="hero-slide">
+          <img :src="image.src" :alt="image.alt" />
         </div>
       </div>
 
-      <!-- RIGHT STACK -->
-      <div class="hero-side">
-        <div class="hero-small">
-          <img src="/public/images/home/2.jpg" />
-        </div>
-
-        <div class="hero-small">
-          <img src="/public/images/home/3.jpg" />
-        </div>
+      <div class="hero-overlay">
+        <p class="hero-title">Master Your Subjects</p>
+        <p class="hero-sub">Structured learning built for real understanding</p>
       </div>
-
     </div>
 
     <div class="learning-wrapper  learning-panel" style="margin-bottom: 2.5rem;">
@@ -253,6 +241,21 @@ const selectedDemoVideo = ref(null);
 const isDemoPlaying = ref(false);
 
 const announcement = ref(null);
+const homepageImages = ref([]);
+
+const heroImages = [
+  { src: "/images/home/1.jpg", alt: "Students learning with Aditya Classes" },
+  { src: "/images/home/2.jpg", alt: "Classroom learning session" },
+  { src: "/images/home/3.jpg", alt: "Focused student study moment" },
+  { src: "/images/home/4.jpg", alt: "Student study session" },
+  { src: "/images/home/7.jpg", alt: "Focused learning moment" },
+  { src: "/images/home/8.jpg", alt: "Classroom learning moment" },
+];
+
+const sliderImages = computed(() => {
+  const images = homepageImages.value.length ? homepageImages.value : heroImages;
+  return [...images, ...images];
+});
 
 const announcementClass = computed(() => {
   switch (announcement.value?.type) {
@@ -331,8 +334,19 @@ onMounted(async () => {
   try {
     await cache.fetchAllMetadata();
 
-    const res = await api.get("/announcement");
-    announcement.value = res.data;
+    const announcementRes = await api.get("/announcement");
+    announcement.value = announcementRes.data;
+
+    try {
+      const imagesRes = await api.get("/homepage-images");
+      homepageImages.value = (imagesRes.data || []).map(image => ({
+        src: image.url,
+        alt: image.name,
+      }));
+    } catch (error) {
+      console.error("Failed to load homepage images:", error);
+      homepageImages.value = [];
+    }
 
   } finally {
     loading.value = false;
@@ -763,36 +777,77 @@ onMounted(async () => {
 
 /* PHOTOS */
 .hero-students {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 12px;
-}
-
-/* BIG IMAGE */
-.hero-main {
   position: relative;
+  height: 190px;
   border-radius: 18px;
   overflow: hidden;
-  height: 180px;
-
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 4px 15px rgba(0, 0, 0, 0.5);
+  transform: translateZ(0);
 }
 
-.hero-main img {
+.hero-students::before,
+.hero-students::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hero-students::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(15, 23, 42, 0.85), transparent);
+}
+
+.hero-students::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(15, 23, 42, 0.75), transparent);
+}
+
+.hero-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  gap: 12px;
+  padding: 0 12px;
+  animation: slideRight 48s linear infinite;
+  will-change: transform;
+}
+
+.hero-students:hover .hero-track {
+  animation-play-state: paused;
+}
+
+.hero-slide {
+  flex: 0 0 clamp(240px, 34vw, 420px);
+  height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.hero-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: brightness(0.86) saturate(1.04);
 }
 
-/* OVERLAY TEXT */
 .hero-overlay {
   position: absolute;
+  left: 0;
   bottom: 0;
-  padding: 16px;
+  z-index: 3;
   width: 100%;
+  padding: 18px;
   background: linear-gradient(to top,
-      rgba(0, 0, 0, 0.8) 0%,
-      rgba(0, 0, 0, 0.4) 50%,
+      rgba(0, 0, 0, 0.72) 0%,
+      rgba(0, 0, 0, 0.34) 58%,
       transparent 100%);
+  pointer-events: none;
 }
 
 .hero-title {
@@ -806,51 +861,37 @@ onMounted(async () => {
   color: #cbd5f5;
 }
 
-/* RIGHT SIDE */
-.hero-side {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 12px;
-  height: 180px;
+@keyframes slideRight {
+  from {
+    transform: translateX(-50%);
+  }
 
+  to {
+    transform: translateX(0);
+  }
 }
 
-.hero-small {
-  border-radius: 18px;
-  overflow: hidden;
+@media (max-width: 768px) {
+  .hero-students {
+    height: 160px;
+  }
+
+  .hero-students::before,
+  .hero-students::after {
+    width: 44px;
+  }
+
+  .hero-track {
+    gap: 8px;
+    padding: 0 8px;
+    animation-duration: 40s;
+  }
 }
 
-.hero-small img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(0.85);
-}
-
-.hero-main:hover img,
-.hero-small:hover img {
-  transform: scale(1.03);
-}
-
-.hero-main img,
-.hero-small img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  will-change: transform;
-  /* Use 'ease-out' for a snappier, more professional feel */
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.hero-main,
-.hero-small {
-
-  /* This prevents the "jagged corner" look on dark themes */
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  /* This forces the browser to use hardware acceleration for smoother scaling */
-  transform: translateZ(0);
-
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 4px 15px rgba(0, 0, 0, 0.5);
+@media (prefers-reduced-motion: reduce) {
+  .hero-track {
+    animation: none;
+    transform: translateX(0);
+  }
 }
 </style>

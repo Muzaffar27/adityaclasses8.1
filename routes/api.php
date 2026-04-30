@@ -7,6 +7,7 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\LessonAccessController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\HomeImageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +65,11 @@ Route::post('/packages/store', [PackageController::class, 'store']);
 Route::put('/packages/update/{id}', [PackageController::class, 'update']);
 Route::delete('/packages/delete/{id}', [PackageController::class, 'destroy']);
 Route::get('/packages/admin', [PackageController::class, 'adminIndex']);
+
+//Homepage image routes
+Route::get('/homepage-images', [HomeImageController::class, 'index']);
+Route::post('/homepage-images', [HomeImageController::class, 'store']);
+Route::delete('/homepage-images/{filename}', [HomeImageController::class, 'destroy']);
 
 
 //announcement 

@@ -48,9 +48,11 @@ import PackageBuilder from "./PackageBuilder.vue";
 import Announcement from "./Announcement.vue";
 import PackageList from "./PackageList.vue";
 import StudentManagement from "./StudentManagement.vue";
+import HomeImageManager from "./HomeImageManager.vue";
 
 const tools = [
     { key: "announcement", label: "Announcement", icon: "📢" },
+    { key: "homeImages", label: "Home Images", icon: "🖼️" },
     { key: "lessons", label: "Lessons", icon: "📚" },
     { key: "students", label: "Students", icon: "🎓" },
     { key: "access", label: "Request Access", icon: "👥" },
@@ -72,6 +74,7 @@ const toolMap = {
     students: StudentManagement,
     package: PackageBuilder,
     packageList: PackageList,
+    homeImages: HomeImageManager,
     announcement: Announcement
 };
 
