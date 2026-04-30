@@ -11,6 +11,10 @@
 
         <div v-else>
 
+            <p v-if="!packages.length" class="has-text-grey-light is-size-7">
+                No packages found.
+            </p>
+
             <div v-for="pkg in packages" :key="pkg.id" class="glass-card p-3 mb-2 is-flex is-align-items-center">
 
                 <div style="flex:1">
@@ -23,9 +27,16 @@
                     </p>
                 </div>
 
-                <button class="button is-small is-primary has-text-white" @click="edit(pkg)">
-                    Edit
-                </button>
+                <div class="buttons are-small">
+                    <button class="button is-primary has-text-white" @click="edit(pkg)">
+                        Edit
+                    </button>
+
+                    <button class="button is-danger has-text-white" :class="{ 'is-loading': deletingId === pkg.id }"
+                        :disabled="deletingId === pkg.id" @click="deletePackage(pkg)">
+                        Delete
+                    </button>
+                </div>
 
             </div>
 
@@ -43,6 +54,7 @@ const emit = defineEmits(["navigate"]);
 
 const packages = ref([]);
 const loading = ref(false);
+const deletingId = ref(null);
 
 async function fetchPackages() {
     loading.value = true;
@@ -61,6 +73,24 @@ function edit(pkg) {
             editPackage: pkg
         }
     });
+}
+
+async function deletePackage(pkg) {
+    const confirmed = window.confirm(`Delete "${pkg.name}"?`);
+
+    if (!confirmed) return;
+
+    deletingId.value = pkg.id;
+
+    try {
+        await api.delete(`/packages/delete/${pkg.id}`);
+        packages.value = packages.value.filter(item => item.id !== pkg.id);
+    } catch (error) {
+        console.error("Failed to delete package:", error);
+        alert("Could not delete this package. Please try again.");
+    } finally {
+        deletingId.value = null;
+    }
 }
 
 onMounted(fetchPackages);

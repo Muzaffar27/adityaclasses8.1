@@ -146,4 +146,14 @@ class PackageController extends Controller
             ->orderBy('id', 'desc')
             ->get();
     }
+
+    public function destroy($id)
+    {
+        $package = Package::findOrFail($id);
+        $package->delete();
+
+        return response()->json([
+            'message' => 'Package deleted successfully',
+        ]);
+    }
 }
