@@ -339,10 +339,12 @@ onMounted(async () => {
 
     try {
       const imagesRes = await api.get("/homepage-images");
-      homepageImages.value = (imagesRes.data || []).map(image => ({
-        src: image.url,
-        alt: image.name,
-      }));
+      homepageImages.value = (imagesRes.data || [])
+        .filter(image => image.active)
+        .map(image => ({
+          src: image.url,
+          alt: image.name,
+        }));
     } catch (error) {
       console.error("Failed to load homepage images:", error);
       homepageImages.value = [];

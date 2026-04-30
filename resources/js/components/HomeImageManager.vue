@@ -37,10 +37,19 @@
                             </p>
                         </div>
 
-                        <button class="button is-small is-danger" :class="{ 'is-loading': deletingName === image.name }"
-                            :disabled="deletingName === image.name" @click="deleteImage(image)">
-                            Delete
-                        </button>
+                        <div class="image-actions">
+                            <label class="active-toggle">
+                                <input type="checkbox" :checked="image.active" :disabled="savingName === image.name"
+                                    @change="toggleImage(image, $event)">
+                                <span>{{ image.active ? 'Shown' : 'Hidden' }}</span>
+                            </label>
+
+                            <button class="button is-small is-danger"
+                                :class="{ 'is-loading': deletingName === image.name }"
+                                :disabled="deletingName === image.name" @click="deleteImage(image)">
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -57,6 +66,7 @@ const images = ref([]);
 const loading = ref(false);
 const uploading = ref(false);
 const deletingName = ref(null);
+const savingName = ref(null);
 
 async function fetchImages() {
     loading.value = true;
@@ -113,6 +123,22 @@ async function deleteImage(image) {
     }
 }
 
+async function toggleImage(image, event) {
+    const active = event.target.checked;
+    savingName.value = image.name;
+
+    try {
+        await api.put(`/homepage-images/${encodeURIComponent(image.name)}`, { active });
+        image.active = active;
+    } catch (error) {
+        console.error('Failed to update homepage image:', error);
+        event.target.checked = image.active;
+        alert('Could not update this image.');
+    } finally {
+        savingName.value = null;
+    }
+}
+
 function formatSize(bytes) {
     if (!bytes) return '0 KB';
 
@@ -166,7 +192,7 @@ onMounted(fetchImages);
 
 .image-meta {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 0.75rem;
     padding: 0.8rem;
@@ -181,6 +207,24 @@ onMounted(fetchImages);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.image-actions {
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.active-toggle {
+    align-items: center;
+    color: rgba(255, 255, 255, 0.72);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 0.75rem;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
 
 .empty-state {
     color: rgba(255, 255, 255, 0.6);

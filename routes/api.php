@@ -69,6 +69,7 @@ Route::get('/packages/admin', [PackageController::class, 'adminIndex']);
 //Homepage image routes
 Route::get('/homepage-images', [HomeImageController::class, 'index']);
 Route::post('/homepage-images', [HomeImageController::class, 'store']);
+Route::put('/homepage-images/{filename}', [HomeImageController::class, 'update']);
 Route::delete('/homepage-images/{filename}', [HomeImageController::class, 'destroy']);
 
 
