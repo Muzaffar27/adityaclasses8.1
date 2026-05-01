@@ -38,22 +38,38 @@ class UserController extends Controller
                         ->values();
                 });
 
-                $acceptedKeys = $student->lessonAccess
+                $acceptedAccessByKey = $student->lessonAccess
                     ->where('status', 'accepted')
-                    ->map(fn($access) => $access->grade_id . '-' . $access->subject_id)
-                    ->values();
+                    ->keyBy(fn($access) => $access->grade_id . '-' . $access->subject_id);
 
                 $student->package_access = $packages
-                    ->map(function ($package) use ($acceptedKeys) {
+                    ->map(function ($package) use ($acceptedAccessByKey) {
                         $items = $package->items->filter(fn($item) => $item->grade_id && $item->subject_id);
 
                         if ($items->isEmpty()) {
                             return null;
                         }
 
-                        $matchedItems = $items->filter(function ($item) use ($acceptedKeys) {
-                            return $acceptedKeys->contains($item->grade_id . '-' . $item->subject_id);
-                        });
+                        $matchedItems = $items
+                            ->map(function ($item) use ($acceptedAccessByKey) {
+                                $access = $acceptedAccessByKey->get($item->grade_id . '-' . $item->subject_id);
+
+                                if (!$access) {
+                                    return null;
+                                }
+
+                                return [
+                                    'access_id' => $access->id,
+                                    'grade_id' => $item->grade_id,
+                                    'subject_id' => $item->subject_id,
+                                    'grade_name' => $item->grade?->name,
+                                    'subject_name' => $item->subject?->name,
+                                    'status' => $access->status,
+                                    'lesson_count' => $access->lessons?->count() ?? 0,
+                                ];
+                            })
+                            ->filter()
+                            ->values();
 
                         if ($matchedItems->isEmpty()) {
                             return null;
@@ -68,6 +84,7 @@ class UserController extends Controller
                             'status' => $matchedItems->count() === $items->count() ? 'full' : 'partial',
                             'matched_items' => $matchedItems->count(),
                             'total_items' => $items->count(),
+                            'items' => $matchedItems,
                         ];
                     })
                     ->filter()
