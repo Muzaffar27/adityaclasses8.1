@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    - export REPOPATH=/home/adityaclasses/repositories/adityaclasses8.1
+    - export REPOPATH=/home/adityaclasses/Git_Adityaclasses
     - export PROJECTPATH=/home/adityaclasses/adityaclasses_project
     - export PUBLICPATH=/home/adityaclasses/public_html
     - /bin/echo "Deploy started at $(/bin/date '+%Y-%m-%d %H:%M:%S')" > /home/adityaclasses/deploy_log.txt
