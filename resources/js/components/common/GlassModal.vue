@@ -110,12 +110,13 @@ const handleOverlay = () => {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.55);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 999;
+    opacity: 1;
+    will-change: opacity;
 }
 
 .glass-modal {
@@ -131,25 +132,32 @@ const handleOverlay = () => {
     padding: 14px;
     border-radius: 14px;
 
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
+    background: rgba(30, 41, 59, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 
     transform: translateZ(0);
     will-change: transform, opacity;
 
-    animation: pop 0.12s ease-out forwards;
+    animation: pop 0.16s ease-out forwards;
+}
+
+.glass-modal:hover {
+    transform: scale(1);
+    background: rgba(30, 41, 59, 0.96);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes pop {
     from {
-        transform: scale(0.9);
+        transform: scale(0.96) translateY(6px);
         opacity: 0;
     }
 
     to {
-        transform: scale(1);
+        transform: scale(1) translateY(0);
         opacity: 1;
     }
 }
