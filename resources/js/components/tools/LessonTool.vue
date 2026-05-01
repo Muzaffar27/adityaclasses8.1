@@ -101,6 +101,7 @@ import { useCacheStore } from '../../stores/cache';
 import { storeToRefs } from 'pinia';
 import createModal from '../common/createModal.vue';
 import axios from 'axios';
+import { showAlert } from '../../composables/dialog';
 
 const emit = defineEmits(['navigate']);
 
@@ -121,9 +122,9 @@ onMounted(async () => {
 });
 
 /* 🔥 THIS replaces router */
-function openLessons() {
+async function openLessons() {
     if (!selectedGrade.value || !selectedSubject.value) {
-        alert("Select both");
+        await showAlert("Select both");
         return;
     }
 

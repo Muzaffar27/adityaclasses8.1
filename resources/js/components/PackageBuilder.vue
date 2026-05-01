@@ -178,6 +178,7 @@ import { ref, computed, onMounted } from "vue";
 import api from "../api";
 import { useCacheStore } from "../stores/cache";
 import { storeToRefs } from "pinia";
+import { showAlert } from "../composables/dialog";
 
 const cacheStore = useCacheStore();
 const { subjects, grades } = storeToRefs(cacheStore);
@@ -224,18 +225,21 @@ const total = computed(() => {
 /* =========================
    ITEM SAVE (ADD / EDIT)
    ========================= */
-function handleItemSave() {
+async function handleItemSave() {
 
     if (!form.value.grade_id) {
-        return alert("Select package grade");
+        await showAlert("Select package grade");
+        return;
     }
 
     if (!form.value.subject_id) {
-        return alert("Select package subject");
+        await showAlert("Select package subject");
+        return;
     }
 
     if (!newItem.value.subjects.length) {
-        return alert("Select item subjects");
+        await showAlert("Select item subjects");
+        return;
     }
 
     const payload = {
@@ -311,9 +315,16 @@ async function submit() {
         } else {
             await api.post("/packages/store", form.value);
         }
-        alert("Saved!");
+        await showAlert({
+            title: "Saved",
+            message: "Package saved successfully.",
+        });
     } catch (e) {
         console.error(e);
+        await showAlert({
+            title: "Save Failed",
+            message: "Could not save this package. Please try again.",
+        });
     }
     finally {
         loading.value = false;

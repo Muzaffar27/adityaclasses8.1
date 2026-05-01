@@ -70,6 +70,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import api from '../api';
+import { showAlert, showConfirm } from '../composables/dialog';
 
 const props = defineProps({
     student: {
@@ -99,14 +100,22 @@ async function acceptAccess(access) {
         emit('updated');
     } catch (error) {
         console.error('Failed to update access:', error);
-        alert('Could not update this access record. Please try again.');
+        await showAlert({
+            title: 'Update Failed',
+            message: 'Could not update this access record. Please try again.',
+        });
     } finally {
         workingId.value = null;
     }
 }
 
 async function removeAccess(access) {
-    const confirmed = window.confirm(`Remove access for ${access.grade?.name || 'this grade'} - ${access.subject?.name || 'this subject'}?`);
+    const confirmed = await showConfirm({
+        title: 'Remove Access',
+        message: `Remove access for ${access.grade?.name || 'this grade'} - ${access.subject?.name || 'this subject'}?`,
+        confirmText: 'Remove',
+        cancelText: 'Keep access',
+    });
 
     if (!confirmed) return;
 
@@ -117,7 +126,10 @@ async function removeAccess(access) {
         emit('updated');
     } catch (error) {
         console.error('Failed to remove access:', error);
-        alert('Could not remove this access record. Please try again.');
+        await showAlert({
+            title: 'Remove Failed',
+            message: 'Could not remove this access record. Please try again.',
+        });
     } finally {
         workingId.value = null;
     }

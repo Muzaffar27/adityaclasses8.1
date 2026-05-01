@@ -64,6 +64,7 @@
 import { ref, onMounted, computed } from "vue";
 import api from "../api";
 import Loader from "./common/Loader.vue";
+import { showAlert } from "../composables/dialog";
 
 const loading = ref(false);
 
@@ -94,13 +95,20 @@ async function save() {
     try {
         loading.value = true;
         await api.post("/announcement/save", form.value);
+        await showAlert({
+            title: "Saved",
+            message: "Announcement saved successfully.",
+        });
     } catch (e) {
         console.log("Error announcement: ", e);
+        await showAlert({
+            title: "Save Failed",
+            message: "Could not save the announcement. Please try again.",
+        });
     }
     finally {
         loading.value = false;
     }
-    alert("Saved!");
 }
 
 /* preview style */

@@ -61,6 +61,7 @@
 import { ref, onMounted } from 'vue';
 import api from '../api';
 import Loader from './common/Loader.vue';
+import { showAlert, showConfirm } from '../composables/dialog';
 
 const images = ref([]);
 const loading = ref(false);
@@ -76,7 +77,10 @@ async function fetchImages() {
         images.value = data;
     } catch (error) {
         console.error('Failed to load homepage images:', error);
-        alert('Could not load homepage images.');
+        await showAlert({
+            title: 'Images Failed',
+            message: 'Could not load homepage images.',
+        });
     } finally {
         loading.value = false;
     }
@@ -99,14 +103,22 @@ async function uploadImage(event) {
         await fetchImages();
     } catch (error) {
         console.error('Failed to upload homepage image:', error);
-        alert('Could not upload this image. Use JPG, PNG, or WebP under 8 MB.');
+        await showAlert({
+            title: 'Upload Failed',
+            message: 'Could not upload this image. Use JPG, PNG, or WebP under 8 MB.',
+        });
     } finally {
         uploading.value = false;
     }
 }
 
 async function deleteImage(image) {
-    const confirmed = window.confirm(`Delete "${image.name}" from the homepage slider?`);
+    const confirmed = await showConfirm({
+        title: 'Delete Image',
+        message: `Delete "${image.name}" from the homepage slider?`,
+        confirmText: 'Delete',
+        cancelText: 'Keep it',
+    });
 
     if (!confirmed) return;
 
@@ -117,7 +129,10 @@ async function deleteImage(image) {
         images.value = images.value.filter(item => item.name !== image.name);
     } catch (error) {
         console.error('Failed to delete homepage image:', error);
-        alert('Could not delete this image.');
+        await showAlert({
+            title: 'Delete Failed',
+            message: 'Could not delete this image.',
+        });
     } finally {
         deletingName.value = null;
     }
@@ -133,7 +148,10 @@ async function toggleImage(image, event) {
     } catch (error) {
         console.error('Failed to update homepage image:', error);
         event.target.checked = image.active;
-        alert('Could not update this image.');
+        await showAlert({
+            title: 'Update Failed',
+            message: 'Could not update this image.',
+        });
     } finally {
         savingName.value = null;
     }

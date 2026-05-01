@@ -17,12 +17,15 @@
             </router-view>
 
         </main>
+
+        <GlobalDialog />
     </div>
 </template>
 
 <script setup>
 
 import { ref } from 'vue';
+import GlobalDialog from './common/GlobalDialog.vue';
 // import Sidebar from './Sidebar.vue';
 
 const mobileMenuOpen = ref(false);

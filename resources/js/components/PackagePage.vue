@@ -151,6 +151,7 @@ import { useCacheStore } from "../stores/cache"
 
 import { storeToRefs } from "pinia"
 import Loader from './common/Loader.vue'
+import { showAlert } from '../composables/dialog'
 
 // store
 const cacheStore = useCacheStore()
@@ -288,11 +289,17 @@ async function submitRequest() {
         const req = await api.post('/lesson-access/request', payload)
         if (req.data.message) {
             selectedItemIds.value = []
-            alert("Request sent ✅")
+            await showAlert({
+                title: "Request Sent",
+                message: "Your access request has been sent.",
+            })
         }
     } catch (err) {
         console.error(err)
-        alert("Failed to send request")
+        await showAlert({
+            title: "Request Failed",
+            message: "Failed to send request.",
+        })
     } finally {
         buttonLoad.value = false
     }

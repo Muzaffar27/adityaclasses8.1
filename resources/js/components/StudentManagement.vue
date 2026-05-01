@@ -222,6 +222,7 @@ import { Pagination } from '../composables/pagination';
 import GlassModal from './common/GlassModal.vue';
 import Loader from './common/Loader.vue';
 import StudentAccessEditor from './StudentAccessEditor.vue';
+import { showAlert } from '../composables/dialog';
 
 defineProps({
     embedded: {
@@ -331,7 +332,11 @@ const confirmResetPassword = async () => {
 
     } catch (e) {
         console.error(e);
-        alert("Failed to reset password. Please try again.");
+        await showAlert({
+            title: "Reset Failed",
+            message: "Failed to reset password. Please try again.",
+        });
+        isResetting.value = false;
     }
 };
 

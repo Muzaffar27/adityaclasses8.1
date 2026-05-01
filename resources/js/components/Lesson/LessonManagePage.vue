@@ -114,6 +114,7 @@ import { useCacheStore } from '../../stores/cache';
 import { storeToRefs } from 'pinia';
 import createModal from '../common/createModal.vue';
 import axios from 'axios';
+import { showAlert } from '../../composables/dialog';
 
 const router = useRouter();
 
@@ -163,7 +164,10 @@ const createGrade = async () => {
 
     } catch (error) {
         console.error(error);
-        alert("Failed to create grade");
+        await showAlert({
+            title: "Create Failed",
+            message: "Failed to create grade",
+        });
     } finally {
         creatingGrade.value = false;
     }
@@ -191,16 +195,19 @@ const createSubject = async () => {
 
     } catch (error) {
         console.error(error);
-        alert("Failed to create subject");
+        await showAlert({
+            title: "Create Failed",
+            message: "Failed to create subject",
+        });
     } finally {
         creatingSubject.value = false;
     }
 };
 
-function goToLessons() {
+async function goToLessons() {
     // Ensure the values exist before pushing to avoid the error
     if (!selectedGrade.value || !selectedSubject.value) {
-        alert("Please select both a Grade and a Subject");
+        await showAlert("Please select both a Grade and a Subject");
         return;
     }
 

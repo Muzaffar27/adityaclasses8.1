@@ -121,6 +121,7 @@ import api from '../../api';
 import { useRouter } from 'vue-router';
 import { useCacheStore } from '../../stores/cache';
 import { storeToRefs } from 'pinia';
+import { showAlert } from '../../composables/dialog';
 
 const router = useRouter();
 const cacheStore = useCacheStore();
@@ -185,7 +186,10 @@ const handleSave = async () => {
     // 2. Check each field
     for (const field of requiredFields) {
         if (!localLesson.value[field.key]) {
-            alert(`Please fill in the ${field.label}.`);
+            await showAlert({
+                title: 'Missing Information',
+                message: `Please fill in the ${field.label}.`,
+            });
             return; // Stop execution
         }
     }
@@ -203,7 +207,10 @@ const handleSave = async () => {
         emit('saved');
     } catch (error) {
         console.error("Update failed", error);
-        alert("Failed to update lesson. Please check your internet connection.");
+        await showAlert({
+            title: 'Save Failed',
+            message: 'Failed to update lesson. Please check your internet connection.',
+        });
     } finally {
         loading.value = false;
     }

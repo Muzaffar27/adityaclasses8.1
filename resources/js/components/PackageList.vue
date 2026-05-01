@@ -72,6 +72,7 @@
 import { computed, ref, onMounted } from "vue";
 import api from "../api";
 import Loader from "./common/Loader.vue";
+import { showAlert, showConfirm } from "../composables/dialog";
 
 const emit = defineEmits(["navigate"]);
 
@@ -128,7 +129,12 @@ function edit(pkg) {
 }
 
 async function deletePackage(pkg) {
-    const confirmed = window.confirm(`Delete "${pkg.name}"?`);
+    const confirmed = await showConfirm({
+        title: "Delete Package",
+        message: `Delete "${pkg.name}"?`,
+        confirmText: "Delete",
+        cancelText: "Keep it",
+    });
 
     if (!confirmed) return;
 
@@ -139,7 +145,10 @@ async function deletePackage(pkg) {
         packages.value = packages.value.filter(item => item.id !== pkg.id);
     } catch (error) {
         console.error("Failed to delete package:", error);
-        alert("Could not delete this package. Please try again.");
+        await showAlert({
+            title: "Delete Failed",
+            message: "Could not delete this package. Please try again.",
+        });
     } finally {
         deletingId.value = null;
     }
