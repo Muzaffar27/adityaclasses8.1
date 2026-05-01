@@ -8,7 +8,6 @@ deployment:
 
     # Backup .env and index.php
     - /bin/cp $PROJECTPATH/.env /home/adityaclasses/.env.backup
-    - /bin/cp $PUBLICPATH/index.php /home/adityaclasses/index.php.backup
 
     # Clear project folder (except .env)
     - /bin/find $PROJECTPATH -mindepth 1 -not -name '.env' -delete
@@ -29,8 +28,9 @@ deployment:
     # Copy public folder from project to public_html
     - /bin/cp -R $PROJECTPATH/public/. $PUBLICPATH
 
-    # Restore index.php
-    - /bin/cp /home/adityaclasses/index.php.backup $PUBLICPATH/index.php
+    - /bin/sed -i "s|__DIR__.'/../storage/framework/maintenance.php'|__DIR__.'/../adityaclasses_project/storage/framework/maintenance.php'|g" $PUBLICPATH/index.php
+    - /bin/sed -i "s|__DIR__.'/../vendor/autoload.php'|__DIR__.'/../adityaclasses_project/vendor/autoload.php'|g" $PUBLICPATH/index.php
+    - /bin/sed -i "s|__DIR__.'/../bootstrap/app.php'|__DIR__.'/../adityaclasses_project/bootstrap/app.php'|g" $PUBLICPATH/index.php
 
     # Force PHP 8.2
     - /bin/echo "AddHandler application/x-httpd-ea-php82 .php" > $PUBLICPATH/.htaccess_php
