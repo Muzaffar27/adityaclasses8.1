@@ -9,6 +9,9 @@
                             <h3 class="has-text-white is-size-6-mobile is-size-5-tablet line-clamp-1">
                                 {{ selectedLesson.title }}
                             </h3>
+                            <p v-if="getSubTopic(selectedLesson)" class="modal-sub-topic line-clamp-1">
+                                {{ getSubTopic(selectedLesson) }}
+                            </p>
                         </div>
                         <button class="close-btn ml-auto" @click="closeLesson">
                             <XMarkIcon class="hero-icon-sm" />
@@ -61,20 +64,28 @@
                                         <span>Locked</span>
                                     </div>
 
-                                    <div class="card-content has-text-centered">
-                                        <div class="icon-circle mb-3">
-                                            <PlayIcon class="hero-icon-sm has-text-primary" />
+                                    <div class="card-content lesson-card-content">
+                                        <div class="lesson-top-row">
+                                            <div class="icon-circle">
+                                                <PlayIcon class="hero-icon-sm has-text-primary" />
+                                            </div>
+                                            <span v-if="getSubTopic(lesson)" class="lesson-sub-topic">
+                                                {{ getSubTopic(lesson) }}
+                                            </span>
                                         </div>
-                                        <p class="has-text-white is-size-6 mb-1">{{ lesson.title }}</p>
-                                        <p v-if="lesson.sub_topic" class="lesson-sub-topic is-size-7 mb-1">
-                                            {{ lesson.sub_topic }}
-                                        </p>
-                                        <p v-if="lesson.description" class="lesson-description is-size-7 mb-2">
-                                            {{ lesson.description }}
-                                        </p>
-                                        <p class="is-size-7 has-text-grey">
-                                            Part {{ lesson.part_number || '1' }} • {{ formatDuration(lesson.duration) }}
-                                        </p>
+
+                                        <div class="lesson-copy">
+                                            <p class="lesson-title">{{ lesson.title }}</p>
+                                            <p v-if="lesson.description" class="lesson-description">
+                                                {{ lesson.description }}
+                                            </p>
+                                        </div>
+
+                                        <div class="lesson-meta">
+                                            <span>Part {{ lesson.part_number || '1' }}</span>
+                                            <span class="meta-dot"></span>
+                                            <span>{{ formatDuration(lesson.duration) }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -94,7 +105,7 @@ import { computed, ref, onMounted } from "vue";
 import api from "../api";
 import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
-import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, FolderOpenIcon } from '@heroicons/vue/24/outline';
+import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();
 const subjectId = route.params.subjectId;
@@ -181,6 +192,10 @@ function openLesson(lesson) {
 
     const img = new Image();
     img.src = lesson.thumbnail || '';
+}
+
+function getSubTopic(lesson) {
+    return lesson?.sub_topic || lesson?.subTopic || '';
 }
 
 function groupLessons(list) {
@@ -313,6 +328,17 @@ function getVimeoThumbnail(url) {
     height: 100%;
 }
 
+.header-content {
+    min-width: 0;
+}
+
+.modal-sub-topic {
+    color: #99f6e4;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-top: 0.2rem;
+}
+
 .close-btn {
     background: rgba(255, 255, 255, 0.1);
     border: none;
@@ -404,27 +430,72 @@ function getVimeoThumbnail(url) {
 }
 
 .fixed-card {
-    min-height: 160px;
+    min-height: 184px;
     height: 100%;
 }
 
 .lesson-card {
     display: flex;
+    border-radius: 16px;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+        rgba(15, 23, 42, 0.28) !important;
+    border-color: rgba(255, 255, 255, 0.12);
+    transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+}
+
+.lesson-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(45, 212, 191, 0.42);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
 }
 
 .lesson-card .card-content {
     width: 100%;
 }
 
-.lesson-sub-topic {
-    color: rgba(255, 255, 255, 0.82);
-    font-weight: 600;
-    overflow-wrap: anywhere;
+.lesson-card-content {
+    align-items: stretch;
+    gap: 14px;
+    justify-content: space-between;
+    padding: 1.15rem;
+    text-align: left;
 }
 
-.lesson-description {
-    color: rgba(255, 255, 255, 0.72);
+.lesson-top-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.lesson-sub-topic {
+    min-width: 0;
+    max-width: 100%;
+    color: #ccfbf1;
+    background: rgba(20, 184, 166, 0.13);
+    border: 1px solid rgba(45, 212, 191, 0.28);
+    border-radius: 999px;
+    padding: 0.28rem 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lesson-copy {
+    min-height: 58px;
+}
+
+.lesson-title {
+    color: #fff;
     display: -webkit-box;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -432,15 +503,47 @@ function getVimeoThumbnail(url) {
     overflow-wrap: anywhere;
 }
 
+.lesson-description {
+    color: rgba(226, 232, 240, 0.72);
+    display: -webkit-box;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    margin-top: 0.35rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.lesson-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: rgba(203, 213, 225, 0.78);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.meta-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(148, 163, 184, 0.72);
+}
+
 .icon-circle {
     width: 40px;
     height: 40px;
-    background: rgba(79, 70, 229, 0.1);
+    min-width: 40px;
+    background: rgba(79, 70, 229, 0.14);
+    border: 1px solid rgba(129, 140, 248, 0.25);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .locked-overlay {
@@ -453,11 +556,22 @@ function getVimeoThumbnail(url) {
     align-items: center;
     justify-content: center;
     color: #fff;
+    border-radius: inherit;
 }
 
 @media (max-width: 768px) {
     .fixed-card {
-        min-height: 150px;
+        min-height: 172px;
+    }
+
+    .lesson-card-content {
+        gap: 12px;
+        padding: 1rem;
+    }
+
+    .lesson-sub-topic {
+        font-size: 0.68rem;
+        padding: 0.25rem 0.55rem;
     }
 }
 
