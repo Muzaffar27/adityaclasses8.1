@@ -1,10 +1,6 @@
 {
-  "public/menu_logo.png": {
-    "file": "assets/menu_logo-MfA_J7Od.png",
-    "src": "public/menu_logo.png"
-  },
   "resources/js/app.js": {
-    "file": "assets/app-BQTVvDne.js",
+    "file": "assets/app-D1nXmG_q.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -17,14 +13,11 @@
       "resources/js/components/TutorSpace.vue"
     ],
     "css": [
-      "assets/app-ChExGHou.css"
-    ],
-    "assets": [
-      "assets/menu_logo-MfA_J7Od.png"
+      "assets/app-DUhXEeQt.css"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-DKTsDICz.js",
+    "file": "assets/MyCourse-DI2Mq8E5.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -36,7 +29,7 @@
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-7ZrNlu1B.js",
+    "file": "assets/PackageBuilder-DGNm8f3g.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -48,7 +41,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-C4WrwRqV.js",
+    "file": "assets/PackagePage-A2JmgmAV.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -60,7 +53,7 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-BCM1dpw0.js",
+    "file": "assets/Profile-DFu7oyKx.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -72,7 +65,7 @@
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-d-bFebXn.js",
+    "file": "assets/StudentManagement-Du1q1hZL.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -84,7 +77,7 @@
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-O0_Tyg76.js",
+    "file": "assets/TutorSpace--gVb4-v3.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,

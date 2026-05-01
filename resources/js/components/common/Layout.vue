@@ -14,7 +14,7 @@
 
         <div class="header-center">
           <div class="logo-wrapper" @click="goHome">
-            <img src="../../../../public/menu_logo.png" class="main-logo mt-5" alt="Aditya Classes" />
+            <img :src="`${baseUrl}menu_logo.png`" class="main-logo mt-5" alt="Aditya Classes" />
             <div class="logo-glow"></div>
           </div>
         </div>
@@ -60,6 +60,7 @@ import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
 const router = useRouter();
+const baseUrl = import.meta.env.BASE_URL || "/";
 
 defineProps({
   title: String,

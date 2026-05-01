@@ -4,7 +4,7 @@
         <!-- Logo + close -->
         <div class="is-relative is-flex is-justify-content-center is-align-items-center ">
             <router-link :to="{ name: 'home' }" class="sidebar-logo-container">
-                <img src="../../../public/menu_logo.png" alt="Aditya Classes" class="sidebar-logo" />
+                <img :src="`${baseUrl}menu_logo.png`" alt="Aditya Classes" class="sidebar-logo" />
             </router-link>
             <button class="button is-ghost is-hidden-desktop close-btn" @click="$emit('close')" aria-label="Close menu">
                 <XMarkIcon class="icon-sm" />
@@ -184,6 +184,7 @@ defineEmits(['close']);
 const router = useRouter();
 const auth = useAuthStore();
 const cache = useCacheStore();
+const baseUrl = import.meta.env.BASE_URL || '/';
 
 const showLogoutModal = ref(false)
 const logoutLoading = ref(false)
