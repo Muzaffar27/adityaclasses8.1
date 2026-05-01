@@ -25,16 +25,21 @@ deployment:
     # Delete build folder in public_html
     - /bin/rm -rf $PUBLICPATH/build
 
-    # Copy public folder from project to public_html
-    - /bin/cp -R $PROJECTPATH/public/. $PUBLICPATH
+    # Copy deployable public files. Do not overwrite static assets because
+    # cPanel may leave existing images/logos owned by another user.
+    - /bin/cp -R $PROJECTPATH/public/build $PUBLICPATH/
+    - /bin/cp -n $PROJECTPATH/public/.htaccess $PUBLICPATH/.htaccess
+    - /bin/cp -n $PROJECTPATH/public/favicon.ico $PUBLICPATH/favicon.ico
+    - /bin/cp -n $PROJECTPATH/public/logo.png $PUBLICPATH/logo.png
+    - /bin/cp -n $PROJECTPATH/public/menu_logo.png $PUBLICPATH/menu_logo.png
+    - /bin/mkdir -p $PUBLICPATH/images/home
+    - /bin/cp -Rn $PROJECTPATH/public/images/home/. $PUBLICPATH/images/home/
 
     - /bin/sed -i "s|__DIR__.'/../storage/framework/maintenance.php'|__DIR__.'/../adityaclasses_project/storage/framework/maintenance.php'|g" $PUBLICPATH/index.php
     - /bin/sed -i "s|__DIR__.'/../vendor/autoload.php'|__DIR__.'/../adityaclasses_project/vendor/autoload.php'|g" $PUBLICPATH/index.php
     - /bin/sed -i "s|__DIR__.'/../bootstrap/app.php'|__DIR__.'/../adityaclasses_project/bootstrap/app.php'|g" $PUBLICPATH/index.php
 
     # Force PHP 8.2
-    - /bin/echo "AddHandler application/x-httpd-ea-php82 .php" > $PUBLICPATH/.htaccess_php
-    - /bin/cat $PUBLICPATH/.htaccess_php $PUBLICPATH/.htaccess > /home/adityaclasses/htaccess_combined && /bin/mv /home/adityaclasses/htaccess_combined $PUBLICPATH/.htaccess
-    - /bin/rm -f $PUBLICPATH/.htaccess_php
+    - /bin/grep -qxF "AddHandler application/x-httpd-ea-php82 .php" $PUBLICPATH/.htaccess || /bin/sed -i '1i AddHandler application/x-httpd-ea-php82 .php' $PUBLICPATH/.htaccess
 
     - /bin/echo "Deploy finished at $(/bin/date '+%Y-%m-%d %H:%M:%S')" >> /home/adityaclasses/deploy_log.txt
