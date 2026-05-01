@@ -280,6 +280,15 @@ async function fetchAllPackagesForGrade() {
 async function submitRequest() {
     if (!selectedPackage.value) return
     const selectedItems = selectedPackage.value.items.filter(item => selectedItemIds.value.includes(item.id))
+
+    if (!selectedItems.length) {
+        await showAlert({
+            title: "Select a Subject",
+            message: "Please select at least one subject before requesting access.",
+        })
+        return
+    }
+
     const payload = selectedItems.map(item => ({
         subject_id: item.subject_id || item.subject?.id,
         grade_id: item.grade_id
