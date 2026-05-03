@@ -124,64 +124,39 @@
       </button>
     </div>
 
-    <!-- Info Cards -->
-    <p class="section-label mb-3 mt-5">About Aditya Classes</p>
-    <div class="columns is-multiline">
+    <!-- Footer -->
+    <footer class="site-footer mt-5">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <div class="footer-logo">A</div>
+          <div>
+            <p class="footer-title">Aditya Classes</p>
+            <p class="footer-copy">Structured private tuition for Grade 7 to HSC students in Mauritius.</p>
+            <p class="footer-meta">Maths · Add Maths · Accounting</p>
+          </div>
+        </div>
 
-      <div class="column is-12-mobile is-6-tablet is-4-desktop">
-        <div class="glass-card p-4">
-          <div class="info-icon ic-indigo mb-3">🏫</div>
-          <h3 class="title is-6 has-text-white mb-2">About Us</h3>
-          <p class="is-size-7 has-text-grey-light">Structured private tuition for students across Mauritius — Grade 7 to
-            HSC. Online & in-person options available.</p>
+        <div class="footer-details">
+          <div class="footer-detail">
+            <span>Phone</span>
+            <a href="tel:+23059473797">+230 5947 3797</a>
+          </div>
+          <div class="footer-detail">
+            <span>Email</span>
+            <a href="mailto:adityaera22@mail.com">adityaera22@mail.com</a>
+          </div>
+          <div class="footer-detail">
+            <span>Location</span>
+            <p>Quartier-Militaire · Online</p>
+          </div>
         </div>
       </div>
 
-      <div class="column is-12-mobile is-6-tablet is-4-desktop">
-        <div class="glass-card p-4">
-          <div class="info-icon ic-teal mb-3">👨‍🏫</div>
-          <h3 class="title is-6 has-text-white mb-2">Your Tutor</h3>
-          <p class="is-size-7 mb-1"><span class="contact-label">Name</span> Mr. Aditya</p>
-          <p class="is-size-7 mb-1"><span class="contact-label">Phone</span> +230 5947 3797</p>
-          <p class="is-size-7"><span class="contact-label">Email</span> adityaera22@mail.com</p>
-        </div>
+      <div class="footer-bottom">
+        <span>Mr. Aditya</span>
+        <span>WhatsApp support within 24 hours</span>
       </div>
-
-      <div class="column is-12-mobile is-12-tablet is-4-desktop">
-        <div class="glass-card p-4">
-          <div class="info-icon ic-amber mb-3">📍</div>
-          <h3 class="title is-6 has-text-white mb-2">Location</h3>
-          <p class="is-size-7 has-text-grey-light">Quartier-Militaire & online · Recordings available</p>
-        </div>
-      </div>
-
-      <div class="column is-12-mobile is-6-tablet is-4-desktop">
-        <div class="glass-card p-4">
-          <div class="info-icon ic-indigo mb-3">📚</div>
-          <h3 class="title is-6 has-text-white mb-2">Subjects</h3>
-          <p class="is-size-7 has-text-grey-light">Maths · Add Maths · Accounting</p>
-        </div>
-      </div>
-
-      <div class="column is-12-mobile is-6-tablet is-4-desktop">
-        <div class="glass-card p-4">
-          <div class="info-icon ic-pink mb-3">💬</div>
-          <h3 class="title is-6 has-text-white mb-2">Need Help?</h3>
-          <p class="is-size-7 has-text-grey-light">WhatsApp Mr Aditya. All inquiries
-            answered within 24 hrs.</p>
-        </div>
-      </div>
-
-      <div class="column is-12-mobile is-12-tablet is-4-desktop">
-        <div class="glass-card p-4">
-          <div class="info-icon ic-teal mb-3">✅</div>
-          <h3 class="title is-6 has-text-white mb-2">How It Works</h3>
-          <p class="is-size-7 has-text-grey-light">1. Request course access · 2. Tutor approves · 3. Unlock lessons · 4.
-            Track progress & ace your exams.</p>
-        </div>
-      </div>
-
-    </div>
+    </footer>
 
     <Transition name="fade">
       <div v-if="selectedDemoVideo" class="video-modal" @click.self="closeDemo">
@@ -470,42 +445,6 @@ onMounted(async () => {
   }
 }
 
-/* ── Quick action icons ── */
-.q-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-}
-
-.ic-indigo {
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-}
-
-.ic-violet {
-  background: rgba(139, 92, 246, 0.15);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-}
-
-.ic-pink {
-  background: rgba(236, 72, 153, 0.12);
-  border: 1px solid rgba(236, 72, 153, 0.25);
-}
-
-.ic-teal {
-  background: rgba(20, 184, 166, 0.12);
-  border: 1px solid rgba(20, 184, 166, 0.25);
-}
-
-.ic-amber {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-}
-
 /* ── Course rows ── */
 .course-row {
   display: flex;
@@ -579,22 +518,119 @@ onMounted(async () => {
   color: #fcd34d;
 }
 
-/* ── Info card extras ── */
-.info-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+/* Footer */
+.site-footer {
+  overflow: hidden;
+  border-radius: 18px 18px 0 0;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 0;
+  box-shadow: 0 -10px 32px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(16px);
+}
+
+.footer-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  align-items: center;
+  padding: 20px 22px;
+}
+
+.footer-brand {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.footer-logo {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  color: #fff;
+  font-weight: 800;
+  background: rgba(99, 102, 241, 0.16);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #c7d2fe;
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.12);
 }
 
-.contact-label {
-  font-size: 0.65rem;
-  color: #475569;
-  min-width: 42px;
-  display: inline-block;
+.footer-title {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.footer-copy {
+  max-width: 330px;
+  margin: 0;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.footer-meta {
+  margin: 8px 0 0;
+  color: #fcd34d;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.footer-details {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 16px;
+  align-items: center;
+}
+
+.footer-detail {
+  min-width: 118px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(99, 102, 241, 0.16);
+}
+
+.footer-detail span {
+  display: block;
+  margin-bottom: 4px;
+  color: #818cf8;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer-detail a,
+.footer-detail p {
+  display: block;
+  margin: 0;
+  color: rgba(203, 213, 225, 0.82);
+  font-size: 0.73rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.footer-detail a {
+  color: rgba(203, 213, 225, 0.9);
+}
+
+.footer-detail a:hover {
+  color: #fcd34d;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 22px;
+  background: rgba(99, 102, 241, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.68rem;
 }
 
 .learning-wrapper {
@@ -876,6 +912,35 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .hero-students {
     height: 160px;
+  }
+
+  .footer-main {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-main {
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .footer-details {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .footer-detail {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .footer-detail a,
+  .footer-detail p {
+    white-space: normal;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    padding: 10px 18px;
   }
 
   .hero-students::before,
