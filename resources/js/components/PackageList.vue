@@ -4,7 +4,8 @@
         <div class="package-list-header mb-3">
             <div>
                 <h1 class="title is-5 has-text-white mb-1">List of Packages</h1>
-                <p class="has-text-grey-light is-size-7">{{ sortedPackages.length }} package{{ sortedPackages.length === 1 ? '' : 's' }}</p>
+                <p class="has-text-grey-light is-size-7">{{ sortedPackages.length }} package{{ sortedPackages.length ===
+                    1 ? '' : 's' }}</p>
             </div>
 
             <div class="field mb-0">
@@ -32,36 +33,43 @@
                 No packages found.
             </p>
 
-            <div v-for="pkg in sortedPackages" :key="pkg.id" class="glass-card package-row p-3 mb-2">
+            <template v-for="pkg in sortedPackages" :key="pkg.id">
+                <div class="glass-card package-row p-3 mb-2">
 
-                <div class="package-main">
-                    <p class="has-text-white has-text-weight-semibold mb-1">
-                        {{ pkg.name }}
-                    </p>
+                    <div class="package-main">
+                        <p class="has-text-white has-text-weight-semibold mb-1">
+                            {{ pkg.name }}
+                        </p>
 
-                    <div class="package-meta">
-                        <span>{{ pkg.grade?.name || 'No grade' }}</span>
-                        <span>{{ pkg.subject?.name || 'No subject' }}</span>
-                        <span>{{ pkg.items?.length || 0 }} item{{ (pkg.items?.length || 0) === 1 ? '' : 's' }}</span>
+                        <div class="package-meta">
+                            <span>{{ pkg.grade?.name || 'No grade' }}</span>
+                            <span>{{ pkg.subject?.name || 'No subject' }}</span>
+                            <span>{{ pkg.items?.length || 0 }} item{{ (pkg.items?.length || 0) === 1 ? '' : 's'
+                                }}</span>
+                        </div>
                     </div>
+
+                    <div class="package-price">
+                        Rs {{ formatMoney(pkg.total_price) }}
+                    </div>
+
+                    <div class="buttons are-small">
+                        <button class="button is-primary has-text-white" @click="toggleEdit(pkg.id)">
+                            {{ editingId === pkg.id ? 'Close' : 'Edit' }}
+                        </button>
+
+                        <button class="button is-danger" :class="{ 'is-loading': deletingId === pkg.id }"
+                            :disabled="deletingId === pkg.id" @click="deletePackage(pkg)">
+                            Delete
+                        </button>
+                    </div>
+
                 </div>
 
-                <div class="package-price">
-                    Rs {{ formatMoney(pkg.total_price) }}
+                <div v-if="editingId === pkg.id" class="edit-panel mb-3">
+                    <PackageBuilder :editPackage="pkg" @saved="onPackageSaved" @cancel="editingId = null" />
                 </div>
-
-                <div class="buttons are-small">
-                    <button class="button is-primary has-text-white" @click="edit(pkg)">
-                        Edit
-                    </button>
-
-                    <button class="button is-danger has-text-white" :class="{ 'is-loading': deletingId === pkg.id }"
-                        :disabled="deletingId === pkg.id" @click="deletePackage(pkg)">
-                        Delete
-                    </button>
-                </div>
-
-            </div>
+            </template>
 
         </div>
 
@@ -69,16 +77,16 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, nextTick } from "vue";
 import api from "../api";
 import Loader from "./common/Loader.vue";
+import PackageBuilder from "./PackageBuilder.vue";
 import { showAlert, showConfirm } from "../composables/dialog";
-
-const emit = defineEmits(["navigate"]);
 
 const packages = ref([]);
 const loading = ref(false);
 const deletingId = ref(null);
+const editingId = ref(null);
 const sortBy = ref("newest");
 
 const sortedPackages = computed(() => {
@@ -119,13 +127,23 @@ async function fetchPackages() {
     }
 }
 
-function edit(pkg) {
-    emit("navigate", {
-        name: "package",
-        props: {
-            editPackage: pkg
-        }
-    });
+async function toggleEdit(id) {
+    if (editingId.value === id) {
+        editingId.value = null;
+        return;
+    }
+
+    editingId.value = id;
+
+    await nextTick();
+
+    const el = document.querySelector(".edit-panel");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function onPackageSaved() {
+    editingId.value = null;
+    await fetchPackages();
 }
 
 async function deletePackage(pkg) {
@@ -143,6 +161,9 @@ async function deletePackage(pkg) {
     try {
         await api.delete(`/packages/delete/${pkg.id}`);
         packages.value = packages.value.filter(item => item.id !== pkg.id);
+        if (editingId.value === pkg.id) {
+            editingId.value = null;
+        }
     } catch (error) {
         console.error("Failed to delete package:", error);
         await showAlert({
@@ -206,7 +227,14 @@ onMounted(fetchPackages);
     text-align: right;
 }
 
+.edit-panel {
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 @media (max-width: 768px) {
+
     .package-list-header,
     .package-row {
         align-items: stretch;

@@ -13,14 +13,21 @@
                 </p>
             </div>
 
-            <button class="login-btn action-btn px-5" style="max-width: 85px;" @click="submit" :disabled="loading">
-                <span v-if="!loading">
-                    {{ isEdit ? "Update" : "Create" }}
-                </span>
-                <span v-else>
-                    Loading..
-                </span>
-            </button>
+            <div class="package-actions">
+                <button v-if="isEdit" class="package-action-btn is-secondary" @click="$emit('cancel')"
+                    :disabled="loading">
+                    Cancel
+                </button>
+
+                <button class="package-action-btn is-primary-action" @click="submit" :disabled="loading">
+                    <span v-if="!loading">
+                        {{ isEdit ? "Update" : "Create" }}
+                    </span>
+                    <span v-else>
+                        Loading..
+                    </span>
+                </button>
+            </div>
 
 
         </div>
@@ -187,6 +194,8 @@ const props = defineProps({
     editPackage: Object
 });
 
+const emit = defineEmits(["saved", "cancel"]);
+
 const isEdit = computed(() => !!props.editPackage);
 const editingIndex = ref(null);
 const singleSubject = ref(null);
@@ -311,9 +320,11 @@ async function submit() {
 
     try {
         if (isEdit.value) {
-            await api.put(`/packages/update/${props.editPackage.id}`, form.value);
+            const res = await api.put(`/packages/update/${props.editPackage.id}`, form.value);
+            emit("saved", res.data);
         } else {
-            await api.post("/packages/store", form.value);
+            const res = await api.post("/packages/store", form.value);
+            emit("saved", res.data);
         }
         await showAlert({
             title: "Saved",
@@ -384,6 +395,45 @@ onMounted(async () => {
     flex-direction: column;
     gap: 5px;
     border-radius: 14px;
+}
+
+.package-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.package-action-btn {
+    min-width: 84px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.package-action-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.package-action-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+}
+
+.package-action-btn.is-primary-action {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
+}
+
+.package-action-btn.is-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #cbd5e1;
 }
 
 /* =========================
