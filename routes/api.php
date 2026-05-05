@@ -8,6 +8,7 @@ use App\Http\Controllers\LessonAccessController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\HomeImageController;
+use App\Http\Controllers\HomepageContentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -97,3 +98,7 @@ Route::post('/announcement/save', function (Request $request) {
 
     return response()->json(["status" => "saved"]);
 });
+
+// Homepage content
+Route::get('/homepage-content', [HomepageContentController::class, 'show']);
+Route::post('/homepage-content/save', [HomepageContentController::class, 'save']);

@@ -1,0 +1,39 @@
+{
+    "demo": {
+        "title": "Watch how lessons are explained before enrolling",
+        "videos": [
+            {
+                "id": 1,
+                "title": "Mathematics",
+                "subject": "Grade 12",
+                "meta": "Simultaneous Equations",
+                "emoji": "🧭",
+                "colorClass": "cd-pink",
+                "tagClass": "pink",
+                "video": "https:\/\/player.vimeo.com\/video\/1075679310?title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479",
+                "backgroundClass": "bg-red"
+            },
+            {
+                "id": 2,
+                "title": "Accounts",
+                "subject": "Grade 10",
+                "meta": "Double Entry",
+                "emoji": "🧮",
+                "colorClass": "cd-slate",
+                "tagClass": "green",
+                "video": "https:\/\/player.vimeo.com\/video\/820746971?h=f2f8ed7cf3",
+                "backgroundClass": "bg-cyan"
+            }
+        ]
+    },
+    "footer": {
+        "brandName": "Aditya Classes",
+        "description": "Structured private tuition for Grade 7 to Grade 13 in Mauritius.",
+        "subjects": "Maths · Add Maths · Accounts",
+        "phone": "+230 5947 3797",
+        "email": "adityaera22@mail.com",
+        "location": "Quartier-Militaire · Online",
+        "tutorName": "Mr. Aditya",
+        "supportText": "WhatsApp support within 24 hours"
+    }
+}

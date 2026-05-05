@@ -84,10 +84,11 @@
     </div>
 
     <!-- Enrolled Courses -->
-    <p class="section-label mb-3">Watch how lessons are explained before enrolling</p>
+    <p class="section-label mb-3">{{ homepageContent.demo.title }}</p>
     <div class="mb-5">
       <div v-if="courses.length">
-        <div v-for="course in courses" :key="course.id" class="course-row mb-2" @click="openDemo(course)">
+        <div v-for="course in courses" :key="course.id" :class="['course-row', course.backgroundClass, 'mb-2']"
+          @click="openDemo(course)">
           <div :class="['course-dot', course.colorClass]">{{ course.emoji }}</div>
           <div style="flex:1; min-width:0;">
             <p class="has-text-weight-semibold is-size-7 mb-0">{{ course.title }}</p>
@@ -128,33 +129,33 @@
     <footer class="site-footer mt-5">
       <div class="footer-main">
         <div class="footer-brand">
-          <div class="footer-logo">A</div>
+          <div class="footer-logo">{{ footerInitial }}</div>
           <div>
-            <p class="footer-title">Aditya Classes</p>
-            <p class="footer-copy">Structured private tuition for Grade 7 to HSC students in Mauritius.</p>
-            <p class="footer-meta">Maths · Add Maths · Accounting</p>
+            <p class="footer-title">{{ homepageContent.footer.brandName }}</p>
+            <p class="footer-copy">{{ homepageContent.footer.description }}</p>
+            <p class="footer-meta">{{ homepageContent.footer.subjects }}</p>
           </div>
         </div>
 
         <div class="footer-details">
           <div class="footer-detail">
             <span>Phone</span>
-            <a href="tel:+23059473797">+230 5947 3797</a>
+            <a :href="`tel:${homepageContent.footer.phone}`">{{ homepageContent.footer.phone }}</a>
           </div>
           <div class="footer-detail">
             <span>Email</span>
-            <a href="mailto:adityaera22@mail.com">adityaera22@mail.com</a>
+            <a :href="`mailto:${homepageContent.footer.email}`">{{ homepageContent.footer.email }}</a>
           </div>
           <div class="footer-detail">
             <span>Location</span>
-            <p>Quartier-Militaire · Online</p>
+            <p>{{ homepageContent.footer.location }}</p>
           </div>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <span>Mr. Aditya</span>
-        <span>WhatsApp support within 24 hours</span>
+        <span>{{ homepageContent.footer.tutorName }}</span>
+        <span>{{ homepageContent.footer.supportText }}</span>
       </div>
     </footer>
 
@@ -218,6 +219,48 @@ const isDemoPlaying = ref(false);
 const announcement = ref(null);
 const homepageImages = ref([]);
 
+const defaultHomepageContent = {
+  demo: {
+    title: "Watch how lessons are explained before enrolling",
+    videos: [
+      {
+        id: 1,
+        title: "Mathematics",
+        subject: "Grade 12",
+        meta: "Simultaneous Equations",
+        emoji: "📐",
+        backgroundClass: "",
+        colorClass: "cd-math",
+        tagClass: "",
+        video: "https://player.vimeo.com/video/1075679310?title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479",
+      },
+      {
+        id: 2,
+        title: "Accounts",
+        subject: "Grade 10",
+        meta: "Double Entry",
+        emoji: "🔬",
+        backgroundClass: "",
+        colorClass: "cd-sci",
+        tagClass: "green",
+        video: "https://player.vimeo.com/video/820746971?h=f2f8ed7cf3",
+      },
+    ],
+  },
+  footer: {
+    brandName: "Aditya Classes",
+    description: "Structured private tuition for Grade 7 to HSC students in Mauritius.",
+    subjects: "Maths · Add Maths · Accounting",
+    phone: "+230 5947 3797",
+    email: "adityaera22@mail.com",
+    location: "Quartier-Militaire · Online",
+    tutorName: "Mr. Aditya",
+    supportText: "WhatsApp support within 24 hours",
+  },
+};
+
+const homepageContent = ref(JSON.parse(JSON.stringify(defaultHomepageContent)));
+
 const heroImages = [
   { src: "/images/home/1.jpg", alt: "Students learning with Aditya Classes" },
   { src: "/images/home/2.jpg", alt: "Classroom learning session" },
@@ -231,6 +274,32 @@ const sliderImages = computed(() => {
   const images = homepageImages.value.length ? homepageImages.value : heroImages;
   return [...images, ...images];
 });
+
+const footerInitial = computed(() => {
+  return homepageContent.value.footer.brandName?.trim()?.charAt(0)?.toUpperCase() || "A";
+});
+
+const courses = computed(() => {
+  return (homepageContent.value.demo.videos || []).filter(video => video.video);
+});
+
+function mergeHomepageContent(content = {}) {
+  const demo = {
+    ...defaultHomepageContent.demo,
+    ...(content.demo || {}),
+  };
+
+  return {
+    demo: {
+      ...demo,
+      videos: Array.isArray(demo.videos) ? demo.videos : defaultHomepageContent.demo.videos,
+    },
+    footer: {
+      ...defaultHomepageContent.footer,
+      ...(content.footer || {}),
+    },
+  };
+}
 
 const announcementClass = computed(() => {
   switch (announcement.value?.type) {
@@ -263,13 +332,13 @@ function closeDemo() {
 
 function startDemoVideo() {
   isDemoPlaying.value = true;
-  isVideoLoading.value = true;
 }
 
 const demoVideoUrl = computed(() => {
   if (!selectedDemoVideo.value?.video) return '';
 
-  return `${selectedDemoVideo.value.video}?autoplay=1&muted=0`;
+  const separator = selectedDemoVideo.value.video.includes("?") ? "&" : "?";
+  return `${selectedDemoVideo.value.video}${separator}autoplay=1&muted=0`;
 });
 
 function selectGrade(grade) {
@@ -280,29 +349,6 @@ function selectGrade(grade) {
     params: { id: $gradeId }
   });
 }
-const courses = ref([
-  {
-    id: 1,
-    title: "Mathematics",
-    subject: "Grade 12",
-    meta: "Simultaneous Equations",
-    emoji: "📐",
-    colorClass: "cd-math",
-    tagClass: "",
-    video: "https://player.vimeo.com/video/1075679310?title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-  },
-  {
-    id: 2,
-    title: "Accounts",
-    subject: "Grade 10",
-    meta: "Double Entry",
-    emoji: "🔬",
-    colorClass: "cd-sci",
-    tagClass: "green",
-    video: "https://player.vimeo.com/video/820746971?h=f2f8ed7cf3"
-  }
-]);
-
 onMounted(async () => {
   loading.value = true;
 
@@ -311,6 +357,14 @@ onMounted(async () => {
 
     const announcementRes = await api.get("/announcement");
     announcement.value = announcementRes.data;
+
+    try {
+      const contentRes = await api.get("/homepage-content");
+      homepageContent.value = mergeHomepageContent(contentRes.data);
+    } catch (error) {
+      console.error("Failed to load homepage content:", error);
+      homepageContent.value = mergeHomepageContent();
+    }
 
     try {
       const imagesRes = await api.get("/homepage-images");
@@ -464,6 +518,38 @@ onMounted(async () => {
   transform: translateX(3px);
 }
 
+.course-row.bg-indigo {
+  background: rgba(99, 102, 241, 0.07);
+}
+
+.course-row.bg-green {
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.course-row.bg-pink {
+  background: rgba(236, 72, 153, 0.06);
+}
+
+.course-row.bg-blue {
+  background: rgba(59, 130, 246, 0.07);
+}
+
+.course-row.bg-purple {
+  background: rgba(139, 92, 246, 0.07);
+}
+
+.course-row.bg-red {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.course-row.bg-cyan {
+  background: rgba(6, 182, 212, 0.06);
+}
+
+.course-row.bg-slate {
+  background: rgba(148, 163, 184, 0.06);
+}
+
 .course-row--dashed {
   border-style: dashed;
   opacity: 0.6;
@@ -493,6 +579,30 @@ onMounted(async () => {
   background: rgba(16, 185, 129, 0.12);
 }
 
+.cd-pink {
+  background: rgba(236, 72, 153, 0.12);
+}
+
+.cd-blue {
+  background: rgba(59, 130, 246, 0.13);
+}
+
+.cd-purple {
+  background: rgba(139, 92, 246, 0.14);
+}
+
+.cd-red {
+  background: rgba(239, 68, 68, 0.13);
+}
+
+.cd-cyan {
+  background: rgba(6, 182, 212, 0.13);
+}
+
+.cd-slate {
+  background: rgba(148, 163, 184, 0.13);
+}
+
 .course-tag {
   flex-shrink: 0;
   background: rgba(99, 102, 241, 0.15);
@@ -510,6 +620,42 @@ onMounted(async () => {
   background: rgba(16, 185, 129, 0.12);
   border-color: rgba(16, 185, 129, 0.25);
   color: #6ee7b7;
+}
+
+.course-tag.pink {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: rgba(236, 72, 153, 0.25);
+  color: #f9a8d4;
+}
+
+.course-tag.blue {
+  background: rgba(59, 130, 246, 0.13);
+  border-color: rgba(59, 130, 246, 0.26);
+  color: #93c5fd;
+}
+
+.course-tag.purple {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.28);
+  color: #c4b5fd;
+}
+
+.course-tag.red {
+  background: rgba(239, 68, 68, 0.13);
+  border-color: rgba(239, 68, 68, 0.26);
+  color: #fca5a5;
+}
+
+.course-tag.cyan {
+  background: rgba(6, 182, 212, 0.13);
+  border-color: rgba(6, 182, 212, 0.26);
+  color: #67e8f9;
+}
+
+.course-tag.slate {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #cbd5e1;
 }
 
 .course-tag--amber {

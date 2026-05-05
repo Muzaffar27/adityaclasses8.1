@@ -49,20 +49,24 @@ import Announcement from "./Announcement.vue";
 import PackageList from "./PackageList.vue";
 import StudentManagement from "./StudentManagement.vue";
 import HomeImageManager from "./HomeImageManager.vue";
+import HomeDemoEditor from "./HomeDemoEditor.vue";
+import HomeFooterEditor from "./HomeFooterEditor.vue";
 
 const tools = [
-    { key: "announcement", label: "Announcement", icon: "📢" },
-    { key: "homeImages", label: "Home Images", icon: "🖼️" },
-    { key: "lessons", label: "Lessons", icon: "📚" },
-    { key: "students", label: "Students", icon: "🎓" },
-    { key: "access", label: "Request Access", icon: "👥" },
-    { key: "package", label: "Package", icon: "📂" },
-    { key: "packageList", label: "Package List", icon: "📦" }
+    { key: "demoVideos", label: "Demo Videos", icon: "\u{1F3AC}" },
+    { key: "footerContent", label: "Footer Content", icon: "\u{1F3E0}" },
+    { key: "homeImages", label: "Home Images", icon: "\u{1F5BC}\uFE0F" },
+    { key: "announcement", label: "Announcement", icon: "\u{1F4E2}" },
+    { key: "lessons", label: "Lessons", icon: "\u{1F4DA}" },
+    { key: "package", label: "Package", icon: "\u{1F4C2}" },
+    { key: "packageList", label: "Package List", icon: "\u{1F4E6}" },
+    { key: "students", label: "Students", icon: "\u{1F393}" },
+    { key: "access", label: "Request Access", icon: "\u{1F465}" }
 ];
 
 /* 🔥 NEW: central state */
 const currentView = ref({
-    name: "announcement",
+    name: "demoVideos",
     props: {}
 });
 
@@ -74,6 +78,8 @@ const toolMap = {
     students: StudentManagement,
     package: PackageBuilder,
     packageList: PackageList,
+    demoVideos: HomeDemoEditor,
+    footerContent: HomeFooterEditor,
     homeImages: HomeImageManager,
     announcement: Announcement
 };
