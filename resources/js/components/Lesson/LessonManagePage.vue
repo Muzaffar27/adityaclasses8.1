@@ -112,7 +112,7 @@ import { useRouter } from 'vue-router';
 import Layout from '../common/Layout.vue';
 import { useCacheStore } from '../../stores/cache';
 import { storeToRefs } from 'pinia';
-import createModal from '../common/createModal.vue';
+import createModal from '../common/CreateModal.vue';
 import axios from 'axios';
 import { showAlert } from '../../composables/dialog';
 

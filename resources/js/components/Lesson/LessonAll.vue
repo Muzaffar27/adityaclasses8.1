@@ -228,7 +228,7 @@ import LessonEditForm from './LessonEditForm.vue';
 import { PlusIcon } from '@heroicons/vue/24/outline';
 import { useCacheStore } from '@/stores/cache';
 import Loader from '../common/Loader.vue';
-import createModal from '../common/createModal.vue';
+import createModal from '../common/CreateModal.vue';
 /* PROPS */
 const props = defineProps({
     grade_id: [String, Number],
