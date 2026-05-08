@@ -165,12 +165,13 @@
         <div class="video-box glass-card">
 
           <div class="video-header p-4 is-flex is-align-items-center">
-            <h3 class="has-text-white is-size-6">
+            <h3 class="video-title has-text-white is-size-6">
               {{ selectedDemoVideo.title }}
             </h3>
 
-            <button class="close-btn ml-auto" @click="closeDemo">
-              x
+            <button class="close-btn ml-auto" type="button" aria-label="Close video" title="Close video"
+              @click.stop="closeDemo">
+              <XMarkIcon class="close-icon" aria-hidden="true" />
             </button>
           </div>
 
@@ -201,6 +202,7 @@ import { useRouter } from "vue-router";
 import { useCacheStore } from "../stores/cache";
 import { useAuthStore } from "../stores/auth";
 import api from "../api";
+import { XMarkIcon } from '@heroicons/vue/24/outline';
 
 import { storeToRefs } from "pinia";
 import Loader from "./common/Loader.vue";
@@ -952,6 +954,52 @@ onMounted(async () => {
 
 .video-box:hover {
   transform: none;
+}
+
+.video-header {
+  gap: 12px;
+}
+
+.video-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close-btn {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.close-btn:hover {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.close-btn:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+.close-icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.25;
 }
 
 .video-container {
