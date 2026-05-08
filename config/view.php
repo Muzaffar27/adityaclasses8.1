@@ -14,7 +14,7 @@ return [
     */
 
     'paths' => [
-        resource_path('views'),
+         __DIR__.'/../resources/views',
     ],
 
     /*
@@ -30,7 +30,7 @@ return [
 
     'compiled' => env(
         'VIEW_COMPILED_PATH',
-        realpath(storage_path('framework/views'))
+        __DIR__.'/../storage/framework/views'
     ),
 
 ];

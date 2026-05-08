@@ -941,3 +941,24 @@ input[type="checkbox"]:disabled {
     color: #a5b4fc;
     font-weight: 600;
   }
+
+  .button.is-danger:not(.is-light):not(.is-outlined),
+  .button.is-danger:not(.is-light):not(.is-outlined):active {
+    background: #be123c !important;
+    border-color: #be123c !important;
+    color: #fff7ed !important;
+    font-weight: 600;
+  }
+
+  .button.is-danger:not(.is-light):not(.is-outlined):hover,
+  .button.is-danger:not(.is-light):not(.is-outlined):focus {
+    background: #9f1239 !important;
+    border-color: #9f1239 !important;
+    color: #fff7ed !important;
+  }
+
+  .button.is-danger:not(.is-light):not(.is-outlined)[disabled] {
+    background: #881337 !important;
+    border-color: #881337 !important;
+    color: rgba(255, 247, 237, 0.75) !important;
+  }

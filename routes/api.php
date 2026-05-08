@@ -33,6 +33,10 @@ Route::get('/lessons', [LessonController::class, 'get']);
 Route::get('/lessons/all', [LessonController::class, 'all']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/admin/lessons/rename-topic', [LessonController::class, 'renameTopic']);
+    Route::post('/admin/lessons/move-topic', [LessonController::class, 'moveTopic']);
+    Route::post('/admin/lessons/copy-topic', [LessonController::class, 'copyTopic']);
+    Route::post('/admin/lessons/delete-topic', [LessonController::class, 'deleteTopic']);
     Route::apiResource('admin/lessons', LessonController::class);
 });
 

@@ -14,7 +14,7 @@
 
         <div class="header-center">
           <div class="logo-wrapper" @click="goHome">
-            <img :src="`${baseUrl}menu_logo.png`" class="main-logo mt-5" alt="Aditya Classes" />
+            <img :src="logoUrl" class="main-logo mt-5" alt="Aditya Classes" />
             <div class="logo-glow"></div>
           </div>
         </div>
@@ -60,7 +60,7 @@ import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
 const router = useRouter();
-const baseUrl = import.meta.env.BASE_URL || "/";
+const logoUrl = '/menu_logo.png';
 
 defineProps({
   title: String,
@@ -317,7 +317,8 @@ function enterAdmin() {
     background: #f59e0b !important;
     border-radius: 40px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    color: #0f172a;
+    color: #451a03;
+    font-weight: 700;
   }
 
   /* Reduce gap between right side items */
@@ -344,6 +345,16 @@ function enterAdmin() {
   background: #f59e0b !important;
   border-radius: 40px !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  color: #0f172a;
+  color: #451a03;
+  font-weight: 700;
+  border: 1px solid #f59e0b;
+  transition: 0.2s ease;
+}
+
+.tutor-space-btn:hover,
+.tutor-space-btn:focus {
+  background: #d97706 !important;
+  border-color: #d97706;
+  color: #2f1202;
 }
 </style>

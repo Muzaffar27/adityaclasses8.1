@@ -3,7 +3,7 @@
         <div class="login-card">
 
             <div class="auth-brand">
-                <img :src="`${baseUrl}menu_logo.png`" alt="Aditya Classes">
+                <img :src="logoUrl" alt="Aditya Classes">
                 <div>
                     <h1 class="login-title">Welcome Back</h1>
                     <p class="auth-subtitle">Continue your learning journey</p>
@@ -63,7 +63,7 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const auth = useAuthStore()
-const baseUrl = import.meta.env.BASE_URL || '/'
+const logoUrl = '/menu_logo.png';
 
 const form = reactive({
     email: '',

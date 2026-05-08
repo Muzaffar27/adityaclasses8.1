@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use Illuminate\Http\Request;
 use App\Models\LessonAccess;
+use Illuminate\Support\Facades\DB;
 
 class LessonController extends Controller
 {
@@ -50,6 +51,98 @@ class LessonController extends Controller
         $lesson->update($request->all());
 
         return $lesson;
+    }
+
+    public function renameTopic(Request $request)
+    {
+        $validated = $request->validate([
+            'lesson_ids' => 'required|array|min:1',
+            'lesson_ids.*' => 'integer|exists:lessons,id',
+            'old_topic' => 'required|string',
+            'new_topic' => 'required|string|max:255',
+        ]);
+
+        $updated = Lesson::whereIn('id', $validated['lesson_ids'])
+            ->where('topic', $validated['old_topic'])
+            ->update(['topic' => $validated['new_topic']]);
+
+        return response()->json([
+            'message' => 'Topic renamed',
+            'updated' => $updated,
+        ]);
+    }
+
+    public function moveTopic(Request $request)
+    {
+        $validated = $request->validate([
+            'lesson_ids' => 'required|array|min:1',
+            'lesson_ids.*' => 'integer|exists:lessons,id',
+            'grade_id' => 'required|integer|exists:grades,id',
+            'subject_id' => 'required|integer|exists:subjects,id',
+        ]);
+
+        $updated = Lesson::whereIn('id', $validated['lesson_ids'])
+            ->update([
+                'grade_id' => $validated['grade_id'],
+                'subject_id' => $validated['subject_id'],
+            ]);
+
+        return response()->json([
+            'message' => 'Topic moved',
+            'updated' => $updated,
+        ]);
+    }
+
+    public function copyTopic(Request $request)
+    {
+        $validated = $request->validate([
+            'lesson_ids' => 'required|array|min:1',
+            'lesson_ids.*' => 'integer|exists:lessons,id',
+            'grade_id' => 'required|integer|exists:grades,id',
+            'subject_id' => 'required|integer|exists:subjects,id',
+            'new_topic' => 'nullable|string|max:255',
+        ]);
+
+        $topic = isset($validated['new_topic']) ? trim($validated['new_topic']) : null;
+
+        $lessons = Lesson::whereIn('id', $validated['lesson_ids'])
+            ->orderBy('part_number')
+            ->orderBy('id')
+            ->get();
+
+        $copied = DB::transaction(function () use ($lessons, $validated, $topic) {
+            return $lessons->map(function (Lesson $lesson) use ($validated, $topic) {
+                $copy = $lesson->replicate();
+                $copy->grade_id = $validated['grade_id'];
+                $copy->subject_id = $validated['subject_id'];
+                if ($topic) {
+                    $copy->topic = $topic;
+                }
+                $copy->save();
+
+                return $copy;
+            });
+        });
+
+        return response()->json([
+            'message' => 'Topic copied',
+            'copied' => $copied->count(),
+        ], 201);
+    }
+
+    public function deleteTopic(Request $request)
+    {
+        $validated = $request->validate([
+            'lesson_ids' => 'required|array|min:1',
+            'lesson_ids.*' => 'integer|exists:lessons,id',
+        ]);
+
+        $deleted = Lesson::whereIn('id', $validated['lesson_ids'])->delete();
+
+        return response()->json([
+            'message' => 'Topic deleted',
+            'deleted' => $deleted,
+        ]);
     }
 
     // DELETE

@@ -38,7 +38,7 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
-            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'database' => env('DB_DATABASE', __DIR__.'/../database/database.sqlite'),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
@@ -50,7 +50,20 @@ return [
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'forge'),
             'username' => env('DB_USERNAME', 'forge'),
-            'password' => env('DB_PASSWORD', ''),
+            'password' => env('DB_PASSWORD_DOCKER') ?: (function () {
+                $envFile = __DIR__.'/../.env';
+
+                foreach (file($envFile, FILE_IGNORE_NEW_LINES) as $line) {
+                    $line = trim($line);
+
+                    if (str_starts_with($line, 'DB_PASSWORD=')) {
+                        $value = substr($line, strlen('DB_PASSWORD='));
+                        return trim($value, "\"'");
+                     }
+                }
+
+                return '';
+            })(),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',

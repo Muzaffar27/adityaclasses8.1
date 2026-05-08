@@ -1,0 +1,51 @@
+services:
+  app:
+    build: .
+    image: adityaclasses-local
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html/adityaclasses
+      - ./public:/var/www/html/public
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8080
+      ASSET_URL: ""
+      SESSION_DOMAIN: localhost
+      SESSION_SECURE_COOKIE: "false"
+      SANCTUM_STATEFUL_DOMAINS: localhost,localhost:8080,127.0.0.1,127.0.0.1:8080
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: adityaclasses
+      DB_USERNAME: aditya
+      DB_PASSWORD: aditya_local
+      DB_PASSWORD_DOCKER: aditya_local
+      CACHE_DRIVER: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+    command: apache2-foreground
+
+  db:
+    image: mariadb:10.6
+    ports:
+      - "3307:3306"
+    environment:
+      MARIADB_DATABASE: adityaclasses
+      MARIADB_USER: aditya
+      MARIADB_PASSWORD: aditya_local
+      MARIADB_ROOT_PASSWORD: root_local
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  db_data:
