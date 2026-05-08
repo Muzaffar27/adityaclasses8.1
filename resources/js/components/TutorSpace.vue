@@ -16,7 +16,7 @@
 
                         <div class="text">
                             <p class="name">{{ tool.label }}</p>
-                            <p class="desc">Manage</p>
+                            <p class="desc">{{ tool.desc }}</p>
                         </div>
 
                     </div>
@@ -53,20 +53,20 @@ import HomeDemoEditor from "./HomeDemoEditor.vue";
 import HomeFooterEditor from "./HomeFooterEditor.vue";
 
 const tools = [
-    { key: "demoVideos", label: "Demo Videos", icon: "\u{1F3AC}" },
-    { key: "footerContent", label: "Footer Content", icon: "\u{1F3E0}" },
-    { key: "homeImages", label: "Home Images", icon: "\u{1F5BC}\uFE0F" },
-    { key: "announcement", label: "Announcement", icon: "\u{1F4E2}" },
-    { key: "lessons", label: "Lessons", icon: "\u{1F4DA}" },
-    { key: "package", label: "Package", icon: "\u{1F4C2}" },
-    { key: "packageList", label: "Package List", icon: "\u{1F4E6}" },
-    { key: "students", label: "Students", icon: "\u{1F393}" },
-    { key: "access", label: "Request Access", icon: "\u{1F465}" }
+    { key: "announcement", label: "Announcement", icon: "\u{1F4E2}", desc: "Site notice" },
+    { key: "access", label: "Request Access", icon: "\u{1F465}", desc: "Approvals" },
+    { key: "students", label: "Students", icon: "\u{1F393}", desc: "List" },
+    { key: "lessons", label: "Lessons", icon: "\u{1F4DA}", desc: "Create & Edit" },
+    { key: "package", label: "Package", icon: "\u{1F4C2}", desc: "Create" },
+    { key: "packageList", label: "Package List", icon: "\u{1F4E6}", desc: "List" },
+    { key: "homeImages", label: "Home Images", icon: "\u{1F5BC}\uFE0F", desc: "Manage" },
+    { key: "demoVideos", label: "Demo Videos", icon: "\u{1F3AC}", desc: "Samples" },
+    { key: "footerContent", label: "Footer Content", icon: "\u{1F3E0}", desc: "Contact" }
 ];
 
 /* 🔥 NEW: central state */
 const currentView = ref({
-    name: "demoVideos",
+    name: "announcement",
     props: {}
 });
 
@@ -180,6 +180,10 @@ function handleNavigation(event) {
     font-size: 0.65rem;
     color: #94a3b8;
     margin: 0;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* RIGHT SIDE */

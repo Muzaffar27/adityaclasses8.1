@@ -2,7 +2,7 @@
     <div v-if="loading">
         <Loader />
     </div>
-    <div v-else class="glass-card p-4">
+    <div v-else class="glass-card announcement-panel p-4">
 
         <h2 class="title is-6 has-text-white mb-3">
             Announcement Editor
@@ -48,14 +48,16 @@
         </div>
 
         <!-- SAVE -->
-        <button class="button is-primary has-text-white" @click="save">
-            <span v-if="!loading">
-                Save
-            </span>
-            <span v-else>
-                Loading..
-            </span>
-        </button>
+        <div class="save-actions">
+            <button class="button is-primary has-text-white" @click="save">
+                <span v-if="!loading">
+                    Save
+                </span>
+                <span v-else>
+                    Loading..
+                </span>
+            </button>
+        </div>
 
     </div>
 </template>
@@ -121,3 +123,18 @@ const previewClass = computed(() => {
     }
 });
 </script>
+
+<style scoped>
+.announcement-panel {
+    height: auto !important;
+}
+
+.announcement-panel:hover {
+    transform: none;
+}
+
+.save-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+</style>

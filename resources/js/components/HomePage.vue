@@ -170,7 +170,7 @@
             </h3>
 
             <button class="close-btn ml-auto" @click="closeDemo">
-              ✕
+              x
             </button>
           </div>
 
@@ -911,6 +911,21 @@ onMounted(async () => {
   cursor: pointer;
 }
 
+.play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 50px;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .video-modal {
   position: fixed;
   inset: 0;
@@ -927,11 +942,16 @@ onMounted(async () => {
 .video-box {
   width: 100%;
   max-width: 850px;
+  height: auto !important;
   border-radius: 14px;
   overflow: hidden;
   background: #0f172a !important;
 
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+.video-box:hover {
+  transform: none;
 }
 
 .video-container {
@@ -940,6 +960,7 @@ onMounted(async () => {
   aspect-ratio: 16 / 9;
   background: #000;
   overflow: hidden;
+  line-height: 0;
 }
 
 @media (max-width: 768px) {
@@ -956,6 +977,7 @@ onMounted(async () => {
   width: 100%;
   height: 100%;
   border: 0;
+  display: block;
 }
 
 
