@@ -1,39 +1,5 @@
 <template>
     <Layout title="Lessons" :loading="loading">
-
-        <Transition name="fade">
-            <div v-if="selectedLesson" class="video-modal" @click.self="closeLesson">
-                <div class="video-box glass-card">
-                    <div class="video-header p-4 is-flex is-align-items-center">
-                        <div class="header-content">
-                            <h3 class="has-text-white is-size-6-mobile is-size-5-tablet line-clamp-1">
-                                {{ selectedLesson.title }}
-                            </h3>
-                            <p v-if="getSubTopic(selectedLesson)" class="modal-sub-topic line-clamp-1">
-                                {{ getSubTopic(selectedLesson) }}
-                            </p>
-                        </div>
-                        <button class="close-btn ml-auto" @click="closeLesson">
-                            <XMarkIcon class="hero-icon-sm" />
-                        </button>
-                    </div>
-
-                    <div class="video-container">
-
-                        <!-- LOAD IFRAME ONLY AFTER CLICK -->
-                        <iframe v-if="selectedLesson" :src="videoUrl" frameborder="0" allow="autoplay; fullscreen"
-                            allowfullscreen class="video-frame" @load="onVideoLoaded" />
-
-                        <div v-if="isVideoLoading" class="video-loading">
-                            <div class="loader"></div>
-                            <p class="mt-2">Buffering...</p>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </Transition>
-
         <div v-if="!loading && lessons.length > 0">
             <div v-for="group in paginatedTopics" :key="group.topic">
 
@@ -56,7 +22,34 @@
                         <div class="columns is-mobile is-multiline px-2 py-3">
                             <div class="column is-12-mobile is-6-tablet is-4-desktop" v-for="lesson in group.lessons"
                                 :key="lesson.id">
-                                <div class="card glass-card clickable-card fixed-card lesson-card"
+                                <div v-if="isSelectedLesson(lesson)" class="card glass-card inline-video-card"
+                                    :data-lesson-player="lesson.id">
+                                    <div class="video-header p-4 is-flex is-align-items-center">
+                                        <div class="header-content">
+                                            <h3 class="has-text-white is-size-6-mobile is-size-5-tablet line-clamp-1">
+                                                {{ lesson.title }}
+                                            </h3>
+                                            <p v-if="getSubTopic(lesson)" class="modal-sub-topic line-clamp-1">
+                                                {{ getSubTopic(lesson) }}
+                                            </p>
+                                        </div>
+                                        <button class="close-btn ml-auto" @click.stop="closeLesson">
+                                            <XMarkIcon class="hero-icon-sm" />
+                                        </button>
+                                    </div>
+
+                                    <div class="video-container">
+                                        <iframe :src="getVideoUrl(lesson)" frameborder="0" allow="autoplay; fullscreen"
+                                            allowfullscreen class="video-frame" @load="onVideoLoaded" />
+
+                                        <div v-if="isVideoLoading" class="video-loading">
+                                            <div class="loader"></div>
+                                            <p class="mt-2">Buffering...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-else class="card glass-card clickable-card fixed-card lesson-card"
                                     @click="hasAccess && openLesson(lesson)">
 
                                     <div v-if="!hasAccess" class="locked-overlay">
@@ -101,7 +94,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, nextTick } from "vue";
 import api from "../api";
 import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
@@ -169,11 +162,6 @@ async function fetchLessons() {
     }
 }
 
-const videoUrl = computed(() => {
-    if (!selectedLesson.value?.vimeo_url) return '';
-    return selectedLesson.value.vimeo_url + '?autoplay=1&muted=0&quality=360p';
-});
-
 function toggleTopic(topic) {
     openTopics.value[topic] = !openTopics.value[topic];
 }
@@ -186,12 +174,30 @@ const isTopicOpen = (topic) => openTopics.value[topic] === true;
 
 function onVideoLoaded() { isVideoLoading.value = false; }
 
-function openLesson(lesson) {
+async function openLesson(lesson) {
+    isVideoLoading.value = true;
     selectedLesson.value = lesson;
     isPlaying.value = false;
 
     const img = new Image();
     img.src = lesson.thumbnail || '';
+
+    await nextTick();
+    document.querySelector(`[data-lesson-player="${lesson.id}"]`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+    });
+}
+
+function isSelectedLesson(lesson) {
+    return selectedLesson.value?.id === lesson.id;
+}
+
+function getVideoUrl(lesson) {
+    if (!lesson?.vimeo_url) return '';
+
+    const separator = lesson.vimeo_url.includes('?') ? '&' : '?';
+    return `${lesson.vimeo_url}${separator}autoplay=1&muted=0&quality=360p`;
 }
 
 function getSubTopic(lesson) {
@@ -285,31 +291,12 @@ function getVimeoThumbnail(url) {
 
 <style scoped>
 /* ── MOBILE OPTIMIZED MODAL ── */
-.video-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    /* Centers vertically */
-    justify-content: center;
-    /* Centers horizontally */
-    padding: 20px;
-}
-
-.video-box {
-    width: 100%;
-    max-width: 900px;
-    max-height: 90vh;
-
-    /* Slightly wider for big screens */
-    height: auto;
-    /* IMPORTANT: Shrinks to content */
+.inline-video-card {
     background: #0f172a !important;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
+    min-height: 184px;
 }
 
 .video-container {
@@ -362,47 +349,14 @@ function getVimeoThumbnail(url) {
 
 /* ── MOBILE BREAKPOINTS ── */
 @media (max-width: 768px) {
-    .video-modal {
-        padding: 0;
-        align-items: flex-start;
-        /* Push to top on mobile */
-    }
-
-    .video-box {
-        width: 100%;
-        max-height: 100vh;
-        height: auto;
-        border-radius: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
     .video-container {
         width: 100%;
         aspect-ratio: 16 / 9;
         flex-shrink: 0;
     }
-
-    .video-header {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        background: #0f172a;
-    }
 }
 
 /* ── ANIMATIONS ── */
-.slide-up-enter-active,
-.slide-up-leave-active {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.slide-up-enter-from,
-.slide-up-leave-to {
-    transform: translateY(100%);
-    opacity: 0;
-}
-
 /* ── ACCORDION ── */
 .accordion-wrapper {
     max-height: 0;
