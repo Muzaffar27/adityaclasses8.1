@@ -19,7 +19,97 @@
 
                 <div class="accordion-wrapper" :class="{ open: isTopicOpen(group.topic) }">
                     <div class="accordion-inner">
-                        <div class="columns is-mobile is-multiline px-2 py-3">
+                        <div v-if="group.hasSubTopics" class="subtopic-list px-2 py-3">
+                            <div v-for="subtopic in group.subtopics" :key="subtopic.key" class="subtopic-block">
+                                <div class="glass-card subtopic-header clickable-card"
+                                    @click.stop="toggleSubTopic(group.topic, subtopic.name)">
+                                    <div class="is-flex is-align-items-center">
+                                        <div class="subtopic-marker"></div>
+                                        <h3 class="subtopic-title mb-0">{{ subtopic.name }}</h3>
+                                        <span class="tag is-dark-accent ml-3">
+                                            {{ subtopic.lessons.length }} lessons
+                                        </span>
+
+                                        <div class="ml-auto">
+                                            <ChevronRightIcon class="hero-icon-sm arrow-icon"
+                                                :class="{ 'is-open': isSubTopicOpen(group.topic, subtopic.name) }" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-wrapper"
+                                    :class="{ open: isSubTopicOpen(group.topic, subtopic.name) }">
+                                    <div class="accordion-inner">
+                                        <div class="columns is-mobile is-multiline px-2 py-3">
+                                            <div class="column is-12-mobile is-6-tablet is-4-desktop"
+                                                v-for="lesson in subtopic.lessons" :key="lesson.id">
+                                                <div v-if="isSelectedLesson(lesson)"
+                                                    class="card glass-card inline-video-card"
+                                                    :data-lesson-player="lesson.id">
+                                                    <div class="video-header p-4 is-flex is-align-items-center">
+                                                        <div class="header-content">
+                                                            <h3
+                                                                class="has-text-white is-size-6-mobile is-size-5-tablet line-clamp-1">
+                                                                {{ lesson.title }}
+                                                            </h3>
+                                                            <p v-if="getSubTopic(lesson)"
+                                                                class="modal-sub-topic line-clamp-1">
+                                                                {{ getSubTopic(lesson) }}
+                                                            </p>
+                                                        </div>
+                                                        <button class="close-btn ml-auto" @click.stop="closeLesson">
+                                                            <XMarkIcon class="hero-icon-sm" />
+                                                        </button>
+                                                    </div>
+
+                                                    <div class="video-container">
+                                                        <iframe :src="getVideoUrl(lesson)" frameborder="0"
+                                                            allow="autoplay; fullscreen" allowfullscreen
+                                                            class="video-frame" @load="onVideoLoaded" />
+
+                                                        <div v-if="isVideoLoading" class="video-loading">
+                                                            <div class="loader"></div>
+                                                            <p class="mt-2">Buffering...</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div v-else class="card glass-card clickable-card fixed-card lesson-card"
+                                                    @click="hasAccess && openLesson(lesson)">
+
+                                                    <div v-if="!hasAccess" class="locked-overlay">
+                                                        <LockClosedIcon class="hero-icon-sm mr-2" />
+                                                        <span>Locked</span>
+                                                    </div>
+
+                                                    <div class="card-content lesson-card-content">
+                                                        <div class="lesson-top-row">
+                                                            <div class="icon-circle">
+                                                                <PlayIcon class="hero-icon-sm has-text-primary" />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="lesson-copy">
+                                                            <p class="lesson-title">{{ lesson.title }}</p>
+                                                            <p v-if="lesson.description" class="lesson-description">
+                                                                {{ lesson.description }}
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="lesson-meta">
+                                                            <span>Part {{ lesson.part_number || '1' }}</span>
+                                                            <span class="meta-dot"></span>
+                                                            <span>{{ formatDuration(lesson.duration) }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="columns is-mobile is-multiline px-2 py-3">
                             <div class="column is-12-mobile is-6-tablet is-4-desktop" v-for="lesson in group.lessons"
                                 :key="lesson.id">
                                 <div v-if="isSelectedLesson(lesson)" class="card glass-card inline-video-card"
@@ -29,9 +119,6 @@
                                             <h3 class="has-text-white is-size-6-mobile is-size-5-tablet line-clamp-1">
                                                 {{ lesson.title }}
                                             </h3>
-                                            <p v-if="getSubTopic(lesson)" class="modal-sub-topic line-clamp-1">
-                                                {{ getSubTopic(lesson) }}
-                                            </p>
                                         </div>
                                         <button class="close-btn ml-auto" @click.stop="closeLesson">
                                             <XMarkIcon class="hero-icon-sm" />
@@ -62,9 +149,6 @@
                                             <div class="icon-circle">
                                                 <PlayIcon class="hero-icon-sm has-text-primary" />
                                             </div>
-                                            <span v-if="getSubTopic(lesson)" class="lesson-sub-topic">
-                                                {{ getSubTopic(lesson) }}
-                                            </span>
                                         </div>
 
                                         <div class="lesson-copy">
@@ -112,6 +196,7 @@ const hasAccess = ref(false);
 const requestStatus = ref(null);
 const selectedLesson = ref(null);
 const openTopics = ref({});
+const openSubTopics = ref({});
 const isPlaying = ref(false);
 
 const paginatedTopics = computed(() => {
@@ -166,11 +251,21 @@ function toggleTopic(topic) {
     openTopics.value[topic] = !openTopics.value[topic];
 }
 
+function getSubTopicKey(topic, subtopic) {
+    return `${topic}::${subtopic}`;
+}
+
+function toggleSubTopic(topic, subtopic) {
+    const key = getSubTopicKey(topic, subtopic);
+    openSubTopics.value[key] = !openSubTopics.value[key];
+}
+
 // watch(lessons, () => {
 //     currentPage.value = 1;
 // });
 
 const isTopicOpen = (topic) => openTopics.value[topic] === true;
+const isSubTopicOpen = (topic, subtopic) => openSubTopics.value[getSubTopicKey(topic, subtopic)] === true;
 
 function onVideoLoaded() { isVideoLoading.value = false; }
 
@@ -204,19 +299,41 @@ function getSubTopic(lesson) {
     return lesson?.sub_topic || lesson?.subTopic || '';
 }
 
+function getSubTopicLabel(lesson) {
+    return getSubTopic(lesson)?.trim() || 'General';
+}
+
 function groupLessons(list) {
     const map = {};
 
     list.forEach((lesson) => {
-        if (!map[lesson.topic]) {
-            map[lesson.topic] = [];
+        const topic = lesson.topic || 'General';
+        const subtopic = getSubTopicLabel(lesson);
+
+        if (!map[topic]) {
+            map[topic] = {
+                lessons: [],
+                subtopics: {},
+            };
         }
-        map[lesson.topic].push(lesson);
+
+        if (!map[topic].subtopics[subtopic]) {
+            map[topic].subtopics[subtopic] = [];
+        }
+
+        map[topic].lessons.push(lesson);
+        map[topic].subtopics[subtopic].push(lesson);
     });
 
     return Object.keys(map).map(topic => ({
         topic,
-        lessons: map[topic]
+        lessons: map[topic].lessons,
+        hasSubTopics: map[topic].lessons.some(lesson => Boolean(getSubTopic(lesson)?.trim())),
+        subtopics: Object.keys(map[topic].subtopics).map(subtopic => ({
+            key: getSubTopicKey(topic, subtopic),
+            name: subtopic,
+            lessons: map[topic].subtopics[subtopic],
+        })),
     }));
 }
 
@@ -375,6 +492,40 @@ function getVimeoThumbnail(url) {
     border-radius: 12px;
 }
 
+.subtopic-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.subtopic-block {
+    margin-left: 1.5rem;
+}
+
+.subtopic-header {
+    background: rgba(255, 255, 255, 0.032) !important;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+}
+
+.subtopic-title {
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.subtopic-marker {
+    width: 3px;
+    height: 26px;
+    margin-right: 0.75rem;
+    border-radius: 999px;
+    background: var(--primary, #4f46e5);
+    box-shadow: 0 0 16px rgba(79, 70, 229, 0.38);
+}
+
 .arrow-icon {
     transition: transform 0.3s ease;
 }
@@ -514,6 +665,18 @@ function getVimeoThumbnail(url) {
 }
 
 @media (max-width: 768px) {
+    .subtopic-block {
+        margin-left: 0;
+    }
+
+    .subtopic-header {
+        padding: 0.8rem 0.9rem;
+    }
+
+    .subtopic-title {
+        font-size: 0.88rem;
+    }
+
     .fixed-card {
         min-height: 172px;
     }
