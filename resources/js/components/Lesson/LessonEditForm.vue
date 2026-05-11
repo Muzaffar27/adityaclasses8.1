@@ -78,9 +78,9 @@
                 </div>
 
                 <div class="column is-6">
-                    <label class="label is-small">Vimeo URL</label>
-                    <input class="input is-small" v-model="localLesson.vimeo_url"
-                        placeholder="https://player.vimeo.com/...">
+                    <label class="label is-small">Vimeo URL / Embed Code</label>
+                    <textarea class="textarea is-small" v-model="localLesson.vimeo_url" rows="2"
+                        placeholder="Paste the Vimeo player URL or full embed code"></textarea>
                 </div>
                 <div class="column is-3">
                     <label class="label is-small">Show/Hidden</label>
@@ -193,6 +193,8 @@ const handleSave = async () => {
             return; // Stop execution
         }
     }
+
+    localLesson.value.vimeo_url = normalizeVimeoUrl(localLesson.value.vimeo_url);
 
     // 3. If validation passes, proceed as normal
     localLesson.value.duration = formatDuration(durationParts.value);
@@ -311,6 +313,22 @@ function formatDuration(parts) {
     }
 
     return `${normalized.hours}:${pad(normalized.minutes)}:${pad(normalized.seconds)}`;
+}
+
+function normalizeVimeoUrl(value) {
+    if (!value) return '';
+
+    const text = String(value).trim();
+    const iframeSrc = text.match(/<iframe[^>]*\ssrc=(["'])(.*?)\1/i)?.[2];
+    const url = iframeSrc || text.match(/https?:\/\/[^\s"'<>]+/i)?.[0] || text;
+
+    return decodeHtmlEntities(url).replace(/&amp;/g, '&').trim();
+}
+
+function decodeHtmlEntities(value) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = value;
+    return textarea.value;
 }
 
 </script>

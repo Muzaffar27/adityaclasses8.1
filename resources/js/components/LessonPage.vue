@@ -1,6 +1,31 @@
 <template>
     <Layout title="Lessons" :loading="loading">
         <div v-if="!loading && lessons.length > 0">
+            <div class="lesson-finder glass-card mb-4">
+                <div class="finder-main">
+                    <div class="finder-summary">
+                        <p>
+                            Showing <strong>{{ filteredLessons.length }}</strong> of <strong>{{ lessons.length }}</strong>
+                            lessons
+                        </p>
+                        <button v-if="hasActiveFilters" class="button is-small is-dark-accent" @click="clearFilters">
+                            Clear
+                        </button>
+                    </div>
+
+                    <div class="search-control">
+                        <MagnifyingGlassIcon class="search-icon" />
+                        <input class="input finder-input" v-model="searchQuery"
+                            placeholder="Search topics or subtopics">
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="filteredLessons.length === 0" class="empty-results glass-card p-4 has-text-centered">
+                <p class="has-text-white has-text-weight-semibold mb-1">No lessons found</p>
+                <p class="has-text-grey-light is-size-7">Try a different topic or subtopic.</p>
+            </div>
+
             <div v-for="group in paginatedTopics" :key="group.topic">
 
                 <div class="glass-card topic-header p-4 mb-2 clickable-card" @click.stop="toggleTopic(group.topic)">
@@ -178,11 +203,11 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, nextTick } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
 import api from "../api";
 import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
-import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();
 const subjectId = route.params.subjectId;
@@ -198,12 +223,47 @@ const selectedLesson = ref(null);
 const openTopics = ref({});
 const openSubTopics = ref({});
 const isPlaying = ref(false);
+const videoHistoryEntryOpen = ref(false);
+const searchQuery = ref('');
 
 const paginatedTopics = computed(() => {
-    return groupLessons(lessons.value);
+    return groupLessons(filteredLessons.value);
 });
 
-onMounted(fetchLessons);
+const hasActiveFilters = computed(() => {
+    return Boolean(searchQuery.value.trim());
+});
+
+const filteredLessons = computed(() => {
+    const query = normalizeSearchText(searchQuery.value);
+
+    return lessons.value.filter((lesson) => {
+        if (!query) return true;
+
+        return normalizeSearchText([
+            lesson.topic,
+            getSubTopic(lesson),
+        ].filter(Boolean).join(' ')).includes(query);
+    });
+});
+
+watch(searchQuery, () => {
+    if (selectedLesson.value) {
+        clearSelectedLesson();
+    }
+
+    openTopics.value = {};
+    openSubTopics.value = {};
+});
+
+onMounted(() => {
+    fetchLessons();
+    window.addEventListener('popstate', handleHistoryBack);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('popstate', handleHistoryBack);
+});
 
 async function fetchLessons() {
     loading.value = true;
@@ -274,6 +334,15 @@ async function openLesson(lesson) {
     selectedLesson.value = lesson;
     isPlaying.value = false;
 
+    if (!videoHistoryEntryOpen.value) {
+        window.history.pushState(
+            { ...(window.history.state || {}), lessonVideoOpen: true },
+            '',
+            window.location.href
+        );
+        videoHistoryEntryOpen.value = true;
+    }
+
     const img = new Image();
     img.src = lesson.thumbnail || '';
 
@@ -288,11 +357,35 @@ function isSelectedLesson(lesson) {
     return selectedLesson.value?.id === lesson.id;
 }
 
-function getVideoUrl(lesson) {
-    if (!lesson?.vimeo_url) return '';
+function handleHistoryBack() {
+    if (!selectedLesson.value) return;
 
-    const separator = lesson.vimeo_url.includes('?') ? '&' : '?';
-    return `${lesson.vimeo_url}${separator}autoplay=1&muted=0&quality=360p`;
+    videoHistoryEntryOpen.value = false;
+    clearSelectedLesson();
+}
+
+function getVideoUrl(lesson) {
+    const baseUrl = normalizeVimeoUrl(lesson?.vimeo_url);
+    if (!baseUrl) return '';
+
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}autoplay=1&muted=0&quality=360p`;
+}
+
+function normalizeVimeoUrl(value) {
+    if (!value) return '';
+
+    const text = String(value).trim();
+    const iframeSrc = text.match(/<iframe[^>]*\ssrc=(["'])(.*?)\1/i)?.[2];
+    const url = iframeSrc || text.match(/https?:\/\/[^\s"'<>]+/i)?.[0] || text;
+
+    return decodeHtmlEntities(url).replace(/&amp;/g, '&').trim();
+}
+
+function decodeHtmlEntities(value) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = value;
+    return textarea.value;
 }
 
 function getSubTopic(lesson) {
@@ -337,8 +430,26 @@ function groupLessons(list) {
     }));
 }
 
+function normalizeSearchText(value) {
+    return String(value || '').toLowerCase().trim();
+}
+
+function clearFilters() {
+    searchQuery.value = '';
+}
+
 function closeLesson() {
+    if (videoHistoryEntryOpen.value) {
+        window.history.back();
+        return;
+    }
+
+    clearSelectedLesson();
+}
+
+function clearSelectedLesson() {
     selectedLesson.value = null;
+    isVideoLoading.value = false;
     isPlaying.value = false;
 }
 
@@ -475,6 +586,66 @@ function getVimeoThumbnail(url) {
 
 /* ── ANIMATIONS ── */
 /* ── ACCORDION ── */
+.lesson-finder {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.finder-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.finder-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: rgba(226, 232, 240, 0.78);
+    font-size: 0.82rem;
+}
+
+.finder-summary strong {
+    color: #fff;
+}
+
+.search-control {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    color: rgba(203, 213, 225, 0.72);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.finder-input {
+    padding-left: 2.25rem;
+}
+
+.finder-input {
+    background: rgba(15, 23, 42, 0.72);
+    border-color: rgba(148, 163, 184, 0.25);
+    color: #fff;
+}
+
+.finder-input::placeholder {
+    color: rgba(203, 213, 225, 0.62);
+}
+
+.empty-results {
+    background: rgba(255, 255, 255, 0.035) !important;
+    border-radius: 12px;
+}
+
 .accordion-wrapper {
     max-height: 0;
     overflow: hidden;
@@ -665,6 +836,30 @@ function getVimeoThumbnail(url) {
 }
 
 @media (max-width: 768px) {
+    .lesson-finder {
+        padding: 0.85rem;
+        position: sticky;
+        top: 0.5rem;
+        z-index: 15;
+        backdrop-filter: blur(14px);
+    }
+
+    .finder-main {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+
+    .finder-summary {
+        align-items: flex-start;
+        flex-direction: column;
+        font-size: 0.76rem;
+        order: 2;
+    }
+
+    .finder-summary .button {
+        width: 100%;
+    }
+
     .subtopic-block {
         margin-left: 0;
     }
