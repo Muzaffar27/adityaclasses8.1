@@ -5,7 +5,8 @@
                 <div class="finder-main">
                     <div class="finder-summary">
                         <p>
-                            Showing <strong>{{ filteredLessons.length }}</strong> of <strong>{{ lessons.length }}</strong>
+                            Showing <strong>{{ filteredLessons.length }}</strong> of <strong>{{ lessons.length
+                                }}</strong>
                             lessons
                         </p>
                         <button v-if="hasActiveFilters" class="button is-small is-dark-accent" @click="clearFilters">
@@ -99,7 +100,8 @@
                                                     </div>
                                                 </div>
 
-                                                <div v-else class="card glass-card clickable-card fixed-card lesson-card"
+                                                <div v-else
+                                                    class="card glass-card clickable-card fixed-card lesson-card"
                                                     @click="hasAccess && openLesson(lesson)">
 
                                                     <div v-if="!hasAccess" class="locked-overlay">
@@ -108,23 +110,28 @@
                                                     </div>
 
                                                     <div class="card-content lesson-card-content">
-                                                        <div class="lesson-top-row">
-                                                            <div class="icon-circle">
-                                                                <PlayIcon class="hero-icon-sm has-text-primary" />
-                                                            </div>
-                                                        </div>
-
                                                         <div class="lesson-copy">
-                                                            <p class="lesson-title">{{ lesson.title }}</p>
+                                                            <div class="lesson-heading">
+                                                                <p class="lesson-title">{{ lesson.title }}</p>
+                                                                <span v-if="lesson.part_number" class="part-badge">
+                                                                    Part {{ lesson.part_number }}
+                                                                </span>
+                                                            </div>
                                                             <p v-if="lesson.description" class="lesson-description">
                                                                 {{ lesson.description }}
                                                             </p>
                                                         </div>
 
                                                         <div class="lesson-meta">
-                                                            <span>Part {{ lesson.part_number || '1' }}</span>
-                                                            <span class="meta-dot"></span>
-                                                            <span>{{ formatDuration(lesson.duration) }}</span>
+                                                            <span class="duration-label">Duration:</span>
+                                                            <span
+                                                                :class="{ 'duration-missing': !hasDuration(lesson.duration) }">
+                                                                {{ formatDuration(lesson.duration) }}
+                                                            </span>
+                                                        </div>
+
+                                                        <div class="icon-circle">
+                                                            <PlayIcon class="hero-icon-sm has-text-primary" />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -170,23 +177,27 @@
                                     </div>
 
                                     <div class="card-content lesson-card-content">
-                                        <div class="lesson-top-row">
-                                            <div class="icon-circle">
-                                                <PlayIcon class="hero-icon-sm has-text-primary" />
-                                            </div>
-                                        </div>
-
                                         <div class="lesson-copy">
-                                            <p class="lesson-title">{{ lesson.title }}</p>
+                                            <div class="lesson-heading">
+                                                <p class="lesson-title">{{ lesson.title }}</p>
+                                                <span v-if="lesson.part_number" class="part-badge">
+                                                    Part {{ lesson.part_number }}
+                                                </span>
+                                            </div>
                                             <p v-if="lesson.description" class="lesson-description">
                                                 {{ lesson.description }}
                                             </p>
                                         </div>
 
                                         <div class="lesson-meta">
-                                            <span>Part {{ lesson.part_number || '1' }}</span>
-                                            <span class="meta-dot"></span>
-                                            <span>{{ formatDuration(lesson.duration) }}</span>
+                                            <span class="duration-label">Duration:</span>
+                                            <span :class="{ 'duration-missing': !hasDuration(lesson.duration) }">
+                                                {{ formatDuration(lesson.duration) }}
+                                            </span>
+                                        </div>
+
+                                        <div class="icon-circle">
+                                            <PlayIcon class="hero-icon-sm has-text-primary" />
                                         </div>
                                     </div>
                                 </div>
@@ -454,7 +465,7 @@ function clearSelectedLesson() {
 }
 
 function formatDuration(value) {
-    if (!value) return '5 min';
+    if (!value) return 'Not available';
 
     const text = String(value).trim();
     let hours = 0;
@@ -481,7 +492,7 @@ function formatDuration(value) {
 
     const totalSeconds = Math.max(hours, 0) * 3600 + Math.max(minutes, 0) * 60 + Math.max(seconds, 0);
 
-    if (!totalSeconds) return '5 min';
+    if (!totalSeconds) return 'Not available';
 
     hours = Math.floor(totalSeconds / 3600);
     minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -492,6 +503,10 @@ function formatDuration(value) {
         minutes ? `${minutes} min` : '',
         seconds ? `${seconds} sec` : '',
     ].filter(Boolean).join(' ');
+}
+
+function hasDuration(value) {
+    return formatDuration(value) !== 'Not available';
 }
 
 async function requestAccess() {
@@ -711,6 +726,7 @@ function getVimeoThumbnail(url) {
 }
 
 .lesson-card {
+    position: relative;
     display: flex;
     border-radius: 16px;
     background:
@@ -722,7 +738,7 @@ function getVimeoThumbnail(url) {
 
 .lesson-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(45, 212, 191, 0.42);
+    border-color: rgba(129, 140, 248, 0.46);
     box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
 }
 
@@ -731,18 +747,13 @@ function getVimeoThumbnail(url) {
 }
 
 .lesson-card-content {
-    align-items: stretch;
-    gap: 14px;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    row-gap: 10px;
     padding: 1.15rem;
     text-align: left;
-}
-
-.lesson-top-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
+    min-height: 184px;
 }
 
 .lesson-sub-topic {
@@ -763,13 +774,35 @@ function getVimeoThumbnail(url) {
 }
 
 .lesson-copy {
-    min-height: 58px;
+    min-width: 0;
+}
+
+.lesson-heading {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.part-badge {
+    color: #c7d2fe;
+    background: rgba(79, 70, 229, 0.18);
+    border: 1px solid rgba(129, 140, 248, 0.28);
+    border-radius: 999px;
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.1;
+    padding: 0.28rem 0.5rem;
+    transform: translateY(-3px);
+    white-space: nowrap;
 }
 
 .lesson-title {
     color: #fff;
     display: -webkit-box;
-    font-size: 1rem;
+    font-size: 0.98rem;
     font-weight: 700;
     line-height: 1.3;
     -webkit-line-clamp: 2;
@@ -784,7 +817,7 @@ function getVimeoThumbnail(url) {
     display: -webkit-box;
     font-size: 0.8rem;
     line-height: 1.35;
-    margin-top: 0.35rem;
+    margin-top: 0.5rem;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -793,13 +826,26 @@ function getVimeoThumbnail(url) {
 }
 
 .lesson-meta {
+    grid-column: 1;
+    align-self: end;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 5px;
     color: rgba(203, 213, 225, 0.78);
     font-size: 0.78rem;
     font-weight: 600;
+    margin-top: auto;
+}
+
+.duration-label {
+    color: rgba(226, 232, 240, 0.92);
+    font-weight: 800;
+}
+
+.duration-missing {
+    color: rgba(248, 250, 252, 0.52);
+    font-style: italic;
 }
 
 .meta-dot {
@@ -810,9 +856,13 @@ function getVimeoThumbnail(url) {
 }
 
 .icon-circle {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
     background: rgba(79, 70, 229, 0.14);
     border: 1px solid rgba(129, 140, 248, 0.25);
     border-radius: 50%;
@@ -820,6 +870,18 @@ function getVimeoThumbnail(url) {
     align-items: center;
     justify-content: center;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: transform 0.22s ease, background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    z-index: 2;
+}
+
+.icon-circle:hover {
+    background: rgba(79, 70, 229, 0.28);
+    border-color: rgba(129, 140, 248, 0.58);
+    box-shadow:
+        0 0 0 8px rgba(79, 70, 229, 0.1),
+        0 14px 28px rgba(79, 70, 229, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transform: translate(-50%, -50%) scale(1.08);
 }
 
 .locked-overlay {
@@ -877,13 +939,29 @@ function getVimeoThumbnail(url) {
     }
 
     .lesson-card-content {
-        gap: 12px;
+        grid-template-columns: 1fr;
         padding: 1rem;
     }
 
-    .lesson-sub-topic {
-        font-size: 0.68rem;
-        padding: 0.25rem 0.55rem;
+    .icon-circle {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+    }
+
+    .lesson-heading {
+        align-items: flex-start;
+        flex-direction: row;
+        gap: 7px;
+    }
+
+    .part-badge {
+        font-size: 0.64rem;
+        padding: 0.24rem 0.45rem;
+    }
+
+    .lesson-title {
+        font-size: 0.92rem;
     }
 }
 
@@ -967,3 +1045,5 @@ function getVimeoThumbnail(url) {
     transition: opacity 0.3s ease;
 }
 </style>
+flex: 1 1 auto;
+min-width: 0;
