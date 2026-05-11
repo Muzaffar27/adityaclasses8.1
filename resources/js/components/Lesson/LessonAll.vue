@@ -12,13 +12,6 @@
                 </span>
                 <span>New Subject</span>
             </button>
-
-            <button class="button is-primary has-text-white" @click="createLesson">
-                <span class="icon">
-                    <PlusIcon />
-                </span>
-                <span>{{ creating && createMode === 'lesson' ? 'Close Form' : 'New Lesson' }}</span>
-            </button>
         </div>
     </div>
 
@@ -106,13 +99,13 @@
                 </thead>
                 <tbody>
                     <!-- CREATE ROW -->
-                    <tr v-if="creating" class="edit-row-active">
+                    <tr v-if="creating && !creatingTopicName" class="edit-row-active">
                         <td colspan="5" style="padding: 0">
                             <div v-if="createMode === 'topic'" class="create-topic-note">
                                 Create the first lesson for this new topic.
                             </div>
                             <LessonEditForm :grade_id="selectedGradeId" :subject_id="selectedSubjectId" inline
-                                @saved="onCreated" @cancel="creating = false" />
+                                @saved="onCreated" @cancel="cancelCreate" />
                         </td>
                     </tr>
 
@@ -181,7 +174,14 @@
                                                 </button>
                                             </div>
                                         </template>
-                                        <strong v-else class="has-text-white">{{ group.topic }}</strong>
+                                        <template v-else>
+                                            <button class="topic-add-button" title="Add lesson to this topic"
+                                                @click.stop="createLessonForTopic(group)">
+                                                <MinusIcon v-if="creatingTopicName === group.topic" />
+                                                <PlusIcon v-else />
+                                            </button>
+                                            <strong class="has-text-white">{{ group.topic }}</strong>
+                                        </template>
                                         <p class="is-size-7 has-text-grey">
                                             {{ group.lessons.length }} lessons
                                         </p>
@@ -209,6 +209,16 @@
                                         </button>
                                     </div>
                                 </div>
+                            </td>
+                        </tr>
+
+                        <tr v-if="creating && creatingTopicName === group.topic" class="edit-row-active">
+                            <td colspan="5" style="padding: 0">
+                                <div class="create-topic-note">
+                                    New lesson for <strong>{{ group.topic }}</strong>
+                                </div>
+                                <LessonEditForm inline :lesson="createDraft" @saved="onCreated"
+                                    @cancel="cancelCreate" />
                             </td>
                         </tr>
 
@@ -259,13 +269,13 @@
 
         <!-- MOBILE CARD VIEW (unchanged – already safe) -->
         <div class="is-hidden-tablet">
-            <div v-if="creating" class="mobile-card mb-3">
+            <div v-if="creating && !creatingTopicName" class="mobile-card mb-3">
                 <div class="card-content">
                     <p v-if="createMode === 'topic'" class="has-text-grey is-size-7 mb-3">
                         Create the first lesson for this new topic.
                     </p>
                     <LessonEditForm :grade_id="selectedGradeId" :subject_id="selectedSubjectId" inline
-                        @saved="onCreated" @cancel="creating = false" />
+                        @saved="onCreated" @cancel="cancelCreate" />
                 </div>
             </div>
 
@@ -315,6 +325,11 @@
                         </div>
                     </div>
                     <template v-else>
+                        <button class="topic-add-button" title="Add lesson to this topic"
+                            @click.stop="createLessonForTopic(group)">
+                            <MinusIcon v-if="creatingTopicName === group.topic" />
+                            <PlusIcon v-else />
+                        </button>
                         <strong>{{ group.topic }}</strong>
                         <span class="ml-2 has-text-grey">({{ group.lessons.length }})</span>
                         <button class="button is-small is-primary has-text-white is-pulled-right"
@@ -331,6 +346,15 @@
                             Delete
                         </button>
                     </template>
+                </div>
+
+                <div v-if="creating && creatingTopicName === group.topic" class="mobile-card mb-3">
+                    <div class="card-content">
+                        <p class="has-text-grey is-size-7 mb-3">
+                            New lesson for <strong>{{ group.topic }}</strong>
+                        </p>
+                        <LessonEditForm inline :lesson="createDraft" @saved="onCreated" @cancel="cancelCreate" />
+                    </div>
                 </div>
 
                 <div v-if="isTopicOpen(group.topic)">
@@ -391,7 +415,7 @@
 import { ref, computed, nextTick, onMounted } from 'vue';
 import api from '../../api';
 import LessonEditForm from './LessonEditForm.vue';
-import { PlusIcon } from '@heroicons/vue/24/outline';
+import { MinusIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import { useCacheStore } from '@/stores/cache';
 import Loader from '../common/Loader.vue';
 import createModal from '../common/CreateModal.vue';
@@ -422,6 +446,8 @@ const deletingTopic = ref(null);
 const deletingLessonId = ref(null);
 const creating = ref(false);
 const createMode = ref('lesson');
+const creatingTopicName = ref(null);
+const createDraft = ref(null);
 const showCreateSubject = ref(false);
 const newSubjectName = ref('');
 const creatingSubject = ref(false);
@@ -681,7 +707,7 @@ const onLessonSaved = () => {
 };
 
 const onCreated = () => {
-    creating.value = false;
+    cancelCreate();
     fetchAllLessons();
 };
 
@@ -713,11 +739,51 @@ function resetFilters() {
 }
 
 function createLesson() {
+    creatingTopicName.value = null;
+    createDraft.value = null;
     toggleCreateForm('lesson');
 }
 
 function createTopic() {
+    creatingTopicName.value = null;
+    createDraft.value = null;
     toggleCreateForm('topic');
+}
+
+function createLessonForTopic(group) {
+    if (creating.value && creatingTopicName.value === group.topic) {
+        cancelCreate();
+        return;
+    }
+
+    const firstLesson = group.lessons[0] || {};
+    const maxPart = Math.max(
+        0,
+        ...group.lessons.map(lesson => Number(lesson.part_number) || 0)
+    );
+
+    createMode.value = 'lesson';
+    creating.value = true;
+    creatingTopicName.value = group.topic;
+    editingId.value = null;
+    openTopics.value[group.topic] = true;
+    createDraft.value = {
+        title: '',
+        topic: group.topic,
+        sub_topic: '',
+        part_number: maxPart + 1,
+        vimeo_url: '',
+        is_active: 1,
+        description: '',
+        duration: '',
+        grade_id: selectedGradeId.value || firstLesson.grade_id || props.grade_id || '',
+        subject_id: selectedSubjectId.value || firstLesson.subject_id || props.subject_id || '',
+    };
+
+    nextTick(() => {
+        const el = document.querySelector('.edit-row-active, .mobile-card');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
 }
 
 function toggleCreateForm(mode) {
@@ -730,6 +796,12 @@ function toggleCreateForm(mode) {
         const el = document.querySelector('.edit-row-active, .mobile-card');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
+}
+
+function cancelCreate() {
+    creating.value = false;
+    creatingTopicName.value = null;
+    createDraft.value = null;
 }
 
 const createSubject = async () => {
@@ -819,9 +891,55 @@ onMounted(async () => {
     min-height: 48px;
 }
 
+.topic-header .topic-add-button {
+    margin-right: 8px;
+}
+
 .topic-title-area {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
     flex: 1;
     min-width: 0;
+    align-self: stretch;
+}
+
+.topic-title-area p {
+    flex-basis: 100%;
+    margin-left: 38px;
+}
+
+.topic-add-button {
+    align-self: center;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border: 0;
+    border-radius: 50%;
+    background: #4f46e5;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    vertical-align: middle;
+}
+
+.topic-add-button:hover,
+.topic-add-button:focus {
+    background: #4338ca;
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.36);
+    transform: translateY(-1px);
+}
+
+.topic-add-button svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
 }
 
 .topic-actions {
