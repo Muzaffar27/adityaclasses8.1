@@ -43,11 +43,25 @@
                 </div>
             </div>
 
-            <div class="column is-12-mobile is-6-tablet">
+            <div class="column is-12-mobile is-3-tablet">
+                <label class="label has-text-grey-light is-size-7">Search Topic/Sub Topic</label>
+                <input class="input" v-model="searchDraft" placeholder="Topic or sub topic"
+                    @keyup.enter="searchFilters" />
+            </div>
+
+            <div class="column is-12-mobile is-3-tablet">
                 <label class="label has-text-grey-light is-size-7">&nbsp;</label>
-                <button class="button is-primary is-fullwidth has-text-white" @click="resetFilters">
-                    Reset Filters
-                </button>
+                <div class="filter-actions">
+                    <button class="button is-primary has-text-white" @click="searchFilters">
+                        <span class="icon">
+                            <MagnifyingGlassIcon />
+                        </span>
+                        <span>Search</span>
+                    </button>
+                    <button class="button is-dark-accent" @click="resetFilters">
+                        Reset Filters
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -105,6 +119,7 @@
                                 Create the first lesson for this new topic.
                             </div>
                             <LessonEditForm :grade_id="selectedGradeId" :subject_id="selectedSubjectId" inline
+                                :topic-options="topicOptionsForLesson()" :sub-topic-options="subTopicOptionsForLesson()"
                                 @saved="onCreated" @cancel="cancelCreate" />
                         </td>
                     </tr>
@@ -125,7 +140,7 @@
                                                         @keyup.esc="cancelTopicEdit" />
                                                 </div>
                                                 <div class="control">
-                                                    <button class="button is-small is-primary has-text-white"
+                                                    <button class="button is-small is-primary has-text-white topic-inline-button"
                                                         :class="{ 'is-loading': topicSaving }"
                                                         :disabled="topicSaving || !topicDraft.trim()"
                                                         @click="saveTopicEdit(group)">
@@ -133,8 +148,8 @@
                                                     </button>
                                                 </div>
                                                 <div class="control">
-                                                    <button class="button is-small" :disabled="topicSaving"
-                                                        @click="cancelTopicEdit">
+                                                    <button class="button is-small topic-inline-button is-dark-accent"
+                                                        :disabled="topicSaving" @click="cancelTopicEdit">
                                                         Cancel
                                                     </button>
                                                 </div>
@@ -217,7 +232,9 @@
                                 <div class="create-topic-note">
                                     New lesson for <strong>{{ group.topic }}</strong>
                                 </div>
-                                <LessonEditForm inline :lesson="createDraft" @saved="onCreated"
+                                <LessonEditForm inline :lesson="createDraft"
+                                    :topic-options="topicOptionsForLesson(createDraft)"
+                                    :sub-topic-options="subTopicOptionsForLesson(createDraft)" @saved="onCreated"
                                     @cancel="cancelCreate" />
                             </td>
                         </tr>
@@ -256,7 +273,9 @@
                                 <!-- EDIT ROW (appears directly below) -->
                                 <tr v-if="editingId === lesson.id" class="edit-row-active">
                                     <td colspan="5" style="padding: 0">
-                                        <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved"
+                                        <LessonEditForm inline :lesson="lesson"
+                                            :topic-options="topicOptionsForLesson(lesson)"
+                                            :sub-topic-options="subTopicOptionsForLesson(lesson)" @saved="onLessonSaved"
                                             @cancel="editingId = null" />
                                     </td>
                                 </tr>
@@ -275,6 +294,7 @@
                         Create the first lesson for this new topic.
                     </p>
                     <LessonEditForm :grade_id="selectedGradeId" :subject_id="selectedSubjectId" inline
+                        :topic-options="topicOptionsForLesson()" :sub-topic-options="subTopicOptionsForLesson()"
                         @saved="onCreated" @cancel="cancelCreate" />
                 </div>
             </div>
@@ -285,11 +305,13 @@
                         <input class="input is-small mb-2" v-model="topicDraft" @keyup.enter="saveTopicEdit(group)"
                             @keyup.esc="cancelTopicEdit" />
                         <div class="buttons are-small mb-0">
-                            <button class="button is-primary has-text-white" :class="{ 'is-loading': topicSaving }"
-                                :disabled="topicSaving || !topicDraft.trim()" @click="saveTopicEdit(group)">
+                            <button class="button is-primary has-text-white topic-inline-button"
+                                :class="{ 'is-loading': topicSaving }" :disabled="topicSaving || !topicDraft.trim()"
+                                @click="saveTopicEdit(group)">
                                 Save
                             </button>
-                            <button class="button" :disabled="topicSaving" @click="cancelTopicEdit">
+                            <button class="button topic-inline-button is-dark-accent" :disabled="topicSaving"
+                                @click="cancelTopicEdit">
                                 Cancel
                             </button>
                         </div>
@@ -353,7 +375,9 @@
                         <p class="has-text-grey is-size-7 mb-3">
                             New lesson for <strong>{{ group.topic }}</strong>
                         </p>
-                        <LessonEditForm inline :lesson="createDraft" @saved="onCreated" @cancel="cancelCreate" />
+                        <LessonEditForm inline :lesson="createDraft" :topic-options="topicOptionsForLesson(createDraft)"
+                            :sub-topic-options="subTopicOptionsForLesson(createDraft)" @saved="onCreated"
+                            @cancel="cancelCreate" />
                     </div>
                 </div>
 
@@ -384,7 +408,8 @@
                                 Delete
                             </button>
                             <div v-if="editingId === lesson.id" class="edit-row-active mt-3">
-                                <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved"
+                                <LessonEditForm inline :lesson="lesson" :topic-options="topicOptionsForLesson(lesson)"
+                                    :sub-topic-options="subTopicOptionsForLesson(lesson)" @saved="onLessonSaved"
                                     @cancel="editingId = null" />
                             </div>
                         </div>
@@ -415,7 +440,7 @@
 import { ref, computed, nextTick, onMounted } from 'vue';
 import api from '../../api';
 import LessonEditForm from './LessonEditForm.vue';
-import { MinusIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { MagnifyingGlassIcon, MinusIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import { useCacheStore } from '@/stores/cache';
 import Loader from '../common/Loader.vue';
 import createModal from '../common/CreateModal.vue';
@@ -456,6 +481,8 @@ const emit = defineEmits(['navigate']);
 /* FILTER STATE */
 const selectedGradeId = ref(null);
 const selectedSubjectId = ref(null);
+const searchDraft = ref('');
+const appliedSearch = ref('');
 
 /* COMPUTED: Filtered lessons */
 const filteredLessons = computed(() => {
@@ -465,6 +492,14 @@ const filteredLessons = computed(() => {
     }
     if (selectedSubjectId.value) {
         result = result.filter(lesson => lesson.subject_id === selectedSubjectId.value);
+    }
+    const searchText = appliedSearch.value.trim().toLowerCase();
+    if (searchText) {
+        result = result.filter(lesson => [
+            lesson.topic,
+            lesson.sub_topic,
+            lesson.title,
+        ].some(value => String(value || '').toLowerCase().includes(searchText)));
     }
     return result;
 });
@@ -533,6 +568,38 @@ const availableSubjects = computed(() => {
     );
     return cacheStore.subjects.filter(subject => subjectsWithLessons.has(subject.id));
 });
+
+function lessonsForOptionScope(lesson = null) {
+    const gradeId = lesson?.grade_id ?? selectedGradeId.value ?? props.grade_id;
+    const subjectId = lesson?.subject_id ?? selectedSubjectId.value ?? props.subject_id;
+
+    return allLessons.value.filter(item => {
+        const matchesGrade = !gradeId || item.grade_id == gradeId;
+        const matchesSubject = !subjectId || item.subject_id == subjectId;
+        return matchesGrade && matchesSubject;
+    });
+}
+
+function uniqueSorted(values) {
+    return [...new Set(
+        values
+            .map(value => String(value || '').trim())
+            .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+}
+
+function topicOptionsForLesson(lesson = null) {
+    return uniqueSorted(lessonsForOptionScope(lesson).map(item => item.topic));
+}
+
+function subTopicOptionsForLesson(lesson = null) {
+    return lessonsForOptionScope(lesson)
+        .filter(item => item.sub_topic)
+        .map(item => ({
+            topic: item.topic,
+            name: item.sub_topic,
+        }));
+}
 
 /* METHODS */
 function toggleTopic(topic) {
@@ -733,9 +800,21 @@ function onGradeChange() {
 
 function onSubjectChange() { }
 
+function searchFilters() {
+    appliedSearch.value = searchDraft.value.trim();
+    creating.value = false;
+    creatingTopicName.value = null;
+    createDraft.value = null;
+    editingId.value = null;
+    cancelTopicEdit();
+    cancelTopicCopy();
+}
+
 function resetFilters() {
     selectedGradeId.value = null;
     selectedSubjectId.value = null;
+    searchDraft.value = '';
+    appliedSearch.value = '';
 }
 
 function createLesson() {
@@ -849,6 +928,17 @@ onMounted(async () => {
     backdrop-filter: blur(8px);
 }
 
+.filter-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.filter-actions .button {
+    width: 100%;
+    font-weight: 600;
+}
+
 .table-wrapper {
     background: white;
     border-radius: 12px;
@@ -905,9 +995,33 @@ onMounted(async () => {
     align-self: stretch;
 }
 
+.topic-title-area:has(.topic-add-button) {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 16px;
+    row-gap: 2px;
+    align-items: center;
+}
+
+.topic-title-area:has(.topic-add-button) .topic-add-button {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
+}
+
+.topic-title-area:has(.topic-add-button) strong,
+.topic-title-area:has(.topic-add-button) p {
+    grid-column: 2;
+}
+
 .topic-title-area p {
     flex-basis: 100%;
     margin-left: 38px;
+}
+
+.topic-title-area:has(.topic-add-button) p {
+    margin-left: 0;
 }
 
 .topic-add-button {
@@ -952,6 +1066,21 @@ onMounted(async () => {
 .topic-action-button {
     min-width: 82px;
     justify-content: center;
+}
+
+.topic-inline-button {
+    min-width: 76px;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.topic-title-area .field.has-addons {
+    gap: 8px;
+}
+
+.topic-title-area .field.has-addons .control:not(:first-child) .button,
+.topic-title-area .field.has-addons .control:not(:first-child) .input {
+    border-radius: 4px;
 }
 
 .is-amber-action {

@@ -40,12 +40,35 @@
 
                 <div class="column is-3">
                     <label class="label is-small">Topic</label>
-                    <input class="input is-small" v-model="localLesson.topic">
+                    <div class="suggestion-field">
+                        <input class="input is-small" v-model="localLesson.topic" placeholder="Choose or type a topic"
+                            autocomplete="off" @focus="showSuggestions('topic')" @input="showSuggestions('topic')"
+                            @blur="hideSuggestions('topic')">
+                        <div v-if="activeSuggestionField === 'topic' && filteredTopicOptions.length"
+                            class="suggestion-menu">
+                            <button v-for="topic in filteredTopicOptions" :key="topic" type="button"
+                                class="suggestion-option" @mousedown.prevent="selectTopic(topic)">
+                                {{ topic }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="column is-3">
                     <label class="label is-small">Sub Topic</label>
-                    <input class="input is-small" v-model="localLesson.sub_topic">
+                    <div class="suggestion-field">
+                        <input class="input is-small" v-model="localLesson.sub_topic"
+                            placeholder="Choose or type a sub topic" autocomplete="off"
+                            @focus="showSuggestions('subTopic')" @input="showSuggestions('subTopic')"
+                            @blur="hideSuggestions('subTopic')">
+                        <div v-if="activeSuggestionField === 'subTopic' && filteredSubTopicOptions.length"
+                            class="suggestion-menu">
+                            <button v-for="subTopic in filteredSubTopicOptions" :key="subTopic" type="button"
+                                class="suggestion-option" @mousedown.prevent="selectSubTopic(subTopic)">
+                                {{ subTopic }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="column is-3">
@@ -135,11 +158,20 @@ const props = defineProps({
     inline: {
         type: Boolean,
         default: false
+    },
+    topicOptions: {
+        type: Array,
+        default: () => []
+    },
+    subTopicOptions: {
+        type: Array,
+        default: () => []
     }
 });
 
 const emit = defineEmits(['saved', 'cancel']);
 const loading = ref(false);
+const activeSuggestionField = ref(null);
 
 // 1. Initialize with either the prop data OR a blank template
 const getInitialData = () => {
@@ -166,6 +198,31 @@ const durationParts = ref(parseDuration(localLesson.value.duration));
 
 // 2. Determine if we are creating or editing
 const isEditMode = computed(() => !!props.lesson?.id);
+
+const normalizedTopicOptions = computed(() => uniqueSorted(props.topicOptions));
+
+const matchingSubTopicOptions = computed(() => {
+    const currentTopic = String(localLesson.value.topic || '').trim();
+    const options = props.subTopicOptions
+        .filter(option => {
+            if (!option) return false;
+            if (typeof option === 'string') return true;
+            return !currentTopic || option.topic === currentTopic;
+        })
+        .map(option => typeof option === 'string' ? option : option.name);
+
+    return uniqueSorted(options);
+});
+
+const filteredTopicOptions = computed(() => filterSuggestions(
+    normalizedTopicOptions.value,
+    localLesson.value.topic
+));
+
+const filteredSubTopicOptions = computed(() => filterSuggestions(
+    matchingSubTopicOptions.value,
+    localLesson.value.sub_topic
+));
 
 onMounted(async () => {
     // 4. Await the combined fetcher
@@ -331,6 +388,44 @@ function decodeHtmlEntities(value) {
     return textarea.value;
 }
 
+function showSuggestions(field) {
+    activeSuggestionField.value = field;
+}
+
+function hideSuggestions(field) {
+    window.setTimeout(() => {
+        if (activeSuggestionField.value === field) {
+            activeSuggestionField.value = null;
+        }
+    }, 120);
+}
+
+function selectTopic(topic) {
+    localLesson.value.topic = topic;
+    activeSuggestionField.value = null;
+}
+
+function selectSubTopic(subTopic) {
+    localLesson.value.sub_topic = subTopic;
+    activeSuggestionField.value = null;
+}
+
+function filterSuggestions(options, searchText) {
+    const needle = String(searchText || '').trim().toLowerCase();
+
+    if (!needle) return options;
+
+    return options.filter(option => option.toLowerCase().includes(needle));
+}
+
+function uniqueSorted(values) {
+    return [...new Set(
+        values
+            .map(value => String(value || '').trim())
+            .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+}
+
 </script>
 
 <style scoped>
@@ -378,6 +473,48 @@ function decodeHtmlEntities(value) {
     margin-top: 0.25rem;
     margin-bottom: 0;
     text-align: center;
+}
+
+.suggestion-field {
+    position: relative;
+    width: 100%;
+}
+
+.suggestion-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    max-height: 10.75rem;
+    overflow-y: auto;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    border-radius: 8px;
+    background: #111827;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+    padding: 0.25rem;
+}
+
+.suggestion-option {
+    display: block;
+    width: 100%;
+    min-height: 2.1rem;
+    padding: 0.45rem 0.65rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #f8fafc;
+    cursor: pointer;
+    font-size: 0.8rem;
+    line-height: 1.15;
+    text-align: left;
+}
+
+.suggestion-option:hover,
+.suggestion-option:focus {
+    background: rgba(79, 70, 229, 0.34);
+    color: #fff;
+    outline: none;
 }
 
 /* The switch - the box around the slider */
