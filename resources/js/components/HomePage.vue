@@ -11,10 +11,10 @@
     </div>
 
     <!-- Student Showcase Slider -->
-    <div class="hero-students mb-5">
+    <div v-if="sliderImages.length" class="hero-students mb-5">
       <div class="hero-track">
         <div v-for="(image, index) in sliderImages" :key="`${image.src}-${index}`" class="hero-slide">
-          <img :src="image.src" :alt="image.alt" />
+          <img :src="image.src" :alt="image.alt" loading="eager" decoding="async" @error="hideBrokenImage" />
         </div>
       </div>
 
@@ -263,18 +263,8 @@ const defaultHomepageContent = {
 
 const homepageContent = ref(JSON.parse(JSON.stringify(defaultHomepageContent)));
 
-const heroImages = [
-  { src: "/images/home/1.jpg", alt: "Students learning with Aditya Classes" },
-  { src: "/images/home/2.jpg", alt: "Classroom learning session" },
-  { src: "/images/home/3.jpg", alt: "Focused student study moment" },
-  { src: "/images/home/4.jpg", alt: "Student study session" },
-  { src: "/images/home/7.jpg", alt: "Focused learning moment" },
-  { src: "/images/home/8.jpg", alt: "Classroom learning moment" },
-];
-
 const sliderImages = computed(() => {
-  const images = homepageImages.value.length ? homepageImages.value : heroImages;
-  return [...images, ...images];
+  return [...homepageImages.value, ...homepageImages.value];
 });
 
 const footerInitial = computed(() => {
@@ -351,6 +341,11 @@ function selectGrade(grade) {
     params: { id: $gradeId }
   });
 }
+
+function hideBrokenImage(event) {
+  event.target.style.display = "none";
+}
+
 onMounted(async () => {
   loading.value = true;
 
