@@ -429,16 +429,47 @@ function groupLessons(list) {
         map[topic].subtopics[subtopic].push(lesson);
     });
 
-    return Object.keys(map).map(topic => ({
-        topic,
-        lessons: map[topic].lessons,
-        hasSubTopics: map[topic].lessons.some(lesson => Boolean(getSubTopic(lesson)?.trim())),
-        subtopics: Object.keys(map[topic].subtopics).map(subtopic => ({
-            key: getSubTopicKey(topic, subtopic),
-            name: subtopic,
-            lessons: map[topic].subtopics[subtopic],
-        })),
-    }));
+    return Object.keys(map).map(topic => {
+        const sortedLessons = sortLessonsByPart(map[topic].lessons);
+
+        return {
+            topic,
+            lessons: sortedLessons,
+            hasSubTopics: sortedLessons.some(lesson => Boolean(getSubTopic(lesson)?.trim())),
+            subtopics: Object.keys(map[topic].subtopics).map(subtopic => ({
+                key: getSubTopicKey(topic, subtopic),
+                name: subtopic,
+                lessons: sortLessonsByPart(map[topic].subtopics[subtopic]),
+            })),
+        };
+    });
+}
+
+function sortLessonsByPart(list) {
+    return [...list].sort((a, b) => {
+        const partA = getLessonOrderNumber(a);
+        const partB = getLessonOrderNumber(b);
+
+        if (partA !== partB) return partA - partB;
+
+        return (a.id || 0) - (b.id || 0);
+    });
+}
+
+function getLessonOrderNumber(lesson) {
+    const partNumber = Number(lesson.part_number);
+
+    if (Number.isFinite(partNumber) && partNumber > 0) {
+        return partNumber;
+    }
+
+    const titleNumber = String(lesson.title || '').trim().match(/^(\d+)/);
+
+    if (titleNumber) {
+        return Number(titleNumber[1]);
+    }
+
+    return Number.MAX_SAFE_INTEGER;
 }
 
 function normalizeSearchText(value) {
