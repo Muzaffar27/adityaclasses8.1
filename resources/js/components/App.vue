@@ -18,6 +18,7 @@
 
         </main>
 
+        <PwaInstallPrompt />
         <GlobalDialog />
     </div>
 </template>
@@ -26,6 +27,7 @@
 
 import { ref } from 'vue';
 import GlobalDialog from './common/GlobalDialog.vue';
+import PwaInstallPrompt from './common/PwaInstallPrompt.vue';
 // import Sidebar from './Sidebar.vue';
 
 const mobileMenuOpen = ref(false);
