@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('lesson_access', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('lesson_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('subject_id')->constrained()->onDelete('cascade');
+            $table->foreignId('grade_id')->constrained()->onDelete('cascade');
 
             $table->enum('status', ['pending', 'accepted', 'refused'])
                 ->default('pending');

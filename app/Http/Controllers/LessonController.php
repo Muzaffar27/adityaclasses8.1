@@ -173,7 +173,10 @@ class LessonController extends Controller
                 'user_id' => $userId,
                 'subject_id' => $request->subject_id,
                 'grade_id' => $request->grade_id,
-            ])->first();
+            ])
+                ->orderByRaw("CASE status WHEN 'accepted' THEN 0 WHEN 'pending' THEN 1 WHEN 'refused' THEN 2 ELSE 3 END")
+                ->latest('updated_at')
+                ->first();
         }
 
         // 3. Return structured response
@@ -188,10 +191,17 @@ class LessonController extends Controller
 
     public function myCourses()
     {
-        // Fetch only approved access for the current user
         return LessonAccess::with(['subject', 'grade'])
             ->where('user_id', auth()->id())
             ->where('status', 'accepted')
+            ->select('lesson_access.*')
+            ->whereIn('id', function ($query) {
+                $query->selectRaw('MAX(id)')
+                    ->from('lesson_access')
+                    ->where('user_id', auth()->id())
+                    ->where('status', 'accepted')
+                    ->groupBy('subject_id', 'grade_id');
+            })
             ->get();
     }
 }

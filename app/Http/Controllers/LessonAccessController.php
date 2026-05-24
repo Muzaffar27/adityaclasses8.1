@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
 use App\Models\LessonAccess;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class LessonAccessController extends Controller
 {
-
     public function count(Request $request)
     {
         return response()->json([
@@ -19,41 +18,43 @@ class LessonAccessController extends Controller
     public function request(Request $request)
     {
         $userId = auth()->id();
+        $requests = $this->normalizedAccessRequests($request);
 
-        $incoming = collect($request->all())
-            ->unique(fn($item) => $item['subject_id'] . '-' . $item['grade_id']);
-
-        // 🔍 get already approved access
-        $existingApproved = DB::table('lesson_access')
-            ->where('user_id', $userId)
-            ->where('status', 'approved')
-            ->get()
-            ->map(fn($item) => $item->subject_id . '-' . $item->grade_id)
-            ->toArray();
-
-        // ❌ remove approved ones from request
-        $filtered = $incoming->reject(function ($req) use ($existingApproved) {
-            return in_array($req['subject_id'] . '-' . $req['grade_id'], $existingApproved);
-        });
-
-        $data = $filtered->map(function ($req) use ($userId) {
-            return [
-                'user_id' => $userId,
-                'subject_id' => $req['subject_id'],
-                'grade_id' => $req['grade_id'],
-                'status' => 'pending',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        })->values()->toArray();
-
-        if (!empty($data)) {
-            DB::table('lesson_access')->upsert(
-                $data,
-                ['user_id', 'subject_id', 'grade_id'],
-                ['status', 'updated_at']
-            );
+        if ($requests->isEmpty()) {
+            return response()->json([
+                'message' => 'No valid access request found'
+            ], 422);
         }
+
+        DB::transaction(function () use ($requests, $userId) {
+            foreach ($requests as $accessRequest) {
+                $query = LessonAccess::where([
+                    'user_id' => $userId,
+                    'subject_id' => $accessRequest['subject_id'],
+                    'grade_id' => $accessRequest['grade_id'],
+                ]);
+
+                if ((clone $query)->where('status', 'accepted')->exists()) {
+                    continue;
+                }
+
+                $existing = (clone $query)
+                    ->orderByRaw("CASE status WHEN 'pending' THEN 0 WHEN 'refused' THEN 1 ELSE 2 END")
+                    ->first();
+
+                if ($existing) {
+                    $existing->update(['status' => 'pending']);
+                    continue;
+                }
+
+                LessonAccess::create([
+                    'user_id' => $userId,
+                    'subject_id' => $accessRequest['subject_id'],
+                    'grade_id' => $accessRequest['grade_id'],
+                    'status' => 'pending',
+                ]);
+            }
+        });
 
         return response()->json([
             'message' => 'Request processed'
@@ -62,12 +63,16 @@ class LessonAccessController extends Controller
 
     public function accept(Request $request)
     {
-        DB::table('lesson_access')
-            ->where('id', $request->id)
-            ->update([
-                'status' => 'accepted',
-                'updated_at' => now()
-            ]);
+        $access = LessonAccess::findOrFail($request->id);
+
+        LessonAccess::where([
+            'user_id' => $access->user_id,
+            'subject_id' => $access->subject_id,
+            'grade_id' => $access->grade_id,
+        ])->update([
+            'status' => 'accepted',
+            'updated_at' => now()
+        ]);
 
         return response()->json(['message' => 'Accepted']);
     }
@@ -75,7 +80,17 @@ class LessonAccessController extends Controller
     public function acceptMultiple(Request $request)
     {
         LessonAccess::whereIn('id', $request->ids)
-            ->update(['status' => 'accepted']);
+            ->get()
+            ->each(function (LessonAccess $access) {
+                LessonAccess::where([
+                    'user_id' => $access->user_id,
+                    'subject_id' => $access->subject_id,
+                    'grade_id' => $access->grade_id,
+                ])->update([
+                    'status' => 'accepted',
+                    'updated_at' => now()
+                ]);
+            });
 
         return response()->json(['message' => 'Accepted']);
     }
@@ -83,7 +98,10 @@ class LessonAccessController extends Controller
     public function refuseMultiple(Request $request)
     {
         LessonAccess::whereIn('id', $request->ids)
-            ->update(['status' => 'refused']);
+            ->update([
+                'status' => 'refused',
+                'updated_at' => now()
+            ]);
 
         return response()->json(['message' => 'Refused']);
     }
@@ -122,7 +140,34 @@ class LessonAccessController extends Controller
                 'grades.name as grade_name'
             )
             ->where('lesson_access.status', 'pending')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('lesson_access as accepted_access')
+                    ->whereColumn('accepted_access.user_id', 'lesson_access.user_id')
+                    ->whereColumn('accepted_access.subject_id', 'lesson_access.subject_id')
+                    ->whereColumn('accepted_access.grade_id', 'lesson_access.grade_id')
+                    ->where('accepted_access.status', 'accepted');
+            })
             ->latest('lesson_access.created_at')
             ->get();
+    }
+
+    private function normalizedAccessRequests(Request $request)
+    {
+        $payload = $request->all();
+
+        $items = isset($payload['subject_id'], $payload['grade_id'])
+            ? [$payload]
+            : array_values($payload);
+
+        return collect($items)
+            ->filter(fn($item) => is_array($item) && isset($item['subject_id'], $item['grade_id']))
+            ->map(fn($item) => [
+                'subject_id' => (int) $item['subject_id'],
+                'grade_id' => (int) $item['grade_id'],
+            ])
+            ->filter(fn($item) => $item['subject_id'] > 0 && $item['grade_id'] > 0)
+            ->unique(fn($item) => $item['subject_id'] . '-' . $item['grade_id'])
+            ->values();
     }
 }
