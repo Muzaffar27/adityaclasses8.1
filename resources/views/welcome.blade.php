@@ -11,7 +11,7 @@
     <title>Aditya Classes - Online School Learning</title>
 
     <link rel="icon" type="image/png" href="/logo.png">
-    <link rel="apple-touch-icon" href="/pwa-icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/pwa-icons/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.webmanifest">
 
     @vite(['resources/js/app.js'])

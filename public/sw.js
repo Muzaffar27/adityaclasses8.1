@@ -1,4 +1,4 @@
-const CACHE_VERSION = "aditya-classes-v4";
+const CACHE_VERSION = "aditya-classes-v5";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -7,9 +7,10 @@ const APP_SHELL_URLS = [
     "/manifest.webmanifest",
     "/logo.png",
     "/menu_logo.png",
-    "/pwa-icons/icon-192.png",
-    "/pwa-icons/icon-512.png",
-    "/pwa-icons/maskable-512.png",
+    "/pwa-icons/mobile-icon-192.png",
+    "/pwa-icons/mobile-icon-512.png",
+    "/pwa-icons/mobile-maskable-512.png",
+    "/pwa-icons/apple-touch-icon.png",
     "/pwa-screenshots/wide.png",
     "/favicon.ico",
 ];
