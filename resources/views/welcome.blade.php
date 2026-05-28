@@ -10,9 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Aditya Classes">
     <title>Aditya Classes - Online School Learning</title>
 
-    <link rel="icon" type="image/png" sizes="32x32" href="/pwa-icons/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-icons/icon-192.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/pwa-icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="/pwa-icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/pwa-icons/icon-192.png">
     <link rel="manifest" href="/manifest.webmanifest">
 
     @vite(['resources/js/app.js'])
