@@ -32,13 +32,20 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { DevicePhoneMobileIcon, XMarkIcon } from "@heroicons/vue/24/outline";
 
-const DISMISS_KEY = "aditya_pwa_install_prompt_dismissed";
+const DISMISS_KEY = "aditya_pwa_install_prompt_dismissed_at";
+const DISMISS_DURATION_MS = 24 * 60 * 60 * 1000;
+
+function wasRecentlyDismissed() {
+  const dismissedAt = Number(localStorage.getItem(DISMISS_KEY));
+
+  return Number.isFinite(dismissedAt) && Date.now() - dismissedAt < DISMISS_DURATION_MS;
+}
 
 const deferredPrompt = ref(null);
 const isInstallable = ref(false);
 const isIosSafari = ref(false);
 const isStandalone = ref(false);
-const isDismissed = ref(localStorage.getItem(DISMISS_KEY) === "true");
+const isDismissed = ref(wasRecentlyDismissed());
 
 const canInstall = computed(() => Boolean(deferredPrompt.value));
 
@@ -68,6 +75,7 @@ function handleBeforeInstallPrompt(event) {
   event.preventDefault();
   deferredPrompt.value = event;
   isInstallable.value = true;
+  isDismissed.value = wasRecentlyDismissed();
   window.adityaPwaInstallPrompt = event;
 }
 
@@ -75,6 +83,7 @@ function handleInstallableEvent() {
   if (window.adityaPwaInstallPrompt) {
     deferredPrompt.value = window.adityaPwaInstallPrompt;
     isInstallable.value = true;
+    isDismissed.value = wasRecentlyDismissed();
   }
 }
 
@@ -82,7 +91,7 @@ function handleAppInstalled() {
   deferredPrompt.value = null;
   isInstallable.value = false;
   isStandalone.value = true;
-  localStorage.setItem(DISMISS_KEY, "true");
+  localStorage.removeItem(DISMISS_KEY);
 }
 
 async function installApp() {
@@ -98,7 +107,7 @@ async function installApp() {
 
 function dismissPrompt() {
   isDismissed.value = true;
-  localStorage.setItem(DISMISS_KEY, "true");
+  localStorage.setItem(DISMISS_KEY, String(Date.now()));
 }
 
 onMounted(() => {

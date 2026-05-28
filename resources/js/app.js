@@ -12,6 +12,7 @@ window.adityaPwaInstallPrompt = null;
 window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     window.adityaPwaInstallPrompt = event;
+    console.info("Aditya Classes PWA install prompt is available.");
     window.dispatchEvent(new Event("aditya-pwa-installable"));
 });
 
