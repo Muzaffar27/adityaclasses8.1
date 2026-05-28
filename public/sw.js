@@ -1,4 +1,4 @@
-const CACHE_VERSION = "aditya-classes-v5";
+const CACHE_VERSION = "aditya-classes-v4";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -53,6 +53,7 @@ self.addEventListener("fetch", (event) => {
     }
 
     if (url.origin === self.location.origin && url.pathname.startsWith("/api/")) {
+        event.respondWith(networkFirst(request));
         return;
     }
 
@@ -64,12 +65,8 @@ self.addEventListener("fetch", (event) => {
 async function networkFirst(request, fallbackUrl = null) {
     try {
         const response = await fetch(request);
-
-        if (response.ok) {
-            const cache = await caches.open(RUNTIME_CACHE);
-            cache.put(request, response.clone());
-        }
-
+        const cache = await caches.open(RUNTIME_CACHE);
+        cache.put(request, response.clone());
         return response;
     } catch (error) {
         const cachedResponse = await caches.match(request);
@@ -92,10 +89,7 @@ async function staleWhileRevalidate(request) {
 
     const fetchPromise = fetch(request)
         .then((networkResponse) => {
-            if (networkResponse.ok) {
-                cache.put(request, networkResponse.clone());
-            }
-
+            cache.put(request, networkResponse.clone());
             return networkResponse;
         })
         .catch(() => cachedResponse);

@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Aditya Classes">
     <title>Aditya Classes - Online School Learning</title>
 
-    <link rel="icon" type="image/png" href="/pwa-icons/icon-192.png">
+    <link rel="icon" type="image/png" href="/logo.png">
     <link rel="apple-touch-icon" href="/pwa-icons/icon-192.png">
     <link rel="manifest" href="/manifest.webmanifest">
 
