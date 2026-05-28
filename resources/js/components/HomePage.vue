@@ -14,7 +14,16 @@
     <div v-if="sliderImages.length" class="hero-students mb-5">
       <div class="hero-track">
         <div v-for="(image, index) in sliderImages" :key="`${image.src}-${index}`" class="hero-slide">
-          <img :src="image.src" :alt="image.alt" loading="eager" decoding="async" @error="hideBrokenImage" />
+          <img
+            :src="image.src"
+            :alt="image.alt"
+            width="420"
+            height="190"
+            :loading="index === 0 ? 'eager' : 'lazy'"
+            :fetchpriority="index === 0 ? 'high' : 'auto'"
+            decoding="async"
+            @error="hideBrokenImage"
+          />
         </div>
       </div>
 
