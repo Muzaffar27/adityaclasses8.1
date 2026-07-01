@@ -183,8 +183,11 @@ class LessonController extends Controller
         return response()->json([
             'lessons' => $lessons,
             'access' => [
-                'has_access' => $access && $access->status === 'accepted',
+                'has_access' => $access
+                    && $access->status === 'accepted'
+                    && (!$access->expires_at || $access->expires_at->isFuture()),
                 'status' => $access->status ?? null,
+                'expires_at' => $access->expires_at ?? null,
             ]
         ]);
     }
@@ -194,12 +197,20 @@ class LessonController extends Controller
         return LessonAccess::with(['subject', 'grade'])
             ->where('user_id', auth()->id())
             ->where('status', 'accepted')
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
             ->select('lesson_access.*')
             ->whereIn('id', function ($query) {
                 $query->selectRaw('MAX(id)')
                     ->from('lesson_access')
                     ->where('user_id', auth()->id())
                     ->where('status', 'accepted')
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', now());
+                    })
                     ->groupBy('subject_id', 'grade_id');
             })
             ->get();

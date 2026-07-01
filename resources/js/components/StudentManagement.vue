@@ -17,9 +17,21 @@
                 Total students: <strong>{{ students.length }}</strong>
             </div>
 
-            <div class="field mb-4">
-                <div class="control">
-                    <input v-model="search" class="input" type="text" placeholder="Search student by name or email..." />
+            <div class="student-filters mb-4">
+                <div class="field mb-0 search-field">
+                    <div class="control">
+                        <input v-model="search" class="input" type="text" placeholder="Search student by name or email..." />
+                    </div>
+                </div>
+
+                <div class="access-filter">
+                    <button class="filter-btn" :class="{ active: accessFilter === 'all' }" @click="accessFilter = 'all'">
+                        All
+                    </button>
+                    <button class="filter-btn has-expired" :class="{ active: accessFilter === 'expired' }"
+                        @click="accessFilter = 'expired'">
+                        Expired Access
+                    </button>
                 </div>
             </div>
 
@@ -233,6 +245,7 @@ defineProps({
 
 const students = ref([]);
 const search = ref("");
+const accessFilter = ref("all");
 
 const confirmModal = ref(false);
 const pendingStudent = ref(null);
@@ -246,9 +259,15 @@ const isResetting = ref(false);
 const expandedStudentId = ref(null);
 
 const filteredStudents = computed(() => {
-    if (!search.value) return students.value;
+    let result = students.value;
 
-    return students.value.filter((student) => {
+    if (accessFilter.value === 'expired') {
+        result = result.filter(hasExpiredAccess);
+    }
+
+    if (!search.value) return result;
+
+    return result.filter((student) => {
         const keyword = search.value.toLowerCase();
 
         return (
@@ -311,6 +330,14 @@ const hiddenPackageCount = (student) => {
     return Math.max(packageAccess(student).length - visiblePackages(student).length, 0);
 };
 
+const hasExpiredAccess = (student) => {
+    return (student.lesson_access || []).some(access => {
+        return access.status === 'accepted'
+            && access.expires_at
+            && new Date(access.expires_at).getTime() < Date.now();
+    });
+};
+
 const confirmResetPassword = async () => {
     if (!pendingStudent.value) return;
 
@@ -346,7 +373,7 @@ const copyPassword = () => {
 
 };
 
-watch(search, () => {
+watch([search, accessFilter], () => {
     currentPage.value = 1;
 });
 
@@ -371,6 +398,49 @@ onMounted(fetchStudents);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     overflow: hidden;
+}
+
+.student-filters {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.search-field {
+    flex: 1;
+    min-width: 0;
+}
+
+.access-filter {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 0.25rem;
+    padding: 0.25rem;
+}
+
+.filter-btn {
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.68);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 800;
+    height: 30px;
+    padding: 0 0.65rem;
+}
+
+.filter-btn.active {
+    background: #4f46e5;
+    color: #fff;
+}
+
+.filter-btn.has-expired.active {
+    background: rgba(251, 113, 133, 0.18);
+    color: #fecaca;
 }
 
 .table {
@@ -461,5 +531,20 @@ onMounted(fetchStudents);
     text-align: center;
     padding: 30px;
     color: #888;
+}
+
+@media (max-width: 768px) {
+    .student-filters {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .access-filter {
+        width: 100%;
+    }
+
+    .filter-btn {
+        flex: 1;
+    }
 }
 </style>

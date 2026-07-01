@@ -40,6 +40,7 @@ class UserController extends Controller
 
                 $acceptedAccessByKey = $student->lessonAccess
                     ->where('status', 'accepted')
+                    ->filter(fn($access) => !$access->expires_at || $access->expires_at->isFuture())
                     ->keyBy(fn($access) => $access->grade_id . '-' . $access->subject_id);
 
                 $student->package_access = $packages
@@ -65,6 +66,7 @@ class UserController extends Controller
                                     'grade_name' => $item->grade?->name,
                                     'subject_name' => $item->subject?->name,
                                     'status' => $access->status,
+                                    'expires_at' => $access->expires_at,
                                     'lesson_count' => $access->lessons?->count() ?? 0,
                                 ];
                             })

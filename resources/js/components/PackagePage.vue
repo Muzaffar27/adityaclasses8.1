@@ -107,7 +107,7 @@
                                 </td>
 
                                 <td class="has-text-right has-text-grey-light">
-                                    Rs {{ item.price }}
+                                    Rs {{ priceForDuration(item.price).toFixed(2) }}
                                 </td>
                             </tr>
                         </tbody>
@@ -122,6 +122,14 @@
                             <p class="is-size-7 has-text-grey">
                                 Selected ({{ selectedItemIds.length }} items)
                             </p>
+                            <div class="duration-options mb-2">
+                                <button v-for="option in durationOptions" :key="option.months" type="button"
+                                    class="button is-small duration-btn"
+                                    :class="{ 'is-primary': selectedDurationMonths === option.months }"
+                                    @click="selectedDurationMonths = option.months">
+                                    {{ option.label }}
+                                </button>
+                            </div>
                             <p class="is-size-5 has-text-primary has-text-weight-bold">
                                 Rs {{ dynamicTotal.toFixed(2) }}
                             </p>
@@ -165,7 +173,13 @@ const selectedPackage = ref(null)
 const selectedPackageId = ref(null)
 const selectedSubjectId = ref(null)
 const selectedItemIds = ref([])
+const selectedDurationMonths = ref(3)
 const excludedSubjects = ['mechanics', 'statistics 1', 'statistics 2']
+const durationOptions = [
+    { months: 3, label: '3 months', priceKey: 'three_month_price' },
+    { months: 6, label: '6 months', priceKey: 'six_month_price' },
+    { months: 9, label: '9 months', priceKey: 'nine_month_price' },
+]
 
 
 // route
@@ -228,8 +242,32 @@ const dynamicTotal = computed(() => {
 
     return selectedPackage.value.items
         .filter(item => selectedItemIds.value.includes(item.id))
-        .reduce((sum, item) => sum + Number(item.price), 0);
+        .reduce((sum, item) => sum + priceForDuration(item.price), 0);
 });
+
+const selectedDurationOption = computed(() => {
+    return durationOptions.find(option => option.months === selectedDurationMonths.value) || durationOptions[0]
+})
+
+function priceForDuration(price) {
+    if (!fullPackageBaseTotal.value) return 0
+
+    return (Number(price || 0) / fullPackageBaseTotal.value) * selectedDurationPrice.value
+}
+
+const fullPackageBaseTotal = computed(() => {
+    if (!selectedPackage.value || !selectedPackage.value.items) return 0
+
+    return selectedPackage.value.items
+        .reduce((sum, item) => sum + Number(item.price || 0), 0)
+})
+
+const selectedDurationPrice = computed(() => {
+    const option = selectedDurationOption.value
+    const packagePrice = Number(selectedPackage.value?.[option.priceKey] || 0)
+
+    return packagePrice > 0 ? packagePrice : fullPackageBaseTotal.value
+})
 
 // select subject
 function selectSubject(subjectId) {
@@ -291,7 +329,9 @@ async function submitRequest() {
 
     const payload = selectedItems.map(item => ({
         subject_id: item.subject_id || item.subject?.id,
-        grade_id: item.grade_id
+        grade_id: item.grade_id,
+        duration_months: selectedDurationMonths.value,
+        requested_price: priceForDuration(item.price),
     }))
     buttonLoad.value = true
     try {
@@ -436,6 +476,25 @@ watch(selectedPackage, () => {
 
 .checkout-bar p {
     margin: 0;
+}
+
+.duration-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.duration-btn {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+}
+
+.duration-btn.is-primary {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
 }
 
 .checkout-bar .is-size-4 {

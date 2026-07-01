@@ -32,6 +32,9 @@
                             <strong>{{ item.subject_name || 'Subject' }}</strong>
                             <span>{{ item.grade_name || 'Grade' }} - {{ item.lesson_count || 0 }} lesson{{
                                 (item.lesson_count || 0) === 1 ? '' : 's' }}</span>
+                            <span class="expiry-chip" :class="{ 'is-expired': isExpired(item) }">
+                                Exp: {{ formatExpiryDate(item.expires_at) }}
+                            </span>
                         </div>
 
                         <button class="button is-danger is-small"
@@ -62,6 +65,9 @@
                         </span>
                         <span>
                             {{ access.lessons?.length || 0 }} lesson{{ (access.lessons?.length || 0) === 1 ? '' : 's' }}
+                        </span>
+                        <span class="expiry-chip" :class="{ 'is-expired': isExpired(access) }">
+                            Exp: {{ formatExpiryDate(access.expires_at) }}
                         </span>
                         <!-- <span class="access-warning">
                             Removing access removes these lessons.
@@ -191,6 +197,22 @@ function statusClass(status) {
         refused: 'is-danger is-light',
     }[status] || 'is-light';
 }
+
+function formatExpiryDate(value) {
+    if (!value) return 'No expiry';
+
+    return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    }).format(new Date(value));
+}
+
+function isExpired(access) {
+    return access?.status === 'accepted'
+        && access?.expires_at
+        && new Date(access.expires_at).getTime() < Date.now();
+}
 </script>
 
 <style scoped>
@@ -308,6 +330,26 @@ function statusClass(status) {
 
 .access-warning {
     color: rgba(248, 113, 113, 0.82);
+}
+
+.expiry-chip {
+    align-items: center;
+    background: rgba(251, 113, 133, 0.12);
+    border: 1px solid rgba(251, 113, 133, 0.34);
+    border-radius: 999px;
+    color: #fecaca;
+    display: inline-flex;
+    font-size: 0.66rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 0.22rem 0.42rem;
+    white-space: nowrap;
+}
+
+.expiry-chip.is-expired {
+    background: rgba(248, 113, 113, 0.2);
+    border-color: rgba(248, 113, 113, 0.48);
+    color: #fca5a5;
 }
 
 .access-actions {

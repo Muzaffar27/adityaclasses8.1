@@ -1,9 +1,8 @@
-const CACHE_VERSION = "aditya-classes-v5";
+const CACHE_VERSION = "aditya-classes-v6-20260701";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 const APP_SHELL_URLS = [
-    "/",
     "/manifest.webmanifest",
     "/logo.png",
     "/menu_logo.png",
@@ -39,6 +38,12 @@ self.addEventListener("activate", (event) => {
     );
 });
 
+self.addEventListener("message", (event) => {
+    if (event.data?.type === "SKIP_WAITING") {
+        self.skipWaiting();
+    }
+});
+
 self.addEventListener("fetch", (event) => {
     const { request } = event;
 
@@ -65,9 +70,11 @@ self.addEventListener("fetch", (event) => {
 
 async function networkFirst(request, fallbackUrl = null) {
     try {
-        const response = await fetch(request);
+        const response = await fetch(request, { cache: "no-store" });
         const cache = await caches.open(RUNTIME_CACHE);
-        cache.put(request, response.clone());
+        if (response.ok) {
+            cache.put(request, response.clone());
+        }
         return response;
     } catch (error) {
         const cachedResponse = await caches.match(request);
@@ -90,7 +97,9 @@ async function staleWhileRevalidate(request) {
 
     const fetchPromise = fetch(request)
         .then((networkResponse) => {
-            cache.put(request, networkResponse.clone());
+            if (networkResponse.ok) {
+                cache.put(request, networkResponse.clone());
+            }
             return networkResponse;
         })
         .catch(() => cachedResponse);

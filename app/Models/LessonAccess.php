@@ -12,11 +12,21 @@ class LessonAccess extends Model
         'subject_id',
         'grade_id',
         'user_id',
-        'status'
+        'status',
+        'duration_months',
+        'requested_price',
+        'expires_at',
     ];
 
     protected $attributes = [
         'status' => 'pending',
+        'duration_months' => 3,
+        'requested_price' => 0,
+    ];
+
+    protected $casts = [
+        'expires_at' => 'datetime',
+        'requested_price' => 'decimal:2',
     ];
 
     public function user()

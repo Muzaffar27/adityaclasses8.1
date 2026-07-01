@@ -50,6 +50,9 @@
                     <p class="is-size-7 ml-5 has-text-white">
                         📘 {{ req.subject_name }}
                         <span class="has-text-grey">• {{ req.grade_name }}</span>
+                        <span class="request-meta has-text-grey">
+                            • {{ formatDuration(req.duration_months) }} • Rs {{ formatMoney(req.requested_price) }}
+                        </span>
                     </p>
 
                     <div class="buttons">
@@ -196,6 +199,15 @@ function refuseStudent(student) {
     });
 }
 
+function formatDuration(months) {
+    const duration = Number(months || 3);
+    return `${duration} months`;
+}
+
+function formatMoney(value) {
+    return Number(value || 0).toFixed(2);
+}
+
 </script>
 
 <style>
@@ -254,6 +266,10 @@ function refuseStudent(student) {
 .student-name {
     font-weight: 600;
     color: white;
+}
+
+.request-meta {
+    margin-left: 6px;
 }
 
 .expand-enter-active,

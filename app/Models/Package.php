@@ -11,8 +11,19 @@ class Package extends Model
         'description',
         'base_price',
         'total_price',
+        'three_month_price',
+        'six_month_price',
+        'nine_month_price',
         'grade_id',
         'subject_id',
+    ];
+
+    protected $casts = [
+        'base_price' => 'decimal:2',
+        'total_price' => 'decimal:2',
+        'three_month_price' => 'decimal:2',
+        'six_month_price' => 'decimal:2',
+        'nine_month_price' => 'decimal:2',
     ];
 
     public function items()

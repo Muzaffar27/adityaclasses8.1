@@ -18,6 +18,9 @@ class PackageController extends Controller
             'grade_id' => 'required|exists:grades,id',
             'subject_id' => 'required|exists:subjects,id',
             'base_price' => 'required|numeric',
+            'three_month_price' => 'nullable|numeric|min:0',
+            'six_month_price' => 'nullable|numeric|min:0',
+            'nine_month_price' => 'nullable|numeric|min:0',
 
             //Package Item
             'items' => 'required|array',
@@ -36,6 +39,9 @@ class PackageController extends Controller
                 'grade_id' => $data['grade_id'],
                 'subject_id' => $data['subject_id'],
                 'base_price' => $data['base_price'],
+                'three_month_price' => $data['three_month_price'] ?? 0,
+                'six_month_price' => $data['six_month_price'] ?? 0,
+                'nine_month_price' => $data['nine_month_price'] ?? 0,
                 'total_price' => 0,
             ]);
 
@@ -89,6 +95,9 @@ class PackageController extends Controller
                 'grade_id' => $request->grade_id,
                 'subject_id' => $request->subject_id,
                 'base_price' => $request->base_price,
+                'three_month_price' => $request->three_month_price ?? 0,
+                'six_month_price' => $request->six_month_price ?? 0,
+                'nine_month_price' => $request->nine_month_price ?? 0,
             ]);
 
             PackageItem::where('package_id', $package->id)->delete();

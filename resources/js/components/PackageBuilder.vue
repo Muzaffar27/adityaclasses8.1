@@ -80,8 +80,6 @@
 
             </div>
 
-            <hr class="mini-divider" />
-
             <div class="section-title subject-title">
                 📚 Subject Details
             </div>
@@ -128,8 +126,6 @@
             <!-- SUBJECTS -->
 
 
-            <hr class="mini-divider" />
-
             <div class="section-title list-title">
                 📋 Package Contents
             </div>
@@ -170,10 +166,36 @@
 
             </div>
 
+            <div class="section-title price-title">
+                Price Details
+            </div>
+
             <!-- TOTAL -->
             <div class="total-bar mt-2">
-                <span>Total</span>
-                <strong>Rs {{ total }}</strong>
+                <div class="duration-price-fields">
+                    <div>
+                        <label class="custom-label">1 Term (3 months)</label>
+                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
+                            v-model.number="form.three_month_price" />
+                    </div>
+
+                    <div>
+                        <label class="custom-label">2 Terms (6 months)</label>
+                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
+                            v-model.number="form.six_month_price" />
+                    </div>
+
+                    <div>
+                        <label class="custom-label">3 Terms (9 months)</label>
+                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
+                            v-model.number="form.nine_month_price" />
+                    </div>
+                </div>
+
+                <div class="total-summary">
+                    <span>Total</span>
+                    <strong>Rs {{ total }}</strong>
+                </div>
             </div>
 
         </div>
@@ -209,6 +231,9 @@ const form = ref({
     grade_id: null,     // ✔ MAIN PACKAGE GRADE
     subject_id: null,   // ✔ MAIN PACKAGE SUBJECT
     base_price: 0,
+    three_month_price: 0,
+    six_month_price: 0,
+    nine_month_price: 0,
     items: []
 });
 
@@ -366,6 +391,9 @@ onMounted(async () => {
             grade_id: props.editPackage.grade_id,     // ✔ RESTORED
             subject_id: props.editPackage.subject_id, // ✔ RESTORED
             base_price: props.editPackage.base_price,
+            three_month_price: Number(props.editPackage.three_month_price ?? props.editPackage.total_price ?? 0),
+            six_month_price: Number(props.editPackage.six_month_price ?? 0),
+            nine_month_price: Number(props.editPackage.nine_month_price ?? 0),
             items: []
         };
 
@@ -634,28 +662,62 @@ onMounted(async () => {
    ========================= */
 .total-bar {
     display: flex;
-    /* Change justify-content from space-between to flex-end */
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     gap: 12px;
-    /* Adds a nice space between the word 'Total' and the price */
     font-size: 0.9rem;
     margin-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    /* Optional: adds a separation line */
-    padding-top: 8px;
 }
 
-.total-bar span {
+.duration-price-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(90px, 1fr));
+    gap: 8px;
+    flex: 1;
+    max-width: 520px;
+}
+
+.duration-price-input {
+    max-width: 150px;
+}
+
+.total-summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex: 0 0 auto;
+    padding: 9px 12px;
+    border: 1px solid #fb7185;
+    border-radius: 8px;
+}
+
+.total-summary span {
     color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 0.75rem;
 }
 
-.total-bar strong {
+.total-summary strong {
     color: #fff;
     font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .total-bar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .duration-price-fields {
+        grid-template-columns: 1fr;
+        max-width: none;
+    }
+
+    .duration-price-input {
+        max-width: none;
+    }
 }
 
 .section-title {
@@ -677,13 +739,20 @@ onMounted(async () => {
     color: #10b981;
     /* green */
     border-bottom-color: #10b981;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
 }
 
 .list-title {
     color: #f59e0b;
     /* amber / warm orange */
     border-bottom-color: #f59e0b;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.price-title {
+    color: #fb7185;
+    border-bottom-color: #fb7185;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
 }
 </style>

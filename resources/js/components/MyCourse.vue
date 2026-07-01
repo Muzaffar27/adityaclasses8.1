@@ -12,13 +12,17 @@
                 <div class="card glass-card">
                     <div class="card-content">
                         <div>
-                            <div class="is-flex is-justify-content-between is-align-items-start mb-4">
+                            <div class="course-card-top mb-4">
 
                                 <span class="tag is-dark-accent">
                                     {{ access.grade?.name }}
                                 </span>
 
-                                <AcademicCapIcon class=" ml-2 hero-icon-lg has-text-primary move-up" />
+                                <span class="expiry-badge" :title="expiryTitle(access.expires_at)">
+                                    <CalendarDaysIcon class="expiry-icon" />
+                                    <span>Exp:</span>
+                                    <strong>{{ formatExpiryDate(access.expires_at) }}</strong>
+                                </span>
 
                             </div>
 
@@ -62,7 +66,7 @@ import Layout from './common/Layout.vue';
 
 // IMPORT HEROICONS (Outline version is usually best for dark mode)
 import {
-    AcademicCapIcon,
+    CalendarDaysIcon,
     ArrowRightIcon,
     FolderOpenIcon
 } from '@heroicons/vue/24/outline';
@@ -90,6 +94,20 @@ const viewLessons = (gradeId, subjectId) => {
     });
 };
 
+function formatExpiryDate(value) {
+    if (!value) return 'No expiry';
+
+    return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    }).format(new Date(value));
+}
+
+function expiryTitle(value) {
+    return value ? `Access expires on ${formatExpiryDate(value)}` : 'No expiry date';
+}
+
 onMounted(fetchMyCourses);
 </script>
 
@@ -98,7 +116,38 @@ onMounted(fetchMyCourses);
     padding: 0 10px;
 }
 
-.move-up {
-    margin-top: -3px;
+.course-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.expiry-badge {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 1px solid rgba(251, 113, 133, 0.42);
+    border-radius: 999px;
+    background: rgba(251, 113, 133, 0.12);
+    color: #fca5a5;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.expiry-badge strong {
+    color: #fecaca;
+    font-weight: 800;
+}
+
+.expiry-icon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    position: relative;
+    top: 2px;
 }
 </style>

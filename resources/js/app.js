@@ -20,6 +20,17 @@ const pinia = createPinia();
 
 app.use(pinia);
 app.use(router);
+app.config.errorHandler = (error) => {
+    console.error("Vue startup error:", error);
+};
+
+window.addEventListener("error", (event) => {
+    console.error("Window error:", event.error || event.message);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+    console.error("Unhandled promise rejection:", event.reason);
+});
 
 // Restore session on every page load
 const auth = useAuthStore();
@@ -31,9 +42,38 @@ const canUseServiceWorker =
         ["localhost", "127.0.0.1"].includes(window.location.hostname));
 
 if (canUseServiceWorker) {
+    let refreshing = false;
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+
+        refreshing = true;
+        window.location.reload();
+    });
+
     window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js").catch((error) => {
-            console.error("Service worker registration failed:", error);
-        });
+        navigator.serviceWorker
+            .register("/sw.js", { updateViaCache: "none" })
+            .then((registration) => {
+                registration.update();
+
+                if (registration.waiting) {
+                    registration.waiting.postMessage({ type: "SKIP_WAITING" });
+                }
+
+                registration.addEventListener("updatefound", () => {
+                    const worker = registration.installing;
+                    if (!worker) return;
+
+                    worker.addEventListener("statechange", () => {
+                        if (worker.state === "installed" && navigator.serviceWorker.controller) {
+                            worker.postMessage({ type: "SKIP_WAITING" });
+                        }
+                    });
+                });
+            })
+            .catch((error) => {
+                console.error("Service worker registration failed:", error);
+            });
     });
 }
