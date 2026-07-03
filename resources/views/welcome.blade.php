@@ -77,6 +77,59 @@
             </div>
         </div>
     </div>
+    <script>
+        (function () {
+            function displayMode() {
+                if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) {
+                    return "standalone";
+                }
+
+                if (window.navigator.standalone === true) {
+                    return "ios-standalone";
+                }
+
+                return "browser";
+            }
+
+            function reportBootIssue(type, message) {
+                try {
+                    var moduleScript = document.querySelector('script[type="module"]');
+                    var payload = JSON.stringify({
+                        type: type,
+                        message: message,
+                        url: window.location.href,
+                        userAgent: window.navigator.userAgent,
+                        displayMode: displayMode(),
+                        serviceWorker: {
+                            supported: "serviceWorker" in navigator,
+                            controlled: Boolean(navigator.serviceWorker && navigator.serviceWorker.controller)
+                        },
+                        buildAsset: moduleScript ? moduleScript.src : ""
+                    });
+
+                    if (navigator.sendBeacon) {
+                        navigator.sendBeacon("/api/client-error", new Blob([payload], { type: "application/json" }));
+                        return;
+                    }
+
+                    fetch("/api/client-error", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: payload,
+                        keepalive: true
+                    }).catch(function () {});
+                } catch (error) {
+                    console.error("Boot issue reporting failed:", error);
+                }
+            }
+
+            window.setTimeout(function () {
+                if (!window.__ADITYA_APP_MOUNTED && document.querySelector(".boot-fallback")) {
+                    reportBootIssue("boot-fallback-visible", "Vue did not mount within 10 seconds");
+                }
+            }, 10000);
+        })();
+    </script>
 </body>
 
 </html>

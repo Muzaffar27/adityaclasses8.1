@@ -4,6 +4,7 @@ import router from "../router";
 
 const api = axios.create({
     baseURL: window.location.origin + "/api",
+    timeout: 12000,
 });
 
 // ── REQUEST INTERCEPTOR ─────────────────────────

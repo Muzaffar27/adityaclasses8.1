@@ -29,6 +29,10 @@ export const useAuthStore = defineStore("auth", () => {
         } catch (err) {
             const status = err.response?.status;
             console.error("fetchUser failed:", status, err.response?.data);
+            window.reportAdityaClientError?.("fetch-user-failed", err, {
+                status,
+                code: err.code,
+            });
 
             // Only wipe token if explicitly unauthorized
             if (status === 401) {

@@ -10,6 +10,7 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\HomeImageController;
 use App\Http\Controllers\HomepageContentController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 //Auth
@@ -19,6 +20,32 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
+
+Route::post('/client-error', function (Request $request) {
+    $payload = $request->all();
+    $context = [
+        'type' => substr((string) ($payload['type'] ?? 'unknown'), 0, 120),
+        'message' => substr((string) ($payload['message'] ?? ''), 0, 1000),
+        'stack' => substr((string) ($payload['stack'] ?? ''), 0, 4000),
+        'url' => substr((string) ($payload['url'] ?? ''), 0, 500),
+        'source' => substr((string) ($payload['source'] ?? ''), 0, 500),
+        'user_agent' => substr((string) ($payload['userAgent'] ?? $request->userAgent() ?? ''), 0, 500),
+        'display_mode' => substr((string) ($payload['displayMode'] ?? ''), 0, 80),
+        'service_worker' => $payload['serviceWorker'] ?? null,
+        'build_asset' => substr((string) ($payload['buildAsset'] ?? ''), 0, 500),
+        'ip' => $request->ip(),
+    ];
+
+    Log::warning('Frontend client error', $context);
+
+    file_put_contents(
+        storage_path('logs/client-errors.log'),
+        now()->toDateTimeString() . ' ' . json_encode($context, JSON_UNESCAPED_SLASHES) . PHP_EOL,
+        FILE_APPEND | LOCK_EX
+    );
+
+    return response()->noContent();
+});
 
 //User routes
 Route::get('/getStudents', [UserController::class, 'getStudents']);
