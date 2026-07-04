@@ -1,6 +1,6 @@
 {
   "resources/js/app.js": {
-    "file": "assets/app-DIwvyvsD.js",
+    "file": "assets/app-BEj5tTSv.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -17,7 +17,7 @@
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-Hq1Qd0fF.js",
+    "file": "assets/MyCourse-BYHlMVPo.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -29,7 +29,7 @@
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-CYahVUHI.js",
+    "file": "assets/PackageBuilder-AWKa5-wb.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -41,7 +41,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-DWAbIZ0F.js",
+    "file": "assets/PackagePage-B7M88921.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -53,7 +53,7 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-Dao8PB38.js",
+    "file": "assets/Profile-BIFOPYEY.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -65,7 +65,7 @@
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-B2N7NhTx.js",
+    "file": "assets/StudentManagement-DimRcS0m.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -77,7 +77,7 @@
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-CJ13fKCh.js",
+    "file": "assets/TutorSpace-CaWysd1Z.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,

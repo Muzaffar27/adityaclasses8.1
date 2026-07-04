@@ -94,6 +94,8 @@
             function reportBootIssue(type, message) {
                 try {
                     var moduleScript = document.querySelector('script[type="module"]');
+                    var buildAsset = moduleScript ? moduleScript.src : "";
+                    var buildAssetOrigin = buildAsset ? new URL(buildAsset, window.location.href).origin : "";
                     var payload = JSON.stringify({
                         type: type,
                         message: message,
@@ -104,7 +106,8 @@
                             supported: "serviceWorker" in navigator,
                             controlled: Boolean(navigator.serviceWorker && navigator.serviceWorker.controller)
                         },
-                        buildAsset: moduleScript ? moduleScript.src : ""
+                        buildAsset: buildAsset,
+                        assetOriginMismatch: Boolean(buildAssetOrigin && buildAssetOrigin !== window.location.origin)
                     });
 
                     if (navigator.sendBeacon) {

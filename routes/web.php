@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\DB;
 */
 
 
+Route::domain('www.adityaclasses.mu')->get('/{any?}', function () {
+    return redirect()->to('https://adityaclasses.mu/' . ltrim(request()->path(), '/'), 301);
+})->where('any', '.*');
+
 Route::get('/admin/clear-cache', function () {
     Artisan::call('config:clear');
     Artisan::call('route:clear');

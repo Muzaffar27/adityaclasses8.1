@@ -35,6 +35,8 @@ function serializeError(error) {
 
 function reportClientError(type, error, extra = {}) {
     const serialized = serializeError(error);
+    const buildAsset = document.querySelector('script[type="module"]')?.src || "";
+    const buildAssetOrigin = buildAsset ? new URL(buildAsset, window.location.href).origin : "";
     const payload = {
         type,
         message: serialized.message || extra.message || "",
@@ -47,7 +49,8 @@ function reportClientError(type, error, extra = {}) {
             supported: "serviceWorker" in navigator,
             controlled: Boolean(navigator.serviceWorker?.controller),
         },
-        buildAsset: document.querySelector('script[type="module"]')?.src || "",
+        buildAsset,
+        assetOriginMismatch: Boolean(buildAssetOrigin && buildAssetOrigin !== window.location.origin),
         ...extra,
     };
 

@@ -33,6 +33,7 @@ Route::post('/client-error', function (Request $request) {
         'display_mode' => substr((string) ($payload['displayMode'] ?? ''), 0, 80),
         'service_worker' => $payload['serviceWorker'] ?? null,
         'build_asset' => substr((string) ($payload['buildAsset'] ?? ''), 0, 500),
+        'asset_origin_mismatch' => (bool) ($payload['assetOriginMismatch'] ?? false),
         'ip' => $request->ip(),
     ];
 
