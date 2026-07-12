@@ -20,7 +20,7 @@
         </div>
 
         <div class="header-side-right">
-          <PwaInstallButton />
+          <PwaInstallButton v-if="showPwaInstallButton" />
 
           <div v-if="auth.isAdmin || auth.isTutor" class="admin-toggle-bar mr-2 ">
             <button class="tutor-space-btn" @click=enterAdmin>
@@ -64,11 +64,13 @@ const auth = useAuthStore();
 const router = useRouter();
 const logoUrl = '/menu_logo.png';
 
-defineProps({
+const props = defineProps({
   title: String,
   loading: Boolean,
   showBack: { type: Boolean, default: true }
 });
+
+const showPwaInstallButton = computed(() => props.title === 'Home');
 
 const userInitials = computed(() => {
   if (!auth.user?.name) return '?';
