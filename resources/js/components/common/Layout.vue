@@ -20,6 +20,7 @@
         </div>
 
         <div class="header-side-right">
+          <PwaInstallButton />
 
           <div v-if="auth.isAdmin || auth.isTutor" class="admin-toggle-bar mr-2 ">
             <button class="tutor-space-btn" @click=enterAdmin>
@@ -54,6 +55,7 @@
 <script setup>
 import { ArrowLeftIcon } from "@heroicons/vue/24/outline";
 import Loader from "./Loader.vue";
+import PwaInstallButton from "./PwaInstallButton.vue";
 import { useRouter } from "vue-router";
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/auth";

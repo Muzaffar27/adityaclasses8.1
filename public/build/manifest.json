@@ -1,6 +1,6 @@
 {
   "resources/js/app.js": {
-    "file": "assets/app-BEj5tTSv.js",
+    "file": "assets/app-Bt8WxnmK.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -13,11 +13,11 @@
       "resources/js/components/TutorSpace.vue"
     ],
     "css": [
-      "assets/app-DAjk7lqH.css"
+      "assets/app-M0k4nZde.css"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-BYHlMVPo.js",
+    "file": "assets/MyCourse-CuyKhsjQ.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -29,7 +29,7 @@
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-AWKa5-wb.js",
+    "file": "assets/PackageBuilder-DCHxm-Jw.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -41,7 +41,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-B7M88921.js",
+    "file": "assets/PackagePage-DUSLgp9F.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -53,7 +53,7 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-BIFOPYEY.js",
+    "file": "assets/Profile-Ckt_6AmN.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -65,7 +65,7 @@
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-DimRcS0m.js",
+    "file": "assets/StudentManagement-VPCzrjVK.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -77,7 +77,7 @@
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-CaWysd1Z.js",
+    "file": "assets/TutorSpace-DSo0S-yu.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,
