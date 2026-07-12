@@ -90,7 +90,8 @@
 
                                                     <div class="video-container">
                                                         <iframe :src="getVideoUrl(lesson)" frameborder="0"
-                                                            allow="autoplay; fullscreen" allowfullscreen
+                                                            allow="autoplay; fullscreen; picture-in-picture"
+                                                            allowfullscreen webkitallowfullscreen mozallowfullscreen
                                                             class="video-frame" @load="onVideoLoaded" />
 
                                                         <div v-if="isVideoLoading" class="video-loading">
@@ -158,8 +159,10 @@
                                     </div>
 
                                     <div class="video-container">
-                                        <iframe :src="getVideoUrl(lesson)" frameborder="0" allow="autoplay; fullscreen"
-                                            allowfullscreen class="video-frame" @load="onVideoLoaded" />
+                                        <iframe :src="getVideoUrl(lesson)" frameborder="0"
+                                            allow="autoplay; fullscreen; picture-in-picture" allowfullscreen
+                                            webkitallowfullscreen mozallowfullscreen class="video-frame"
+                                            @load="onVideoLoaded" />
 
                                         <div v-if="isVideoLoading" class="video-loading">
                                             <div class="loader"></div>
@@ -627,6 +630,30 @@ function getVimeoThumbnail(url) {
         width: 100%;
         aspect-ratio: 16 / 9;
         flex-shrink: 0;
+    }
+}
+
+@media (max-width: 920px) and (orientation: landscape) {
+    .inline-video-card {
+        position: fixed;
+        inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        z-index: 500;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    .inline-video-card .video-header {
+        flex: 0 0 auto;
+        padding: 0.55rem 0.75rem !important;
+    }
+
+    .inline-video-card .video-container {
+        aspect-ratio: auto;
+        flex: 1 1 auto;
+        min-height: 0;
     }
 }
 
