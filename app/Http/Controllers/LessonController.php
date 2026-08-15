@@ -7,6 +7,8 @@ use App\Models\Lesson;
 use Illuminate\Http\Request;
 use App\Models\LessonAccess;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class LessonController extends Controller
 {
@@ -48,7 +50,18 @@ class LessonController extends Controller
     // UPDATE
     public function update(Request $request, Lesson $lesson)
     {
-        $lesson->update($request->all());
+        $lesson->update($request->only([
+            'grade_id',
+            'subject_id',
+            'topic',
+            'sub_topic',
+            'title',
+            'part_number',
+            'description',
+            'vimeo_url',
+            'duration',
+            'is_active',
+        ]));
 
         return $lesson;
     }
@@ -118,6 +131,8 @@ class LessonController extends Controller
                 if ($topic) {
                     $copy->topic = $topic;
                 }
+                $copy->question_pdf_path = null;
+                $copy->answer_pdf_path = null;
                 $copy->save();
 
                 return $copy;
@@ -148,9 +163,104 @@ class LessonController extends Controller
     // DELETE
     public function destroy(Lesson $lesson)
     {
+        Storage::disk('local')->delete(array_filter([
+            $lesson->question_pdf_path,
+            $lesson->answer_pdf_path,
+        ]));
         $lesson->delete();
 
         return response()->json(['message' => 'Deleted']);
+    }
+
+    public function uploadPdf(Request $request, Lesson $lesson)
+    {
+        $this->ensureTutor($request);
+        $type = $this->pdfType($request->input('type'));
+        $request->validate([
+            'type' => 'required|in:question,answer',
+            'pdf' => 'required|file|mimes:pdf|max:20480',
+        ]);
+
+        $field = $type . '_pdf_path';
+        $oldPath = $lesson->{$field};
+        $path = $request->file('pdf')->storeAs(
+            'lesson-pdfs/' . $lesson->id,
+            $type . '-' . Str::uuid() . '.pdf',
+            'local'
+        );
+
+        $lesson->update([$field => $path]);
+        if ($oldPath) {
+            Storage::disk('local')->delete($oldPath);
+        }
+
+        return response()->json([
+            'has_question_pdf' => $lesson->has_question_pdf,
+            'has_answer_pdf' => $lesson->has_answer_pdf,
+        ]);
+    }
+
+    public function viewPdf(Request $request, Lesson $lesson, string $type)
+    {
+        $type = $this->pdfType($type);
+        $this->ensurePdfAccess($request, $lesson);
+        $path = $lesson->{$type . '_pdf_path'};
+
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return response()->file(Storage::disk('local')->path($path), [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $type . '-lesson-' . $lesson->id . '.pdf"',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    public function removePdf(Request $request, Lesson $lesson, string $type)
+    {
+        $this->ensureTutor($request);
+        $type = $this->pdfType($type);
+        $field = $type . '_pdf_path';
+
+        if ($lesson->{$field}) {
+            Storage::disk('local')->delete($lesson->{$field});
+            $lesson->update([$field => null]);
+        }
+
+        return response()->json([
+            'has_question_pdf' => $lesson->has_question_pdf,
+            'has_answer_pdf' => $lesson->has_answer_pdf,
+        ]);
+    }
+
+    private function pdfType(?string $type): string
+    {
+        abort_unless(in_array($type, ['question', 'answer'], true), 404);
+
+        return $type;
+    }
+
+    private function ensureTutor(Request $request): void
+    {
+        abort_unless(in_array($request->user()->role, ['tutor', 'admin'], true), 403);
+    }
+
+    private function ensurePdfAccess(Request $request, Lesson $lesson): void
+    {
+        if (in_array($request->user()->role, ['tutor', 'admin'], true)) {
+            return;
+        }
+
+        $hasAccess = LessonAccess::where([
+            'user_id' => $request->user()->id,
+            'subject_id' => $lesson->subject_id,
+            'grade_id' => $lesson->grade_id,
+            'status' => 'accepted',
+        ])->where(function ($query) {
+            $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+        })->exists();
+
+        abort_unless($hasAccess, 403);
     }
     /**
      * Get all lessons for a specific grade and subject

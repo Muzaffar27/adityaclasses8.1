@@ -99,6 +99,7 @@
                                                             <p class="mt-2">Buffering...</p>
                                                         </div>
                                                     </div>
+                                                    <LessonPdfResources :lesson="lesson" />
                                                 </div>
 
                                                 <div v-else
@@ -169,6 +170,7 @@
                                             <p class="mt-2">Buffering...</p>
                                         </div>
                                     </div>
+                                    <LessonPdfResources :lesson="lesson" />
                                 </div>
 
                                 <div v-else class="card glass-card clickable-card fixed-card lesson-card"
@@ -221,6 +223,7 @@ import { computed, ref, onMounted, onBeforeUnmount, nextTick, watch } from "vue"
 import api from "../api";
 import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
+import LessonPdfResources from "./LessonPdfResources.vue";
 import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();

@@ -121,6 +121,8 @@
                 </div>
             </div>
 
+            <LessonPdfManager v-if="isEditMode" :lesson="lesson" @changed="$emit('resource-changed')" />
+
             <hr class="my-4" style="height: 1px; background-color: #dbdbdb;">
 
             <div class="buttons is-right">
@@ -145,6 +147,7 @@ import { useRouter } from 'vue-router';
 import { useCacheStore } from '../../stores/cache';
 import { storeToRefs } from 'pinia';
 import { showAlert } from '../../composables/dialog';
+import LessonPdfManager from './LessonPdfManager.vue';
 
 const router = useRouter();
 const cacheStore = useCacheStore();
@@ -169,7 +172,7 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['saved', 'cancel']);
+const emit = defineEmits(['saved', 'cancel', 'resource-changed']);
 const loading = ref(false);
 const activeSuggestionField = ref(null);
 
@@ -255,13 +258,17 @@ const handleSave = async () => {
 
     // 3. If validation passes, proceed as normal
     localLesson.value.duration = formatDuration(durationParts.value);
+    const payload = Object.fromEntries([
+        'grade_id', 'subject_id', 'topic', 'sub_topic', 'title', 'part_number',
+        'description', 'vimeo_url', 'duration', 'is_active'
+    ].map(key => [key, localLesson.value[key]]));
 
     loading.value = true;
     try {
         if (isEditMode.value) {
-            await api.put(`/admin/lessons/${localLesson.value.id}`, localLesson.value);
+            await api.put(`/admin/lessons/${localLesson.value.id}`, payload);
         } else {
-            await api.post(`/admin/lessons`, localLesson.value);
+            await api.post(`/admin/lessons`, payload);
         }
         emit('saved');
     } catch (error) {

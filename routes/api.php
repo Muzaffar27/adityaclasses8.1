@@ -65,6 +65,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/lessons/move-topic', [LessonController::class, 'moveTopic']);
     Route::post('/admin/lessons/copy-topic', [LessonController::class, 'copyTopic']);
     Route::post('/admin/lessons/delete-topic', [LessonController::class, 'deleteTopic']);
+    Route::post('/admin/lessons/{lesson}/pdf', [LessonController::class, 'uploadPdf']);
+    Route::delete('/admin/lessons/{lesson}/pdf/{type}', [LessonController::class, 'removePdf']);
+    Route::get('/lessons/{lesson}/pdf/{type}', [LessonController::class, 'viewPdf']);
     Route::apiResource('admin/lessons', LessonController::class);
 });
 

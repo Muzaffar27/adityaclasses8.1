@@ -102,7 +102,7 @@
                             <!-- EDIT FORM -->
                             <tr v-if="editingId === lesson.id" class="edit-row-active">
                                 <td colspan="4" style="padding: 0;">
-                                    <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved"
+                                    <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved" @resource-changed="fetchLessons"
                                         @cancel="editingId = null" />
                                 </td>
                             </tr>
@@ -154,7 +154,8 @@
                         </button>
 
                         <div v-if="editingId === lesson.id" class="edit-row-active mt-3">
-                            <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved" @cancel="editingId = null" />
+                            <LessonEditForm inline :lesson="lesson" @saved="onLessonSaved" @resource-changed="fetchLessons"
+                                @cancel="editingId = null" />
                         </div>
 
                     </div>
