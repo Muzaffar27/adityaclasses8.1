@@ -1,4 +1,4 @@
-const CACHE_VERSION = "aditya-classes-v6-20260701";
+const CACHE_VERSION = "aditya-classes-v8-20260815";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 

@@ -273,10 +273,15 @@ watch(searchQuery, () => {
 onMounted(() => {
     fetchLessons();
     window.addEventListener('popstate', handleHistoryBack);
+    document.addEventListener('fullscreenchange', handleVideoFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleVideoFullscreenChange);
 });
 
 onBeforeUnmount(() => {
     window.removeEventListener('popstate', handleHistoryBack);
+    document.removeEventListener('fullscreenchange', handleVideoFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', handleVideoFullscreenChange);
+    releaseVideoOrientation();
 });
 
 async function fetchLessons() {
@@ -343,10 +348,59 @@ const isSubTopicOpen = (topic, subtopic) => openSubTopics.value[getSubTopicKey(t
 
 function onVideoLoaded() { isVideoLoading.value = false; }
 
+function getFullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+function isLessonVideoFullscreen(element) {
+    if (!element) return false;
+
+    return element.classList?.contains('video-frame')
+        || Boolean(element.closest?.('[data-lesson-player]'))
+        || Boolean(element.querySelector?.('.video-frame'));
+}
+
+async function requestVideoOrientation(orientation) {
+    if (typeof window.screen?.orientation?.lock !== 'function') return;
+
+    try {
+        await window.screen.orientation.lock(orientation);
+    } catch {
+        // Some browsers only allow orientation locking while fullscreen.
+    }
+}
+
+function releaseVideoOrientation() {
+    if (typeof window.screen?.orientation?.unlock !== 'function') return;
+
+    try {
+        window.screen.orientation.unlock();
+    } catch {
+        // Ignore browsers that expose the API but do not permit it here.
+    }
+}
+
+function handleVideoFullscreenChange() {
+    const fullscreenElement = getFullscreenElement();
+
+    if (isLessonVideoFullscreen(fullscreenElement)) {
+        void requestVideoOrientation('landscape');
+        return;
+    }
+
+    if (selectedLesson.value) {
+        void requestVideoOrientation('any');
+        return;
+    }
+
+    releaseVideoOrientation();
+}
+
 async function openLesson(lesson) {
     isVideoLoading.value = true;
     selectedLesson.value = lesson;
     isPlaying.value = false;
+    void requestVideoOrientation('any');
 
     if (!videoHistoryEntryOpen.value) {
         window.history.pushState(
@@ -496,6 +550,7 @@ function clearSelectedLesson() {
     selectedLesson.value = null;
     isVideoLoading.value = false;
     isPlaying.value = false;
+    releaseVideoOrientation();
 }
 
 function formatDuration(value) {
