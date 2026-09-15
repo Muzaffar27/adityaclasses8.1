@@ -1,5 +1,5 @@
 <template>
-    <section v-if="lesson.has_question_pdf || lesson.has_answer_pdf" class="lesson-resources">
+    <section v-if="lesson.has_question_pdf || hasAnswerResources" class="lesson-resources">
         <div class="resources-heading">
             <p class="resources-label">Lesson practice</p>
             <p class="resources-help">Try the questions first, then reveal the answers when you're ready.</p>
@@ -14,15 +14,38 @@
                 </span>
                 <ChevronRightIcon class="resource-arrow" />
             </button>
-            <button v-if="lesson.has_answer_pdf" type="button" class="resource-button answer-button"
-                :disabled="Boolean(loadingType)" @click.stop="toggleAnswer">
+            <button v-if="hasAnswerResources && !answersRevealed" type="button"
+                class="resource-button answer-button" @click.stop="answersRevealed = true">
                 <span class="resource-icon"><EyeIcon /></span>
                 <span class="resource-copy">
-                    <strong>{{ loadingType === 'answer' ? 'Loading answer...' : 'Reveal answer' }}</strong>
-                    <small>Hidden until you choose to view it</small>
+                    <strong>Reveal answers</strong>
+                    <small>Answer materials stay hidden until you're ready</small>
                 </span>
                 <ChevronRightIcon class="resource-arrow" />
             </button>
+            <template v-if="answersRevealed">
+                <button v-if="lesson.answer_vimeo_url" type="button" class="resource-button answer-button"
+                    @click.stop="toggleAnswerVideo">
+                    <span class="resource-icon"><VideoCameraIcon /></span>
+                    <span class="resource-copy">
+                        <strong>{{ showingAnswerVideo ? 'Return to lesson video' : 'Watch answer video' }}</strong>
+                        <small>{{ showingAnswerVideo ? 'Continue with the original lesson' : 'Play the tutor\'s video solution' }}</small>
+                    </span>
+                    <ChevronRightIcon class="resource-arrow" />
+                </button>
+                <button v-if="lesson.has_answer_pdf" type="button" class="resource-button answer-button"
+                    :disabled="Boolean(loadingType)" @click.stop="openPdf('answer')">
+                    <span class="resource-icon"><DocumentTextIcon /></span>
+                    <span class="resource-copy">
+                        <strong>{{ loadingType === 'answer' ? 'Loading answer...' : 'Open answer PDF' }}</strong>
+                        <small>View the written answers</small>
+                    </span>
+                    <ChevronRightIcon class="resource-arrow" />
+                </button>
+                <button type="button" class="answer-hide-button" @click.stop="hideAnswers">
+                    <EyeSlashIcon /> Hide answers
+                </button>
+            </template>
         </div>
 
         <Teleport to="body">
@@ -31,7 +54,7 @@
                 <header class="pdf-screen-header">
                     <button ref="backButton" type="button" class="pdf-back-button" @click.stop="closeViewer">
                         <ArrowLeftIcon />
-                        <span>Back to lesson video</span>
+                        <span>{{ showingAnswerVideo ? 'Back to answer video' : 'Back to lesson video' }}</span>
                     </button>
                     <div class="pdf-screen-title">
                         <strong>{{ viewerType === 'answer' ? 'Answer PDF' : 'Question PDF' }}</strong>
@@ -41,10 +64,11 @@
                         <span class="pdf-kind" :class="viewerType">
                             {{ viewerType === 'answer' ? 'Answer revealed' : 'Questions' }}
                         </span>
-                        <button v-if="otherPdfAvailable" type="button" class="pdf-switch-button"
-                            :disabled="Boolean(loadingType)" @click.stop="openPdf(otherPdfType)">
-                            <ArrowsRightLeftIcon />
-                            {{ loadingType ? 'Loading...' : `Go to ${otherPdfType === 'answer' ? 'answer' : 'questions'}` }}
+                        <button v-if="nextResource" type="button" class="pdf-switch-button"
+                            :disabled="Boolean(loadingType)" @click.stop="goToNextResource">
+                            <VideoCameraIcon v-if="nextResource.type === 'video'" />
+                            <ArrowsRightLeftIcon v-else />
+                            {{ loadingType ? 'Loading...' : nextResource.label }}
                         </button>
                     </div>
                 </header>
@@ -54,7 +78,7 @@
                 </main>
                 <footer class="pdf-screen-footer">
                     <button type="button" class="pdf-return-button" @click.stop="closeViewer">
-                        <ArrowLeftIcon /> Return to video
+                        <ArrowLeftIcon /> {{ showingAnswerVideo ? 'Return to answer video' : 'Return to lesson video' }}
                     </button>
                 </footer>
             </div>
@@ -64,27 +88,58 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import { ArrowLeftIcon, ArrowsRightLeftIcon, ChevronRightIcon, DocumentTextIcon, EyeIcon } from '@heroicons/vue/24/outline';
+import { ArrowLeftIcon, ArrowsRightLeftIcon, ChevronRightIcon, DocumentTextIcon, EyeIcon, EyeSlashIcon, VideoCameraIcon } from '@heroicons/vue/24/outline';
 import api from '../api';
 import { showAlert } from '../composables/dialog';
 
-const props = defineProps({ lesson: { type: Object, required: true } });
+const props = defineProps({
+    lesson: { type: Object, required: true },
+    showingAnswerVideo: { type: Boolean, default: false },
+});
+const emit = defineEmits(['play-answer-video', 'play-lesson-video']);
 const loadingType = ref('');
+const answersRevealed = ref(false);
 const viewerUrl = ref('');
 const viewerType = ref('');
 const backButton = ref(null);
-const otherPdfType = computed(() => viewerType.value === 'answer' ? 'question' : 'answer');
-const otherPdfAvailable = computed(() => props.lesson[`has_${otherPdfType.value}_pdf`]);
+const hasAnswerResources = computed(() => Boolean(props.lesson.has_answer_pdf || props.lesson.answer_vimeo_url));
+const nextResource = computed(() => {
+    if (viewerType.value === 'question' && props.lesson.has_answer_pdf) {
+        return { type: 'pdf', value: 'answer', label: 'Go to answer' };
+    }
+    if (props.lesson.answer_vimeo_url) {
+        return {
+            type: 'video',
+            label: props.showingAnswerVideo ? 'Back to answer video' : 'Go to answer video',
+        };
+    }
+    if (viewerType.value === 'answer' && props.lesson.has_question_pdf) {
+        return { type: 'pdf', value: 'question', label: 'Go to questions' };
+    }
+    return null;
+});
 let previousBodyOverflow = '';
 let returnFocusElement = null;
 let requestSerial = 0;
 
-function toggleAnswer() {
-    if (viewerType.value === 'answer') {
-        closeViewer();
+function toggleAnswerVideo() {
+    emit(props.showingAnswerVideo ? 'play-lesson-video' : 'play-answer-video');
+}
+
+function goToNextResource() {
+    if (nextResource.value?.type === 'pdf') {
+        openPdf(nextResource.value.value);
         return;
     }
-    openPdf('answer');
+
+    answersRevealed.value = true;
+    closeViewer();
+    if (!props.showingAnswerVideo) emit('play-answer-video');
+}
+
+function hideAnswers() {
+    if (props.showingAnswerVideo) emit('play-lesson-video');
+    answersRevealed.value = false;
 }
 
 async function openPdf(type) {
@@ -164,6 +219,9 @@ onBeforeUnmount(() => {
 .question-button .resource-icon { background: rgba(99, 102, 241, 0.2); }
 .answer-button .resource-icon { background: rgba(20, 184, 166, 0.18); }
 .resource-button:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
+.answer-hide-button { align-items: center; background: transparent; border: 0; color: #94a3b8; cursor: pointer; display: inline-flex; font-size: 0.68rem; font-weight: 700; gap: 0.3rem; justify-self: start; padding: 0.25rem 0.35rem; }
+.answer-hide-button:hover { color: #e2e8f0; }
+.answer-hide-button svg { height: 15px; width: 15px; }
 .pdf-screen { background: #0b1120; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; inset: 0; position: fixed; z-index: 2147483000; }
 .pdf-screen-header { align-items: center; background: #111827; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: grid; gap: 0.75rem; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 64px; padding: max(0.65rem, env(safe-area-inset-top)) 0.8rem 0.65rem; }
 .pdf-back-button, .pdf-return-button { align-items: center; background: #4f46e5; border: 0; border-radius: 9px; color: #fff; cursor: pointer; display: inline-flex; font-size: 0.75rem; font-weight: 800; gap: 0.4rem; padding: 0.6rem 0.75rem; }

@@ -78,6 +78,7 @@
                                                                 class="has-text-white is-size-6-mobile is-size-5-tablet line-clamp-1">
                                                                 {{ lesson.title }}
                                                             </h3>
+                                                            <span v-if="videoMode === 'answer'" class="answer-video-badge">Answer video</span>
                                                             <p v-if="getSubTopic(lesson)"
                                                                 class="modal-sub-topic line-clamp-1">
                                                                 {{ getSubTopic(lesson) }}
@@ -89,7 +90,8 @@
                                                     </div>
 
                                                     <div class="video-container">
-                                                        <iframe :src="getVideoUrl(lesson)" frameborder="0"
+                                                        <iframe :key="`${lesson.id}-${videoMode}`"
+                                                            :src="getVideoUrl(lesson)" frameborder="0"
                                                             allow="autoplay; fullscreen; picture-in-picture"
                                                             allowfullscreen webkitallowfullscreen mozallowfullscreen
                                                             class="video-frame" @load="onVideoLoaded" />
@@ -99,7 +101,10 @@
                                                             <p class="mt-2">Buffering...</p>
                                                         </div>
                                                     </div>
-                                                    <LessonPdfResources :lesson="lesson" />
+                                                    <LessonPdfResources :lesson="lesson"
+                                                        :showing-answer-video="videoMode === 'answer'"
+                                                        @play-answer-video="playAnswerVideo(lesson)"
+                                                        @play-lesson-video="playLessonVideo" />
                                                 </div>
 
                                                 <div v-else
@@ -153,6 +158,7 @@
                                             <h3 class="has-text-white is-size-6-mobile is-size-5-tablet line-clamp-1">
                                                 {{ lesson.title }}
                                             </h3>
+                                            <span v-if="videoMode === 'answer'" class="answer-video-badge">Answer video</span>
                                         </div>
                                         <button class="close-btn ml-auto" @click.stop="closeLesson">
                                             <XMarkIcon class="hero-icon-sm" />
@@ -160,7 +166,8 @@
                                     </div>
 
                                     <div class="video-container">
-                                        <iframe :src="getVideoUrl(lesson)" frameborder="0"
+                                        <iframe :key="`${lesson.id}-${videoMode}`"
+                                            :src="getVideoUrl(lesson)" frameborder="0"
                                             allow="autoplay; fullscreen; picture-in-picture" allowfullscreen
                                             webkitallowfullscreen mozallowfullscreen class="video-frame"
                                             @load="onVideoLoaded" />
@@ -170,7 +177,10 @@
                                             <p class="mt-2">Buffering...</p>
                                         </div>
                                     </div>
-                                    <LessonPdfResources :lesson="lesson" />
+                                    <LessonPdfResources :lesson="lesson"
+                                        :showing-answer-video="videoMode === 'answer'"
+                                        @play-answer-video="playAnswerVideo(lesson)"
+                                        @play-lesson-video="playLessonVideo" />
                                 </div>
 
                                 <div v-else class="card glass-card clickable-card fixed-card lesson-card"
@@ -224,6 +234,7 @@ import api from "../api";
 import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
 import LessonPdfResources from "./LessonPdfResources.vue";
+import { getVimeoPlayerUrl } from "../utils/vimeo";
 import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();
@@ -237,6 +248,7 @@ const requestLoading = ref(false);
 const hasAccess = ref(false);
 const requestStatus = ref(null);
 const selectedLesson = ref(null);
+const videoMode = ref('lesson');
 const openTopics = ref({});
 const openSubTopics = ref({});
 const isPlaying = ref(false);
@@ -401,6 +413,7 @@ function handleVideoFullscreenChange() {
 
 async function openLesson(lesson) {
     isVideoLoading.value = true;
+    videoMode.value = 'lesson';
     selectedLesson.value = lesson;
     isPlaying.value = false;
     void requestVideoOrientation('any');
@@ -436,27 +449,19 @@ function handleHistoryBack() {
 }
 
 function getVideoUrl(lesson) {
-    const baseUrl = normalizeVimeoUrl(lesson?.vimeo_url);
-    if (!baseUrl) return '';
-
-    const separator = baseUrl.includes('?') ? '&' : '?';
-    return `${baseUrl}${separator}autoplay=1&muted=0&quality=360p`;
+    const value = videoMode.value === 'answer' ? lesson?.answer_vimeo_url : lesson?.vimeo_url;
+    return getVimeoPlayerUrl(value);
 }
 
-function normalizeVimeoUrl(value) {
-    if (!value) return '';
-
-    const text = String(value).trim();
-    const iframeSrc = text.match(/<iframe[^>]*\ssrc=(["'])(.*?)\1/i)?.[2];
-    const url = iframeSrc || text.match(/https?:\/\/[^\s"'<>]+/i)?.[0] || text;
-
-    return decodeHtmlEntities(url).replace(/&amp;/g, '&').trim();
+function playAnswerVideo(lesson) {
+    if (!lesson?.answer_vimeo_url) return;
+    isVideoLoading.value = true;
+    videoMode.value = 'answer';
 }
 
-function decodeHtmlEntities(value) {
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = value;
-    return textarea.value;
+function playLessonVideo() {
+    isVideoLoading.value = true;
+    videoMode.value = 'lesson';
 }
 
 function getSubTopic(lesson) {
@@ -551,6 +556,7 @@ function closeLesson() {
 
 function clearSelectedLesson() {
     selectedLesson.value = null;
+    videoMode.value = 'lesson';
     isVideoLoading.value = false;
     isPlaying.value = false;
     releaseVideoOrientation();
@@ -659,6 +665,18 @@ function getVimeoThumbnail(url) {
     font-size: 0.78rem;
     font-weight: 700;
     margin-top: 0.2rem;
+}
+
+.answer-video-badge {
+    background: rgba(20, 184, 166, 0.16);
+    border: 1px solid rgba(45, 212, 191, 0.32);
+    border-radius: 999px;
+    color: #99f6e4;
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 800;
+    margin-top: 0.3rem;
+    padding: 0.2rem 0.5rem;
 }
 
 .close-btn {

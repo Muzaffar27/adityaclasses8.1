@@ -96,4 +96,29 @@ class LessonPdfResourceTest extends TestCase
         ])->assertForbidden();
         $this->deleteJson("/api/admin/lessons/{$lesson->id}/pdf/question")->assertForbidden();
     }
+
+    public function test_tutor_can_create_a_lesson_with_an_answer_video_and_no_answer_pdf(): void
+    {
+        $tutor = User::factory()->create(['role' => 'tutor']);
+        $grade = Grade::create(['name' => 'Grade 12']);
+        $subject = Subject::create(['name' => 'Additional Mathematics']);
+
+        Sanctum::actingAs($tutor);
+        $response = $this->postJson('/api/admin/lessons', [
+            'grade_id' => $grade->id,
+            'subject_id' => $subject->id,
+            'topic' => 'Integration',
+            'title' => 'Worked solution',
+            'vimeo_url' => 'https://player.vimeo.com/video/1',
+            'answer_vimeo_url' => 'https://player.vimeo.com/video/2',
+        ])->assertCreated()
+            ->assertJsonPath('answer_vimeo_url', 'https://player.vimeo.com/video/2')
+            ->assertJsonPath('has_answer_pdf', false);
+
+        $this->assertDatabaseHas('lessons', [
+            'id' => $response->json('id'),
+            'answer_vimeo_url' => 'https://player.vimeo.com/video/2',
+            'answer_pdf_path' => null,
+        ]);
+    }
 }

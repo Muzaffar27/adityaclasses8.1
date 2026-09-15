@@ -351,4 +351,9 @@ const subjectName = computed(() => lessons.value[0]?.subject?.name || '');
     border-radius: 12px;
     cursor: pointer;
 }
+
+.table tbody tr:has(+ .edit-row-active) > td,
+.edit-row-active > td {
+    border-bottom-color: transparent !important;
+}
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <div class="edit-form-container" :class="{ 'is-create-page': !isEditMode }">
+    <div class="edit-form-container" :class="{ 'is-create-page': !isEditMode, 'is-inline-form': inline }">
         <div class="box is-shadowless has-background-transparent">
             <div v-if="isEditMode" class="mb-4">
                 <h3 class="is-size-6 has-text-weight-bold">
@@ -121,7 +121,37 @@
                 </div>
             </div>
 
-            <LessonPdfManager v-if="isEditMode" :lesson="lesson" @changed="$emit('resource-changed')" />
+            <section class="practice-materials-panel">
+                <header class="practice-materials-header">
+                    <span class="practice-materials-icon"><ClipboardDocumentCheckIcon /></span>
+                    <div>
+                        <h4 class="practice-materials-title">Practice &amp; Solutions</h4>
+                        <p class="practice-materials-subtitle">
+                            Add the question sheet and provide written or video solutions.
+                        </p>
+                    </div>
+                </header>
+
+                <div class="practice-materials-content">
+                    <LessonPdfManager ref="pdfManager" :lesson="isEditMode ? lesson : null"
+                        @changed="$emit('resource-changed')" />
+
+                    <section class="answer-video-panel">
+                        <header class="answer-video-header">
+                            <span class="answer-video-icon"><VideoCameraIcon /></span>
+                            <div>
+                                <p class="answer-video-title">Answer video</p>
+                                <p class="answer-video-subtitle">Add a Vimeo video solution for your students.</p>
+                            </div>
+                            <span class="answer-video-optional">Optional</span>
+                        </header>
+                        <label class="label is-small mt-3">Vimeo URL / Embed Code</label>
+                        <textarea class="textarea is-small answer-video-input" v-model="localLesson.answer_vimeo_url"
+                            rows="2" placeholder="Paste the answer video's Vimeo URL or full embed code"></textarea>
+                        <p class="help answer-video-help">Use an answer video, an answer PDF, or both.</p>
+                    </section>
+                </div>
+            </section>
 
             <hr class="my-4" style="height: 1px; background-color: #dbdbdb;">
 
@@ -148,6 +178,8 @@ import { useCacheStore } from '../../stores/cache';
 import { storeToRefs } from 'pinia';
 import { showAlert } from '../../composables/dialog';
 import LessonPdfManager from './LessonPdfManager.vue';
+import { normalizeVimeoUrl } from '../../utils/vimeo';
+import { ClipboardDocumentCheckIcon, VideoCameraIcon } from '@heroicons/vue/24/outline';
 
 const router = useRouter();
 const cacheStore = useCacheStore();
@@ -174,6 +206,7 @@ const props = defineProps({
 
 const emit = defineEmits(['saved', 'cancel', 'resource-changed']);
 const loading = ref(false);
+const pdfManager = ref(null);
 const activeSuggestionField = ref(null);
 
 // 1. Initialize with either the prop data OR a blank template
@@ -189,6 +222,7 @@ const getInitialData = () => {
         vimeo_url: '',
         is_active: 1,
         description: '',
+        answer_vimeo_url: '',
         duration: '',
         grade_id: props.grade_id || '',
         subject_id: props.subject_id || ''
@@ -255,12 +289,13 @@ const handleSave = async () => {
     }
 
     localLesson.value.vimeo_url = normalizeVimeoUrl(localLesson.value.vimeo_url);
+    localLesson.value.answer_vimeo_url = normalizeVimeoUrl(localLesson.value.answer_vimeo_url);
 
     // 3. If validation passes, proceed as normal
     localLesson.value.duration = formatDuration(durationParts.value);
     const payload = Object.fromEntries([
         'grade_id', 'subject_id', 'topic', 'sub_topic', 'title', 'part_number',
-        'description', 'vimeo_url', 'duration', 'is_active'
+        'description', 'vimeo_url', 'answer_vimeo_url', 'duration', 'is_active'
     ].map(key => [key, localLesson.value[key]]));
 
     loading.value = true;
@@ -268,7 +303,16 @@ const handleSave = async () => {
         if (isEditMode.value) {
             await api.put(`/admin/lessons/${localLesson.value.id}`, payload);
         } else {
-            await api.post(`/admin/lessons`, payload);
+            const { data: createdLesson } = await api.post(`/admin/lessons`, payload);
+            try {
+                await pdfManager.value?.uploadPending(createdLesson.id);
+            } catch (error) {
+                console.error('New lesson PDF upload failed:', error);
+                await showAlert({
+                    title: 'Lesson Created',
+                    message: 'The lesson was created, but one or more PDFs could not be uploaded. You can add them by editing the lesson.',
+                });
+            }
         }
         emit('saved');
     } catch (error) {
@@ -377,22 +421,6 @@ function formatDuration(parts) {
     }
 
     return `${normalized.hours}:${pad(normalized.minutes)}:${pad(normalized.seconds)}`;
-}
-
-function normalizeVimeoUrl(value) {
-    if (!value) return '';
-
-    const text = String(value).trim();
-    const iframeSrc = text.match(/<iframe[^>]*\ssrc=(["'])(.*?)\1/i)?.[2];
-    const url = iframeSrc || text.match(/https?:\/\/[^\s"'<>]+/i)?.[0] || text;
-
-    return decodeHtmlEntities(url).replace(/&amp;/g, '&').trim();
-}
-
-function decodeHtmlEntities(value) {
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = value;
-    return textarea.value;
 }
 
 function showSuggestions(field) {
@@ -588,25 +616,45 @@ input:checked+.slider:before {
 /* Base container style */
 .edit-form-container {
     animation: slideDown 0.2s ease-out;
-    background-color: hsl(221, 14%, 9%, 1) !important;
+    background:
+        linear-gradient(145deg, #26324a 0%, #1d273b 100%) !important;
+    border: 1px solid rgba(203, 213, 225, 0.22);
+    border-radius: 14px;
+    box-shadow:
+        0 18px 42px rgba(0, 0, 0, 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.055);
+    overflow: hidden;
     transition: all 0.3s ease;
+}
+
+.edit-form-container:hover {
+    background:
+        linear-gradient(145deg, #344866 0%, #273a56 100%) !important;
+    border-color: rgba(147, 197, 253, 0.38);
+    box-shadow:
+        0 20px 46px rgba(0, 0, 0, 0.34),
+        0 8px 24px rgba(59, 130, 246, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+}
+
+.edit-form-container.is-inline-form {
+    margin: 0.7rem;
 }
 
 /* Specific styles for "Create Mode" standalone page */
 .edit-form-container.is-create-page {
-    border: 1px solid #dbdbdb;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
     margin-top: 1rem;
-    background-color: hsl(221, 14%, 9%, 1) !important;
-    border-left: none;
-    /* Remove the aggressive indigo bar in full-page mode */
+    border-left: 1px solid rgba(203, 213, 225, 0.18);
+}
+
+.edit-form-container.is-create-page.is-inline-form {
+    margin: 0.7rem;
 }
 
 /* Specific styles for "Edit Mode" (likely inside a list/table) */
 .edit-form-container:not(.is-create-page) {
     border-left: 4px solid #4f46e5;
-    border-bottom: 1px solid #dbdbdb;
 }
 
 .box {
@@ -647,5 +695,136 @@ input:checked+.slider:before {
 .select select:focus {
     border-color: #4f46e5;
     box-shadow: 0 0 0 0.125em rgba(79, 70, 229, 0.1);
+}
+
+.answer-video-panel {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    padding: 1rem;
+}
+
+.practice-materials-panel {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(15, 23, 42, 0.52));
+    border: 1px solid rgba(226, 232, 240, 0.16);
+    border-left: 4px solid rgba(129, 140, 248, 0.78);
+    border-radius: 14px;
+    box-shadow:
+        0 16px 34px rgba(0, 0, 0, 0.3),
+        0 3px 8px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    margin-top: 0.5rem;
+    padding: 1rem;
+}
+
+.practice-materials-header {
+    align-items: center;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    display: flex;
+    gap: 0.75rem;
+    padding-bottom: 0.9rem;
+}
+
+.practice-materials-icon {
+    align-items: center;
+    background: rgba(99, 102, 241, 0.2);
+    border-radius: 11px;
+    color: #a5b4fc;
+    display: flex;
+    flex: 0 0 44px;
+    height: 44px;
+    justify-content: center;
+}
+
+.practice-materials-icon svg {
+    height: 24px;
+    width: 24px;
+}
+
+.practice-materials-title {
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.practice-materials-subtitle {
+    color: #94a3b8;
+    font-size: 0.74rem;
+    margin-top: 0.12rem;
+}
+
+.practice-materials-content {
+    display: grid;
+    gap: 1rem;
+    padding-top: 1rem;
+}
+
+.practice-materials-panel :deep(.pdf-manager) {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.answer-video-header {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.answer-video-icon {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    color: #cbd5e1;
+    display: flex;
+    flex: 0 0 42px;
+    height: 42px;
+    justify-content: center;
+}
+
+.answer-video-icon svg {
+    height: 23px;
+    width: 23px;
+}
+
+.answer-video-title {
+    color: #f8fafc;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.answer-video-subtitle,
+.answer-video-help {
+    color: #94a3b8;
+    font-size: 0.72rem;
+}
+
+.answer-video-optional {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 999px;
+    color: #cbd5e1;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    margin-left: auto;
+    padding: 0.3rem 0.55rem;
+    text-transform: uppercase;
+}
+
+.answer-video-input {
+    border-color: rgba(148, 163, 184, 0.28);
+}
+
+@media (max-width: 600px) {
+    .answer-video-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .answer-video-optional {
+        margin-left: 0;
+    }
 }
 </style>

@@ -41,6 +41,7 @@ class LessonController extends Controller
             'part_number' => 'nullable',
             'description' => 'nullable',
             'vimeo_url' => 'nullable',
+            'answer_vimeo_url' => 'nullable',
             'duration' => 'nullable',
         ]);
 
@@ -59,6 +60,7 @@ class LessonController extends Controller
             'part_number',
             'description',
             'vimeo_url',
+            'answer_vimeo_url',
             'duration',
             'is_active',
         ]));

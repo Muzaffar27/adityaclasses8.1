@@ -19,6 +19,7 @@ class Lesson extends Model
         'part_number',
         'description',
         'vimeo_url',
+        'answer_vimeo_url',
         'duration',
         'question_pdf_path',
         'answer_pdf_path',

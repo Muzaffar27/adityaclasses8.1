@@ -116,7 +116,11 @@
                     <tr v-if="creating && !creatingTopicName" class="edit-row-active">
                         <td colspan="5" style="padding: 0">
                             <div v-if="createMode === 'topic'" class="create-topic-note">
-                                Create the first lesson for this new topic.
+                                <span class="create-topic-note-icon"><PlusIcon /></span>
+                                <div>
+                                    <strong>Start your new topic</strong>
+                                    <span>Create the first lesson for this topic using the form below.</span>
+                                </div>
                             </div>
                             <LessonEditForm :grade_id="selectedGradeId" :subject_id="selectedSubjectId" inline
                                 :topic-options="topicOptionsForLesson()" :sub-topic-options="subTopicOptionsForLesson()"
@@ -230,7 +234,11 @@
                         <tr v-if="creating && creatingTopicName === group.topic" class="edit-row-active">
                             <td colspan="5" style="padding: 0">
                                 <div class="create-topic-note">
-                                    New lesson for <strong>{{ group.topic }}</strong>
+                                    <span class="create-topic-note-icon"><PlusIcon /></span>
+                                    <div>
+                                        <strong>Adding a new lesson</strong>
+                                        <span>This lesson will be added to {{ group.topic }}.</span>
+                                    </div>
                                 </div>
                                 <LessonEditForm inline :lesson="createDraft"
                                     :topic-options="topicOptionsForLesson(createDraft)"
@@ -1124,10 +1132,50 @@ onMounted(async () => {
 }
 
 .create-topic-note {
-    padding: 0.75rem 1.5rem 0;
-    color: #94a3b8;
-    font-size: 0.8rem;
-    background: hsl(221, 14%, 9%, 1);
+    align-items: center;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(30, 41, 59, 0.92));
+    border: 1px solid rgba(129, 140, 248, 0.35);
+    border-left: 4px solid #818cf8;
+    border-radius: 11px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+    color: #cbd5e1;
+    display: flex;
+    gap: 0.75rem;
+    margin: 0.7rem 0.7rem 0;
+    padding: 0.8rem 1rem;
+}
+
+.create-topic-note-icon {
+    align-items: center;
+    background: rgba(129, 140, 248, 0.18);
+    border-radius: 9px;
+    color: #c7d2fe;
+    display: flex;
+    flex: 0 0 36px;
+    height: 36px;
+    justify-content: center;
+}
+
+.create-topic-note-icon svg {
+    display: block;
+    height: 19px;
+    width: 19px;
+}
+
+.create-topic-note > div > strong,
+.create-topic-note > div > span {
+    display: block;
+}
+
+.create-topic-note strong {
+    color: #fff;
+    font-size: 0.88rem;
+    margin-bottom: 0.12rem;
+}
+
+.create-topic-note div > span {
+    color: #aebbd0;
+    font-size: 0.74rem;
 }
 
 
@@ -1178,6 +1226,11 @@ onMounted(async () => {
 .edit-row-active :deep(.lesson-edit-form) {
     padding: 1.5rem;
     background: #f9f9f9;
+}
+
+.table tbody tr:has(+ .edit-row-active) > td,
+.edit-row-active > td {
+    border-bottom-color: transparent !important;
 }
 
 .topic-row {

@@ -2,8 +2,8 @@
     <section class="pdf-manager">
         <div class="pdf-manager-heading">
             <div>
-                <p class="has-text-white has-text-weight-semibold mb-1">Lesson PDFs</p>
-                <p class="is-size-7 has-text-grey-light">Upload questions and answers separately. PDF only, up to 20 MB.</p>
+                <p class="has-text-white has-text-weight-semibold mb-1">PDF materials</p>
+                <p class="is-size-7 has-text-grey-light">Upload the question sheet and written answers separately. PDF only, up to 20 MB.</p>
             </div>
         </div>
 
@@ -13,8 +13,8 @@
                     <DocumentTextIcon class="pdf-icon" />
                     <div>
                         <p class="pdf-title">{{ type.label }}</p>
-                        <p class="pdf-status" :class="{ uploaded: available[type.key] }">
-                            {{ available[type.key] ? 'Uploaded' : 'No PDF' }}
+                        <p class="pdf-status" :class="{ uploaded: available[type.key] || pendingFiles[type.key] }">
+                            {{ statusText(type.key) }}
                         </p>
                     </div>
                 </div>
@@ -24,13 +24,13 @@
                         :class="{ 'is-loading': uploadingType === type.key }">
                         <input type="file" accept="application/pdf,.pdf" hidden
                             :disabled="Boolean(uploadingType)" @change="uploadPdf(type.key, $event)">
-                        {{ available[type.key] ? 'Replace' : 'Upload' }}
+                        {{ available[type.key] || pendingFiles[type.key] ? 'Replace' : 'Upload' }}
                     </label>
                     <button v-if="available[type.key]" type="button" class="button is-small is-info"
                         :class="{ 'is-loading': viewingType === type.key }" @click="viewPdf(type.key)">
                         View
                     </button>
-                    <button v-if="available[type.key]" type="button" class="button is-small is-danger"
+                    <button v-if="available[type.key] || pendingFiles[type.key]" type="button" class="button is-small is-danger"
                         :class="{ 'is-loading': removingType === type.key }" @click="removePdf(type.key)">
                         Remove
                     </button>
@@ -56,7 +56,7 @@ import { DocumentTextIcon } from '@heroicons/vue/24/outline';
 import api from '../../api';
 import { showAlert, showConfirm } from '../../composables/dialog';
 
-const props = defineProps({ lesson: { type: Object, required: true } });
+const props = defineProps({ lesson: { type: Object, default: null } });
 const emit = defineEmits(['changed']);
 
 const types = [
@@ -64,6 +64,7 @@ const types = [
     { key: 'answer', label: 'Answer PDF' },
 ];
 const available = reactive({ question: false, answer: false });
+const pendingFiles = reactive({ question: null, answer: null });
 const uploadingType = ref('');
 const removingType = ref('');
 const viewingType = ref('');
@@ -87,13 +88,23 @@ async function uploadPdf(type, event) {
         return;
     }
 
+    if (!props.lesson?.id) {
+        pendingFiles[type] = file;
+        return;
+    }
+
+    await sendPdf(type, file, props.lesson.id);
+}
+
+async function sendPdf(type, file, lessonId, rethrow = false) {
+
     const formData = new FormData();
     formData.append('type', type);
     formData.append('pdf', file);
     uploadingType.value = type;
 
     try {
-        const { data } = await api.post(`/admin/lessons/${props.lesson.id}/pdf`, formData, { timeout: 60000 });
+        const { data } = await api.post(`/admin/lessons/${lessonId}/pdf`, formData, { timeout: 60000 });
         syncAvailability(data);
         emit('changed', data);
     } catch (error) {
@@ -101,6 +112,7 @@ async function uploadPdf(type, event) {
         const message = error.response?.data?.errors?.pdf?.[0]
             || error.response?.data?.message
             || 'Could not upload this PDF.';
+        if (rethrow) throw error;
         await showAlert({ title: 'Upload Failed', message });
     } finally {
         uploadingType.value = '';
@@ -127,6 +139,11 @@ async function viewPdf(type) {
 }
 
 async function removePdf(type) {
+    if (!props.lesson?.id) {
+        pendingFiles[type] = null;
+        return;
+    }
+
     const confirmed = await showConfirm({
         title: `Remove ${type === 'question' ? 'Questions' : 'Answers'}`,
         message: `Remove this ${type} PDF from the lesson?`,
@@ -148,6 +165,20 @@ async function removePdf(type) {
         removingType.value = '';
     }
 }
+
+function statusText(type) {
+    if (available[type]) return 'Uploaded';
+    if (pendingFiles[type]) return `${pendingFiles[type].name} - ready to upload`;
+    return 'No PDF';
+}
+
+async function uploadPending(lessonId) {
+    for (const type of ['question', 'answer']) {
+        if (pendingFiles[type]) await sendPdf(type, pendingFiles[type], lessonId, true);
+    }
+}
+
+defineExpose({ uploadPending });
 
 function closeViewer() {
     if (viewerUrl.value) URL.revokeObjectURL(viewerUrl.value);
