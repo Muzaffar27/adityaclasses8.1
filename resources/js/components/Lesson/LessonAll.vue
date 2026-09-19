@@ -112,22 +112,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- CREATE ROW -->
-                    <tr v-if="creating && !creatingTopicName" class="edit-row-active">
-                        <td colspan="5" style="padding: 0">
-                            <div v-if="createMode === 'topic'" class="create-topic-note">
-                                <span class="create-topic-note-icon"><PlusIcon /></span>
-                                <div>
-                                    <strong>Start your new topic</strong>
-                                    <span>Create the first lesson for this topic using the form below.</span>
-                                </div>
-                            </div>
-                            <LessonEditForm :grade_id="selectedGradeId" :subject_id="selectedSubjectId" inline
-                                :topic-options="topicOptionsForLesson()" :sub-topic-options="subTopicOptionsForLesson()"
-                                @saved="onCreated" @cancel="cancelCreate" />
-                        </td>
-                    </tr>
-
                     <!-- GROUPED TOPICS -->
                     <template v-for="group in groupedTopics" :key="group.topic">
                         <!-- TOPIC ROW -->
@@ -196,8 +180,7 @@
                                         <template v-else>
                                             <button class="topic-add-button" title="Add lesson to this topic"
                                                 @click.stop="createLessonForTopic(group)">
-                                                <MinusIcon v-if="creatingTopicName === group.topic" />
-                                                <PlusIcon v-else />
+                                                <PlusIcon />
                                             </button>
                                             <strong class="has-text-white">{{ group.topic }}</strong>
                                         </template>
@@ -231,22 +214,6 @@
                             </td>
                         </tr>
 
-                        <tr v-if="creating && creatingTopicName === group.topic" class="edit-row-active">
-                            <td colspan="5" style="padding: 0">
-                                <div class="create-topic-note">
-                                    <span class="create-topic-note-icon"><PlusIcon /></span>
-                                    <div>
-                                        <strong>Adding a new lesson</strong>
-                                        <span>This lesson will be added to {{ group.topic }}.</span>
-                                    </div>
-                                </div>
-                                <LessonEditForm inline :lesson="createDraft"
-                                    :topic-options="topicOptionsForLesson(createDraft)"
-                                    :sub-topic-options="subTopicOptionsForLesson(createDraft)" @saved="onCreated"
-                                    @cancel="cancelCreate" />
-                            </td>
-                        </tr>
-
                         <!-- LESSONS + EDIT ROWS (SINGLE LOOP) -->
                         <template v-if="isTopicOpen(group.topic)">
                             <template v-for="lesson in group.lessons" :key="lesson.id">
@@ -266,8 +233,8 @@
                                     <td>
                                         <div class="lesson-actions">
                                             <button class="button is-small is-primary has-text-white"
-                                                @click.stop="toggleEdit(lesson.id)">
-                                                {{ editingId === lesson.id ? 'Close' : 'Edit' }}
+                                                @click.stop="openLessonEditor(lesson.id)">
+                                                Edit
                                             </button>
                                             <button class="button is-small is-danger"
                                                 :class="{ 'is-loading': deletingLessonId === lesson.id }"
@@ -276,15 +243,6 @@
                                                 Delete
                                             </button>
                                         </div>
-                                    </td>
-                                </tr>
-                                <!-- EDIT ROW (appears directly below) -->
-                                <tr v-if="editingId === lesson.id" class="edit-row-active">
-                                    <td colspan="5" style="padding: 0">
-                                        <LessonEditForm inline :lesson="lesson"
-                                            :topic-options="topicOptionsForLesson(lesson)"
-                                            :sub-topic-options="subTopicOptionsForLesson(lesson)" @saved="onLessonSaved"
-                                            @cancel="editingId = null" />
                                     </td>
                                 </tr>
                             </template>
@@ -296,17 +254,6 @@
 
         <!-- MOBILE CARD VIEW (unchanged – already safe) -->
         <div class="is-hidden-tablet">
-            <div v-if="creating && !creatingTopicName" class="mobile-card mb-3">
-                <div class="card-content">
-                    <p v-if="createMode === 'topic'" class="has-text-grey is-size-7 mb-3">
-                        Create the first lesson for this new topic.
-                    </p>
-                    <LessonEditForm :grade_id="selectedGradeId" :subject_id="selectedSubjectId" inline
-                        :topic-options="topicOptionsForLesson()" :sub-topic-options="subTopicOptionsForLesson()"
-                        @saved="onCreated" @cancel="cancelCreate" />
-                </div>
-            </div>
-
             <div v-for="group in groupedTopics" :key="group.topic">
                 <div class="topic-header" @click="toggleTopic(group.topic)">
                     <div v-if="editingTopic === group.topic" class="topic-mobile-edit" @click.stop>
@@ -357,8 +304,7 @@
                     <template v-else>
                         <button class="topic-add-button" title="Add lesson to this topic"
                             @click.stop="createLessonForTopic(group)">
-                            <MinusIcon v-if="creatingTopicName === group.topic" />
-                            <PlusIcon v-else />
+                            <PlusIcon />
                         </button>
                         <strong>{{ group.topic }}</strong>
                         <span class="ml-2 has-text-grey">({{ group.lessons.length }})</span>
@@ -376,17 +322,6 @@
                             Delete
                         </button>
                     </template>
-                </div>
-
-                <div v-if="creating && creatingTopicName === group.topic" class="mobile-card mb-3">
-                    <div class="card-content">
-                        <p class="has-text-grey is-size-7 mb-3">
-                            New lesson for <strong>{{ group.topic }}</strong>
-                        </p>
-                        <LessonEditForm inline :lesson="createDraft" :topic-options="topicOptionsForLesson(createDraft)"
-                            :sub-topic-options="subTopicOptionsForLesson(createDraft)" @saved="onCreated"
-                            @cancel="cancelCreate" />
-                    </div>
                 </div>
 
                 <div v-if="isTopicOpen(group.topic)">
@@ -407,19 +342,14 @@
                                 </span>
                             </div>
                             <button class="button is-small is-primary has-text-white mt-2"
-                                @click="toggleEdit(lesson.id)">
-                                {{ editingId === lesson.id ? 'Close' : 'Edit' }}
+                                @click="openLessonEditor(lesson.id)">
+                                Edit
                             </button>
                             <button class="button is-small is-danger mt-2 ml-2"
                                 :class="{ 'is-loading': deletingLessonId === lesson.id }"
                                 :disabled="deletingLessonId === lesson.id" @click="deleteLesson(lesson)">
                                 Delete
                             </button>
-                            <div v-if="editingId === lesson.id" class="edit-row-active mt-3">
-                                <LessonEditForm inline :lesson="lesson" :topic-options="topicOptionsForLesson(lesson)"
-                                    :sub-topic-options="subTopicOptionsForLesson(lesson)" @saved="onLessonSaved"
-                                    @cancel="editingId = null" />
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -441,6 +371,23 @@
             </template>
         </createModal>
 
+        <createModal v-model="editModalOpen" :title="editModalTitle" :subtitle="editModalSubtitle" wide>
+            <LessonEditForm v-if="editingLesson" inline :lesson="editingLesson"
+                :topic-options="topicOptionsForLesson(editingLesson)"
+                :sub-topic-options="subTopicOptionsForLesson(editingLesson)"
+                @resource-changed="onLessonResourceChanged"
+                @saved="onLessonSaved" @cancel="closeLessonEditor" />
+        </createModal>
+
+        <createModal v-model="lessonCreateModalOpen" :title="lessonCreateModalTitle"
+            :subtitle="lessonCreateMessage" wide>
+            <LessonEditForm v-if="creating" inline :lesson="createDraft"
+                :grade_id="selectedGradeId" :subject_id="selectedSubjectId"
+                :topic-options="topicOptionsForLesson(createDraft)"
+                :sub-topic-options="subTopicOptionsForLesson(createDraft)"
+                @saved="onCreated" @cancel="cancelCreate" />
+        </createModal>
+
     </template>
 </template>
 
@@ -448,7 +395,7 @@
 import { ref, computed, nextTick, onMounted } from 'vue';
 import api from '../../api';
 import LessonEditForm from './LessonEditForm.vue';
-import { MagnifyingGlassIcon, MinusIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import { useCacheStore } from '@/stores/cache';
 import Loader from '../common/Loader.vue';
 import createModal from '../common/CreateModal.vue';
@@ -486,11 +433,40 @@ const newSubjectName = ref('');
 const creatingSubject = ref(false);
 const emit = defineEmits(['navigate']);
 
+const lessonCreateModalOpen = computed({
+    get: () => creating.value,
+    set: value => {
+        if (!value) cancelCreate();
+    },
+});
+const lessonCreateModalTitle = computed(() => 'Adding a new lesson');
+const lessonCreateMessage = computed(() => {
+    if (creatingTopicName.value) {
+        return `This lesson will be added to ${creatingTopicName.value}.`;
+    }
+    if (createMode.value === 'topic') {
+        return 'Create the first lesson for the new topic.';
+    }
+    return 'Enter the lesson details below.';
+});
+
 /* FILTER STATE */
 const selectedGradeId = ref(null);
 const selectedSubjectId = ref(null);
 const searchDraft = ref('');
 const appliedSearch = ref('');
+const pendingResourceUpdate = ref(null);
+const editingLesson = computed(() => allLessons.value.find(lesson => lesson.id === editingId.value) || null);
+const editModalOpen = computed({
+    get: () => Boolean(editingLesson.value),
+    set: value => {
+        if (!value) closeLessonEditor();
+    },
+});
+const editModalTitle = computed(() => 'Editing lesson');
+const editModalSubtitle = computed(() => editingLesson.value
+    ? `Update ${editingLesson.value.title}.`
+    : 'Update the lesson details and materials.');
 
 /* COMPUTED: Filtered lessons */
 const filteredLessons = computed(() => {
@@ -761,29 +737,48 @@ async function deleteLesson(lesson) {
     }
 }
 
-const toggleEdit = async (id) => {
-    console.log('Toggle edit for lesson id:', id);
-    const lesson = allLessons.value.find(l => l.id === id);
-    console.log('Found lesson:', lesson);
-
-    if (editingId.value === id) {
-        editingId.value = null;
-        return;
-    }
+const openLessonEditor = (id) => {
+    pendingResourceUpdate.value = null;
     editingId.value = id;
-    await nextTick();
-    const el = document.querySelector('.edit-row-active');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
-const onLessonSaved = () => {
+const closeLessonEditor = () => {
+    const resourceUpdate = pendingResourceUpdate.value;
+    const lessonId = editingId.value;
+    pendingResourceUpdate.value = null;
     editingId.value = null;
-    fetchAllLessons();
+
+    if (resourceUpdate && lessonId) {
+        nextTick(() => mergeLessonUpdate({ id: lessonId, ...resourceUpdate }));
+    }
 };
 
-const onCreated = () => {
+const onLessonSaved = (updatedLesson) => {
+    mergeLessonUpdate(updatedLesson);
+    pendingResourceUpdate.value = null;
+    closeLessonEditor();
+};
+
+const onLessonResourceChanged = (resourceState) => {
+    pendingResourceUpdate.value = resourceState;
+};
+
+function mergeLessonUpdate(updatedLesson) {
+    if (!updatedLesson?.id) return;
+    const index = allLessons.value.findIndex(lesson => lesson.id === updatedLesson.id);
+    if (index !== -1) {
+        allLessons.value[index] = { ...allLessons.value[index], ...updatedLesson };
+    }
+}
+
+const onCreated = (createdLesson) => {
+    if (createdLesson?.id) {
+        const grade = cacheStore.grades.find(item => item.id == createdLesson.grade_id);
+        const subject = cacheStore.subjects.find(item => item.id == createdLesson.subject_id);
+        allLessons.value.push({ ...createdLesson, grade, subject });
+        if (createdLesson.topic) openTopics.value[createdLesson.topic] = true;
+    }
     cancelCreate();
-    fetchAllLessons();
 };
 
 /* FETCH ALL LESSONS */
@@ -867,10 +862,6 @@ function createLessonForTopic(group) {
         subject_id: selectedSubjectId.value || firstLesson.subject_id || props.subject_id || '',
     };
 
-    nextTick(() => {
-        const el = document.querySelector('.edit-row-active, .mobile-card');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
 }
 
 function toggleCreateForm(mode) {
@@ -879,10 +870,6 @@ function toggleCreateForm(mode) {
     editingId.value = null;
     creating.value = !shouldClose;
 
-    nextTick(() => {
-        const el = document.querySelector('.edit-row-active, .mobile-card');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
 }
 
 function cancelCreate() {
@@ -1131,54 +1118,6 @@ onMounted(async () => {
     flex-wrap: wrap;
 }
 
-.create-topic-note {
-    align-items: center;
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(30, 41, 59, 0.92));
-    border: 1px solid rgba(129, 140, 248, 0.35);
-    border-left: 4px solid #818cf8;
-    border-radius: 11px;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
-    color: #cbd5e1;
-    display: flex;
-    gap: 0.75rem;
-    margin: 0.7rem 0.7rem 0;
-    padding: 0.8rem 1rem;
-}
-
-.create-topic-note-icon {
-    align-items: center;
-    background: rgba(129, 140, 248, 0.18);
-    border-radius: 9px;
-    color: #c7d2fe;
-    display: flex;
-    flex: 0 0 36px;
-    height: 36px;
-    justify-content: center;
-}
-
-.create-topic-note-icon svg {
-    display: block;
-    height: 19px;
-    width: 19px;
-}
-
-.create-topic-note > div > strong,
-.create-topic-note > div > span {
-    display: block;
-}
-
-.create-topic-note strong {
-    color: #fff;
-    font-size: 0.88rem;
-    margin-bottom: 0.12rem;
-}
-
-.create-topic-note div > span {
-    color: #aebbd0;
-    font-size: 0.74rem;
-}
-
-
 .info-stats {
     background: rgba(255, 255, 255, 0.05);
     padding: 8px 12px;
@@ -1221,16 +1160,6 @@ onMounted(async () => {
     .info-stats .mx-2 {
         margin: 0 4px;
     }
-}
-
-.edit-row-active :deep(.lesson-edit-form) {
-    padding: 1.5rem;
-    background: #f9f9f9;
-}
-
-.table tbody tr:has(+ .edit-row-active) > td,
-.edit-row-active > td {
-    border-bottom-color: transparent !important;
 }
 
 .topic-row {

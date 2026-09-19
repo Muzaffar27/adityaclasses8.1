@@ -80,7 +80,19 @@
                     <label class="label is-small">Part #</label>
                     <input class="input is-small" type="text" v-model="localLesson.part_number" placeholder="Ex: 1">
                 </div>
-                <div class="column is-3">
+
+                <div class="column is-2">
+                    <label class="label is-small">Show/Hidden</label>
+                    <div class="field mt-2">
+                        <label class="switch">
+                            <input type="checkbox" v-model="localLesson.is_active" :true-value="1" :false-value="0">
+                            <span class="slider round"></span>
+                            <span class="switch-label">{{ localLesson.is_active ? 'Active' : 'Inactive' }}</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="column is-4">
                     <label class="label is-small">Duration</label>
                     <div class="duration-grid">
                         <div>
@@ -100,24 +112,22 @@
                     </div>
                 </div>
 
-                <div class="column is-6">
-                    <label class="label is-small">Vimeo URL / Embed Code</label>
-                    <textarea class="textarea is-small" v-model="localLesson.vimeo_url" rows="2"
-                        placeholder="Paste the Vimeo player URL or full embed code"></textarea>
-                </div>
-                <div class="column is-3">
-                    <label class="label is-small">Show/Hidden</label>
-                    <div class="field mt-2">
-                        <label class="switch">
-                            <input type="checkbox" v-model="localLesson.is_active" :true-value="1" :false-value="0">
-                            <span class="slider round"></span>
-                            <span class="switch-label">{{ localLesson.is_active ? 'Active' : 'Inactive' }}</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="column is-12">
+                <div class="column is-8">
                     <label class="label is-small">Description</label>
                     <textarea class="textarea is-small" v-model="localLesson.description" rows="3"></textarea>
+                </div>
+
+                <div class="column is-6">
+                    <label class="label is-small">Vimeo URL / Embed Code <span class="has-text-grey-light">(optional)</span></label>
+                    <textarea class="textarea is-small" v-model="localLesson.vimeo_url" rows="2"
+                        placeholder="Paste the Vimeo player URL or full embed code"></textarea>
+                    <p class="help has-text-grey-light">Add the lesson video here, or use the Lesson upload beside it.</p>
+                </div>
+
+                <div class="column is-6 lesson-upload-column">
+                    <label class="label is-small">Lesson <span class="has-text-grey-light">(optional)</span></label>
+                    <LessonPdfManager ref="lessonPdfManager" mode="lesson"
+                        :lesson="isEditMode ? lesson : null" @changed="$emit('resource-changed', $event)" />
                 </div>
             </div>
 
@@ -127,14 +137,15 @@
                     <div>
                         <h4 class="practice-materials-title">Practice &amp; Solutions</h4>
                         <p class="practice-materials-subtitle">
-                            Add the question sheet and provide written or video solutions.
+                            Add the question sheets and provide written or video solutions.
                         </p>
                     </div>
                 </header>
 
                 <div class="practice-materials-content">
-                    <LessonPdfManager ref="pdfManager" :lesson="isEditMode ? lesson : null"
-                        @changed="$emit('resource-changed')" />
+                    <LessonPdfManager ref="practicePdfManager" mode="practice"
+                        :lesson="isEditMode ? lesson : null"
+                        @changed="$emit('resource-changed', $event)" />
 
                     <section class="answer-video-panel">
                         <header class="answer-video-header">
@@ -206,7 +217,8 @@ const props = defineProps({
 
 const emit = defineEmits(['saved', 'cancel', 'resource-changed']);
 const loading = ref(false);
-const pdfManager = ref(null);
+const lessonPdfManager = ref(null);
+const practicePdfManager = ref(null);
 const activeSuggestionField = ref(null);
 
 // 1. Initialize with either the prop data OR a blank template
@@ -272,7 +284,6 @@ const handleSave = async () => {
     const requiredFields = [
         { key: 'title', label: 'Lesson Title' },
         { key: 'topic', label: 'Topic' },
-        { key: 'vimeo_url', label: 'Vimeo URL' },
         { key: 'grade_id', label: 'Grade' },
         { key: 'subject_id', label: 'Subject' }
     ];
@@ -291,6 +302,14 @@ const handleSave = async () => {
     localLesson.value.vimeo_url = normalizeVimeoUrl(localLesson.value.vimeo_url);
     localLesson.value.answer_vimeo_url = normalizeVimeoUrl(localLesson.value.answer_vimeo_url);
 
+    if (!localLesson.value.vimeo_url && !lessonPdfManager.value?.hasResource('lesson')) {
+        await showAlert({
+            title: 'Lesson Material Required',
+            message: 'Add either a Vimeo video or a Lesson file before saving.',
+        });
+        return;
+    }
+
     // 3. If validation passes, proceed as normal
     localLesson.value.duration = formatDuration(durationParts.value);
     const payload = Object.fromEntries([
@@ -300,12 +319,16 @@ const handleSave = async () => {
 
     loading.value = true;
     try {
+        let savedLesson;
         if (isEditMode.value) {
-            await api.put(`/admin/lessons/${localLesson.value.id}`, payload);
+            const { data } = await api.put(`/admin/lessons/${localLesson.value.id}`, payload);
+            savedLesson = data;
         } else {
             const { data: createdLesson } = await api.post(`/admin/lessons`, payload);
+            savedLesson = createdLesson;
             try {
-                await pdfManager.value?.uploadPending(createdLesson.id);
+                await lessonPdfManager.value?.uploadPending(createdLesson.id);
+                await practicePdfManager.value?.uploadPending(createdLesson.id);
             } catch (error) {
                 console.error('New lesson PDF upload failed:', error);
                 await showAlert({
@@ -314,7 +337,7 @@ const handleSave = async () => {
                 });
             }
         }
-        emit('saved');
+        emit('saved', savedLesson);
     } catch (error) {
         console.error("Update failed", error);
         await showAlert({

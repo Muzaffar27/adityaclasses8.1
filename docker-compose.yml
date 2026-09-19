@@ -9,7 +9,10 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html/adityaclasses
-      - ./public:/var/www/html/public
+      - app_public:/var/www/html/public
+      - app_vendor:/var/www/html/adityaclasses/vendor
+      - app_storage_framework:/var/www/html/adityaclasses/storage/framework
+      - app_bootstrap_cache:/var/www/html/adityaclasses/bootstrap/cache
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
@@ -49,3 +52,15 @@ services:
 
 volumes:
   db_data:
+  app_vendor:
+    external: true
+    name: adityaclasses_app_vendor
+  app_storage_framework:
+    external: true
+    name: adityaclasses_app_storage_framework
+  app_bootstrap_cache:
+    external: true
+    name: adityaclasses_app_bootstrap_cache
+  app_public:
+    external: true
+    name: adityaclasses_app_public

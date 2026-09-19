@@ -1,11 +1,20 @@
 <template>
-    <section v-if="questionResources.length || hasAnswerResources" class="lesson-resources"
+    <section v-if="lesson.has_lesson_pdf || questionResources.length || hasAnswerResources" class="lesson-resources"
         :class="{ 'is-compact': compact }" @click.stop>
         <div class="resources-heading">
-            <p class="resources-label">Lesson practice</p>
-            <p class="resources-help">Try the questions first, then reveal the answers when you're ready.</p>
+            <p class="resources-label">Lesson materials</p>
+            <p class="resources-help">{{ resourcesHelp }}</p>
         </div>
         <div class="resource-list">
+            <button v-if="lesson.has_lesson_pdf" type="button" class="resource-button lesson-pdf-button"
+                :disabled="Boolean(loadingType)" @click.stop="openPdf('lesson')">
+                <span class="resource-icon"><DocumentTextIcon /></span>
+                <span class="resource-copy">
+                    <strong>{{ loadingType === 'lesson' ? 'Loading lesson...' : 'Open PDF lesson' }}</strong>
+                    <small>Read the lesson material</small>
+                </span>
+                <ChevronRightIcon class="resource-arrow" />
+            </button>
             <button v-for="question in questionResources" :key="question.type" type="button"
                 class="resource-button question-button" :disabled="Boolean(loadingType)"
                 @click.stop="openPdf(question.type)">
@@ -76,8 +85,7 @@
                     </div>
                 </header>
                 <main class="pdf-screen-body">
-                    <iframe :src="`${viewerUrl}#toolbar=0&navpanes=0&view=FitH`"
-                        :title="viewerTitle"></iframe>
+                    <PdfDocumentViewer :url="viewerUrl" />
                 </main>
                 <footer class="pdf-screen-footer">
                     <button type="button" class="pdf-return-button" @click.stop="closeViewer">
@@ -94,6 +102,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { ArrowLeftIcon, ArrowsRightLeftIcon, ChevronRightIcon, DocumentTextIcon, EyeIcon, EyeSlashIcon, VideoCameraIcon } from '@heroicons/vue/24/outline';
 import api from '../api';
 import { showAlert } from '../composables/dialog';
+import PdfDocumentViewer from './common/PdfDocumentViewer.vue';
 
 const props = defineProps({
     lesson: { type: Object, required: true },
@@ -111,6 +120,13 @@ const backButton = ref(null);
 const hasAnswerResources = computed(() => Boolean(
     props.lesson.has_answer_pdf || (props.includeAnswerVideo && props.lesson.answer_vimeo_url)
 ));
+const resourcesHelp = computed(() => {
+    if (props.lesson.has_lesson_pdf && questionResources.value.length) {
+        return 'Read the lesson, then try the questions when you are ready.';
+    }
+    if (props.lesson.has_lesson_pdf) return 'Open the PDF to start this lesson.';
+    return 'Try the questions first, then reveal the answers when you are ready.';
+});
 const questionResources = computed(() => {
     const questions = [];
     if (props.lesson.has_question_pdf) {
@@ -127,11 +143,15 @@ const questionResources = computed(() => {
 });
 const backDestination = computed(() => props.showingAnswerVideo ? 'answer video' : props.returnLabel);
 const viewerTitle = computed(() => {
+    if (viewerType.value === 'lesson') return 'Lesson PDF';
     if (viewerType.value === 'answer') return 'Answer PDF';
     if (viewerType.value === 'question2') return 'Question PDF 2';
     return props.lesson.has_question_pdf_2 ? 'Question PDF 1' : 'Question PDF';
 });
 const nextResource = computed(() => {
+    if (viewerType.value === 'lesson' && questionResources.value.length) {
+        return { type: 'pdf', value: questionResources.value[0].type, label: 'Go to questions' };
+    }
     if (viewerType.value === 'question' && props.lesson.has_question_pdf_2) {
         return { type: 'pdf', value: 'question2', label: 'Go to questions 2' };
     }
@@ -146,6 +166,9 @@ const nextResource = computed(() => {
     }
     if (viewerType.value === 'answer' && questionResources.value.length) {
         return { type: 'pdf', value: questionResources.value[0].type, label: 'Go to questions' };
+    }
+    if (viewerType.value === 'answer' && props.lesson.has_lesson_pdf) {
+        return { type: 'pdf', value: 'lesson', label: 'Go to lesson' };
     }
     return null;
 });
@@ -204,6 +227,8 @@ async function openPdf(type) {
     }
 }
 
+defineExpose({ openPdf });
+
 async function closeViewer(restoreFocus = true) {
     requestSerial++;
     loadingType.value = '';
@@ -246,7 +271,9 @@ onBeforeUnmount(() => {
 .resource-copy small { color: #94a3b8; font-size: 0.65rem; font-weight: 500; margin-top: 0.08rem; }
 .resource-arrow { height: 17px; opacity: 0.7; width: 17px; }
 .question-button { background: rgba(79, 70, 229, 0.18); border-color: rgba(129, 140, 248, 0.42); color: #e0e7ff; }
+.lesson-pdf-button { background: rgba(37, 99, 235, 0.16); border-color: rgba(96, 165, 250, 0.42); color: #dbeafe; }
 .answer-button { background: rgba(20, 184, 166, 0.14); border-color: rgba(45, 212, 191, 0.36); color: #ccfbf1; }
+.lesson-pdf-button .resource-icon { background: rgba(59, 130, 246, 0.2); }
 .question-button .resource-icon { background: rgba(99, 102, 241, 0.2); }
 .answer-button .resource-icon { background: rgba(20, 184, 166, 0.18); }
 .resource-button:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
@@ -273,6 +300,7 @@ onBeforeUnmount(() => {
 .pdf-screen-title small { color: #94a3b8; font-size: 0.68rem; margin-top: 0.08rem; }
 .pdf-kind { border: 1px solid rgba(129, 140, 248, 0.35); border-radius: 999px; color: #c7d2fe; font-size: 0.67rem; font-weight: 800; padding: 0.38rem 0.58rem; white-space: nowrap; }
 .pdf-kind.answer { border-color: rgba(45, 212, 191, 0.35); color: #99f6e4; }
+.pdf-kind.lesson { border-color: rgba(96, 165, 250, 0.4); color: #bfdbfe; }
 .pdf-actions { align-items: center; display: flex; gap: 0.5rem; }
 .pdf-switch-button { align-items: center; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9px; color: #fff; cursor: pointer; display: inline-flex; font-size: 0.7rem; font-weight: 800; gap: 0.35rem; padding: 0.5rem 0.65rem; white-space: nowrap; }
 .pdf-switch-button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.15); }
@@ -280,16 +308,21 @@ onBeforeUnmount(() => {
 .pdf-switch-button svg { height: 16px; width: 16px; }
 .pdf-switch-button:focus-visible { box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.55); outline: none; }
 .pdf-screen-body { background: #374151; min-height: 0; overflow: hidden; }
-.pdf-screen-body iframe { background: #fff; border: 0; display: block; height: 100%; width: 100%; }
+.pdf-screen-body :deep(.pdf-document-viewer) { height: 100%; }
 .pdf-screen-footer { background: #111827; border-top: 1px solid rgba(255, 255, 255, 0.1); display: none; padding: 0.55rem 0.75rem max(0.55rem, env(safe-area-inset-bottom)); }
 @media (max-width: 600px) {
-    .pdf-screen-header { grid-template-columns: minmax(0, 1fr) auto; }
+    .pdf-screen-header { grid-template-columns: auto minmax(0, 1fr) auto; }
     .pdf-back-button span { display: none; }
-    .pdf-back-button { padding: 0.58rem; }
-    .pdf-screen-title { grid-column: 1 / -1; grid-row: 2; text-align: left; }
-    .pdf-actions { grid-column: 2; grid-row: 1; }
+    .pdf-back-button { justify-self: start; padding: 0.58rem; }
+    .pdf-screen-title { grid-column: 2; grid-row: 1; text-align: left; }
+    .pdf-actions { grid-column: 3; grid-row: 1; }
     .pdf-kind { display: none; }
     .pdf-screen-footer { display: flex; }
     .pdf-return-button { justify-content: center; width: 100%; }
+}
+
+@media (max-width: 440px) {
+    .pdf-screen-title small { display: none; }
+    .pdf-switch-button { padding: 0.5rem; }
 }
 </style>

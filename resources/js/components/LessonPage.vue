@@ -109,7 +109,8 @@
 
                                                 <div v-else
                                                     class="card glass-card clickable-card fixed-card lesson-card"
-                                                    @click="hasAccess && openLesson(lesson)">
+                                                    :class="{ 'pdf-only-card': isPdfOnlyLesson(lesson) }"
+                                                    @click="hasAccess && openPrimaryLesson(lesson)">
 
                                                     <div v-if="!hasAccess" class="locked-overlay">
                                                         <LockClosedIcon class="hero-icon-sm mr-2" />
@@ -130,26 +131,37 @@
                                                         </div>
 
                                                         <div class="lesson-meta">
-                                                            <span class="duration-label">Duration:</span>
-                                                            <span
+                                                            <template v-if="isPdfOnlyLesson(lesson)">
+                                                                <DocumentTextIcon class="lesson-format-icon" />
+                                                                <span class="pdf-lesson-format">PDF lesson</span>
+                                                            </template>
+                                                            <template v-else>
+                                                                <span class="duration-label">Duration:</span>
+                                                                <span
                                                                 :class="{ 'duration-missing': !hasDuration(lesson.duration) }">
-                                                                {{ formatDuration(lesson.duration) }}
-                                                            </span>
+                                                                    {{ formatDuration(lesson.duration) }}
+                                                                </span>
+                                                            </template>
                                                         </div>
 
-                                                        <div class="icon-circle">
+                                                        <div v-if="isPdfOnlyLesson(lesson)"
+                                                            class="icon-circle pdf-icon-circle">
+                                                            <DocumentTextIcon class="hero-icon-sm" />
+                                                        </div>
+                                                        <div v-else-if="lesson.vimeo_url" class="icon-circle">
                                                             <PlayIcon class="hero-icon-sm has-text-primary" />
                                                         </div>
 
                                                     </div>
 
                                                     <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
-                                                        <button type="button" class="lesson-play-action"
+                                                        <button v-if="lesson.vimeo_url" type="button" class="lesson-play-action"
                                                             @click="openLesson(lesson)">
                                                             <PlayIcon />
                                                             <span>Watch lesson</span>
                                                         </button>
-                                                        <LessonPdfResources :lesson="lesson" compact return-label="lessons"
+                                                        <LessonPdfResources :ref="el => setResourceRef(lesson.id, el)"
+                                                            :lesson="lesson" compact return-label="lessons"
                                                             @play-answer-video="openLesson(lesson, 'answer')"
                                                             @play-lesson-video="openLesson(lesson)" />
                                                     </div>
@@ -196,7 +208,8 @@
                                 </div>
 
                                 <div v-else class="card glass-card clickable-card fixed-card lesson-card"
-                                    @click="hasAccess && openLesson(lesson)">
+                                    :class="{ 'pdf-only-card': isPdfOnlyLesson(lesson) }"
+                                    @click="hasAccess && openPrimaryLesson(lesson)">
 
                                     <div v-if="!hasAccess" class="locked-overlay">
                                         <LockClosedIcon class="hero-icon-sm mr-2" />
@@ -217,24 +230,36 @@
                                         </div>
 
                                         <div class="lesson-meta">
-                                            <span class="duration-label">Duration:</span>
-                                            <span :class="{ 'duration-missing': !hasDuration(lesson.duration) }">
-                                                {{ formatDuration(lesson.duration) }}
-                                            </span>
+                                            <template v-if="isPdfOnlyLesson(lesson)">
+                                                <DocumentTextIcon class="lesson-format-icon" />
+                                                <span class="pdf-lesson-format">PDF lesson</span>
+                                            </template>
+                                            <template v-else>
+                                                <span class="duration-label">Duration:</span>
+                                                <span :class="{ 'duration-missing': !hasDuration(lesson.duration) }">
+                                                    {{ formatDuration(lesson.duration) }}
+                                                </span>
+                                            </template>
                                         </div>
 
-                                        <div class="icon-circle">
+                                        <div v-if="isPdfOnlyLesson(lesson)"
+                                            class="icon-circle pdf-icon-circle">
+                                            <DocumentTextIcon class="hero-icon-sm" />
+                                        </div>
+                                        <div v-else-if="lesson.vimeo_url" class="icon-circle">
                                             <PlayIcon class="hero-icon-sm has-text-primary" />
                                         </div>
 
                                     </div>
 
                                     <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
-                                        <button type="button" class="lesson-play-action" @click="openLesson(lesson)">
+                                        <button v-if="lesson.vimeo_url" type="button" class="lesson-play-action"
+                                            @click="openLesson(lesson)">
                                             <PlayIcon />
                                             <span>Watch lesson</span>
                                         </button>
-                                        <LessonPdfResources :lesson="lesson" compact return-label="lessons"
+                                        <LessonPdfResources :ref="el => setResourceRef(lesson.id, el)"
+                                            :lesson="lesson" compact return-label="lessons"
                                             @play-answer-video="openLesson(lesson, 'answer')"
                                             @play-lesson-video="openLesson(lesson)" />
                                     </div>
@@ -258,7 +283,7 @@ import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
 import LessonPdfResources from "./LessonPdfResources.vue";
 import { getVimeoPlayerUrl } from "../utils/vimeo";
-import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
+import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();
 const subjectId = route.params.subjectId;
@@ -271,6 +296,7 @@ const requestLoading = ref(false);
 const hasAccess = ref(false);
 const requestStatus = ref(null);
 const selectedLesson = ref(null);
+const resourceRefs = new Map();
 const videoMode = ref('lesson');
 const openTopics = ref({});
 const openSubTopics = ref({});
@@ -432,6 +458,24 @@ function handleVideoFullscreenChange() {
     }
 
     releaseVideoOrientation();
+}
+
+function setResourceRef(lessonId, component) {
+    if (component) resourceRefs.set(lessonId, component);
+    else resourceRefs.delete(lessonId);
+}
+
+function isPdfOnlyLesson(lesson) {
+    return Boolean(!lesson?.vimeo_url && lesson?.has_lesson_pdf);
+}
+
+function openPrimaryLesson(lesson) {
+    if (lesson?.vimeo_url) {
+        openLesson(lesson);
+        return;
+    }
+
+    if (lesson?.has_lesson_pdf) resourceRefs.get(lesson.id)?.openPdf('lesson');
 }
 
 async function openLesson(lesson, mode = 'lesson') {
@@ -932,6 +976,18 @@ function getVimeoThumbnail(url) {
     box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
 }
 
+.lesson-card.pdf-only-card {
+    background:
+        linear-gradient(145deg, rgba(59, 130, 246, 0.12), rgba(14, 116, 144, 0.055)),
+        rgba(15, 23, 42, 0.34) !important;
+    border-color: rgba(96, 165, 250, 0.28);
+}
+
+.lesson-card.pdf-only-card:hover {
+    border-color: rgba(125, 211, 252, 0.5);
+    box-shadow: 0 16px 34px rgba(2, 132, 199, 0.12), 0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
 .lesson-card .card-content {
     flex: 1 1 auto;
     width: 100%;
@@ -1040,6 +1096,20 @@ function getVimeoThumbnail(url) {
     font-style: italic;
 }
 
+.lesson-format-icon {
+    color: #7dd3fc;
+    height: 18px;
+    width: 18px;
+}
+
+.pdf-lesson-format {
+    color: #bae6fd;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+}
+
 .meta-dot {
     width: 4px;
     height: 4px;
@@ -1074,6 +1144,21 @@ function getVimeoThumbnail(url) {
         0 14px 28px rgba(79, 70, 229, 0.24),
         inset 0 1px 0 rgba(255, 255, 255, 0.12);
     transform: translate(-50%, -50%) scale(1.08);
+}
+
+.pdf-icon-circle {
+    color: #bae6fd;
+    background: rgba(14, 165, 233, 0.14);
+    border-color: rgba(125, 211, 252, 0.3);
+}
+
+.pdf-icon-circle:hover {
+    background: rgba(14, 165, 233, 0.26);
+    border-color: rgba(125, 211, 252, 0.58);
+    box-shadow:
+        0 0 0 8px rgba(14, 165, 233, 0.09),
+        0 14px 28px rgba(14, 165, 233, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .lesson-card-actions {

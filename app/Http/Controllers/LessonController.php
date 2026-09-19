@@ -133,6 +133,7 @@ class LessonController extends Controller
                 if ($topic) {
                     $copy->topic = $topic;
                 }
+                $copy->lesson_pdf_path = null;
                 $copy->question_pdf_path = null;
                 $copy->question_pdf_2_path = null;
                 $copy->answer_pdf_path = null;
@@ -167,6 +168,7 @@ class LessonController extends Controller
     public function destroy(Lesson $lesson)
     {
         Storage::disk('local')->delete(array_filter([
+            $lesson->lesson_pdf_path,
             $lesson->question_pdf_path,
             $lesson->question_pdf_2_path,
             $lesson->answer_pdf_path,
@@ -181,7 +183,7 @@ class LessonController extends Controller
         $this->ensureTutor($request);
         $type = $this->pdfType($request->input('type'));
         $request->validate([
-            'type' => 'required|in:question,question2,answer',
+            'type' => 'required|in:lesson,question,question2,answer',
             'pdf' => 'required|file|mimes:pdf|max:20480',
         ]);
 
@@ -199,6 +201,7 @@ class LessonController extends Controller
         }
 
         return response()->json([
+            'has_lesson_pdf' => $lesson->has_lesson_pdf,
             'has_question_pdf' => $lesson->has_question_pdf,
             'has_question_pdf_2' => $lesson->has_question_pdf_2,
             'has_answer_pdf' => $lesson->has_answer_pdf,
@@ -233,6 +236,7 @@ class LessonController extends Controller
         }
 
         return response()->json([
+            'has_lesson_pdf' => $lesson->has_lesson_pdf,
             'has_question_pdf' => $lesson->has_question_pdf,
             'has_question_pdf_2' => $lesson->has_question_pdf_2,
             'has_answer_pdf' => $lesson->has_answer_pdf,
@@ -241,7 +245,7 @@ class LessonController extends Controller
 
     private function pdfType(?string $type): string
     {
-        abort_unless(in_array($type, ['question', 'question2', 'answer'], true), 404);
+        abort_unless(in_array($type, ['lesson', 'question', 'question2', 'answer'], true), 404);
 
         return $type;
     }
@@ -249,6 +253,7 @@ class LessonController extends Controller
     private function pdfField(string $type): string
     {
         return match ($type) {
+            'lesson' => 'lesson_pdf_path',
             'question' => 'question_pdf_path',
             'question2' => 'question_pdf_2_path',
             'answer' => 'answer_pdf_path',
