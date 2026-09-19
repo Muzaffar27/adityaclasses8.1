@@ -3,7 +3,7 @@
         <div class="pdf-manager-heading">
             <div>
                 <p class="has-text-white has-text-weight-semibold mb-1">PDF materials</p>
-                <p class="is-size-7 has-text-grey-light">Upload the question sheet and written answers separately. PDF only, up to 20 MB.</p>
+                <p class="is-size-7 has-text-grey-light">Upload up to two question sheets and one written answer. PDF only, up to 20 MB each.</p>
             </div>
         </div>
 
@@ -60,11 +60,12 @@ const props = defineProps({ lesson: { type: Object, default: null } });
 const emit = defineEmits(['changed']);
 
 const types = [
-    { key: 'question', label: 'Question PDF' },
+    { key: 'question', label: 'Question PDF 1' },
+    { key: 'question2', label: 'Question PDF 2' },
     { key: 'answer', label: 'Answer PDF' },
 ];
-const available = reactive({ question: false, answer: false });
-const pendingFiles = reactive({ question: null, answer: null });
+const available = reactive({ question: false, question2: false, answer: false });
+const pendingFiles = reactive({ question: null, question2: null, answer: null });
 const uploadingType = ref('');
 const removingType = ref('');
 const viewingType = ref('');
@@ -75,6 +76,7 @@ watch(() => props.lesson, syncAvailability, { immediate: true, deep: true });
 
 function syncAvailability(lesson) {
     available.question = Boolean(lesson?.has_question_pdf);
+    available.question2 = Boolean(lesson?.has_question_pdf_2);
     available.answer = Boolean(lesson?.has_answer_pdf);
 }
 
@@ -128,7 +130,7 @@ async function viewPdf(type) {
             responseType: 'blob',
             timeout: 60000,
         });
-        viewerLabel.value = type === 'question' ? 'Question PDF' : 'Answer PDF';
+        viewerLabel.value = types.find(item => item.key === type)?.label || 'Lesson PDF';
         viewerUrl.value = URL.createObjectURL(data);
     } catch (error) {
         console.error('Lesson PDF view failed:', error);
@@ -145,7 +147,7 @@ async function removePdf(type) {
     }
 
     const confirmed = await showConfirm({
-        title: `Remove ${type === 'question' ? 'Questions' : 'Answers'}`,
+        title: `Remove ${type === 'answer' ? 'Answers' : 'Questions'}`,
         message: `Remove this ${type} PDF from the lesson?`,
         confirmText: 'Remove',
         cancelText: 'Keep it',
@@ -173,7 +175,7 @@ function statusText(type) {
 }
 
 async function uploadPending(lessonId) {
-    for (const type of ['question', 'answer']) {
+    for (const type of types.map(item => item.key)) {
         if (pendingFiles[type]) await sendPdf(type, pendingFiles[type], lessonId, true);
     }
 }
@@ -191,7 +193,7 @@ onBeforeUnmount(closeViewer);
 
 <style scoped>
 .pdf-manager { border-top: 1px solid rgba(148, 163, 184, 0.2); margin-top: 1rem; padding-top: 1rem; }
-.pdf-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pdf-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
 .pdf-card { align-items: center; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 10px; display: flex; gap: 0.75rem; justify-content: space-between; padding: 0.8rem; }
 .pdf-card-copy, .pdf-actions { align-items: center; display: flex; gap: 0.5rem; }
 .pdf-icon { color: #818cf8; height: 24px; width: 24px; }

@@ -1,16 +1,18 @@
 <template>
-    <section v-if="lesson.has_question_pdf || hasAnswerResources" class="lesson-resources">
+    <section v-if="questionResources.length || hasAnswerResources" class="lesson-resources"
+        :class="{ 'is-compact': compact }" @click.stop>
         <div class="resources-heading">
             <p class="resources-label">Lesson practice</p>
             <p class="resources-help">Try the questions first, then reveal the answers when you're ready.</p>
         </div>
         <div class="resource-list">
-            <button v-if="lesson.has_question_pdf" type="button" class="resource-button question-button"
-                :disabled="Boolean(loadingType)" @click.stop="openPdf('question')">
+            <button v-for="question in questionResources" :key="question.type" type="button"
+                class="resource-button question-button" :disabled="Boolean(loadingType)"
+                @click.stop="openPdf(question.type)">
                 <span class="resource-icon"><DocumentTextIcon /></span>
                 <span class="resource-copy">
-                    <strong>{{ loadingType === 'question' ? 'Loading questions...' : 'Questions' }}</strong>
-                    <small>Open the lesson question sheet</small>
+                    <strong>{{ loadingType === question.type ? 'Loading questions...' : question.label }}</strong>
+                    <small>Open {{ question.description }}</small>
                 </span>
                 <ChevronRightIcon class="resource-arrow" />
             </button>
@@ -24,7 +26,8 @@
                 <ChevronRightIcon class="resource-arrow" />
             </button>
             <template v-if="answersRevealed">
-                <button v-if="lesson.answer_vimeo_url" type="button" class="resource-button answer-button"
+                <button v-if="includeAnswerVideo && lesson.answer_vimeo_url" type="button"
+                    class="resource-button answer-button"
                     @click.stop="toggleAnswerVideo">
                     <span class="resource-icon"><VideoCameraIcon /></span>
                     <span class="resource-copy">
@@ -50,19 +53,19 @@
 
         <Teleport to="body">
             <div v-if="viewerUrl" class="pdf-screen" role="dialog" aria-modal="true"
-                :aria-label="viewerType === 'answer' ? 'Answer PDF' : 'Question PDF'">
+                :aria-label="viewerTitle">
                 <header class="pdf-screen-header">
                     <button ref="backButton" type="button" class="pdf-back-button" @click.stop="closeViewer">
                         <ArrowLeftIcon />
-                        <span>{{ showingAnswerVideo ? 'Back to answer video' : 'Back to lesson video' }}</span>
+                        <span>Back to {{ backDestination }}</span>
                     </button>
                     <div class="pdf-screen-title">
-                        <strong>{{ viewerType === 'answer' ? 'Answer PDF' : 'Question PDF' }}</strong>
+                        <strong>{{ viewerTitle }}</strong>
                         <small>{{ lesson.title }}</small>
                     </div>
                     <div class="pdf-actions">
                         <span class="pdf-kind" :class="viewerType">
-                            {{ viewerType === 'answer' ? 'Answer revealed' : 'Questions' }}
+                            {{ viewerType === 'answer' ? 'Answer revealed' : viewerTitle }}
                         </span>
                         <button v-if="nextResource" type="button" class="pdf-switch-button"
                             :disabled="Boolean(loadingType)" @click.stop="goToNextResource">
@@ -74,11 +77,11 @@
                 </header>
                 <main class="pdf-screen-body">
                     <iframe :src="`${viewerUrl}#toolbar=0&navpanes=0&view=FitH`"
-                        :title="viewerType === 'answer' ? 'Answer PDF' : 'Question PDF'"></iframe>
+                        :title="viewerTitle"></iframe>
                 </main>
                 <footer class="pdf-screen-footer">
                     <button type="button" class="pdf-return-button" @click.stop="closeViewer">
-                        <ArrowLeftIcon /> {{ showingAnswerVideo ? 'Return to answer video' : 'Return to lesson video' }}
+                        <ArrowLeftIcon /> Return to {{ backDestination }}
                     </button>
                 </footer>
             </div>
@@ -95,6 +98,9 @@ import { showAlert } from '../composables/dialog';
 const props = defineProps({
     lesson: { type: Object, required: true },
     showingAnswerVideo: { type: Boolean, default: false },
+    compact: { type: Boolean, default: false },
+    includeAnswerVideo: { type: Boolean, default: true },
+    returnLabel: { type: String, default: 'lesson video' },
 });
 const emit = defineEmits(['play-answer-video', 'play-lesson-video']);
 const loadingType = ref('');
@@ -102,19 +108,44 @@ const answersRevealed = ref(false);
 const viewerUrl = ref('');
 const viewerType = ref('');
 const backButton = ref(null);
-const hasAnswerResources = computed(() => Boolean(props.lesson.has_answer_pdf || props.lesson.answer_vimeo_url));
+const hasAnswerResources = computed(() => Boolean(
+    props.lesson.has_answer_pdf || (props.includeAnswerVideo && props.lesson.answer_vimeo_url)
+));
+const questionResources = computed(() => {
+    const questions = [];
+    if (props.lesson.has_question_pdf) {
+        questions.push({
+            type: 'question',
+            label: props.lesson.has_question_pdf_2 ? 'Questions 1' : 'Questions',
+            description: props.lesson.has_question_pdf_2 ? 'question sheet 1' : 'the lesson question sheet',
+        });
+    }
+    if (props.lesson.has_question_pdf_2) {
+        questions.push({ type: 'question2', label: 'Questions 2', description: 'question sheet 2' });
+    }
+    return questions;
+});
+const backDestination = computed(() => props.showingAnswerVideo ? 'answer video' : props.returnLabel);
+const viewerTitle = computed(() => {
+    if (viewerType.value === 'answer') return 'Answer PDF';
+    if (viewerType.value === 'question2') return 'Question PDF 2';
+    return props.lesson.has_question_pdf_2 ? 'Question PDF 1' : 'Question PDF';
+});
 const nextResource = computed(() => {
-    if (viewerType.value === 'question' && props.lesson.has_answer_pdf) {
+    if (viewerType.value === 'question' && props.lesson.has_question_pdf_2) {
+        return { type: 'pdf', value: 'question2', label: 'Go to questions 2' };
+    }
+    if (viewerType.value.startsWith('question') && props.lesson.has_answer_pdf) {
         return { type: 'pdf', value: 'answer', label: 'Go to answer' };
     }
-    if (props.lesson.answer_vimeo_url) {
+    if (props.includeAnswerVideo && props.lesson.answer_vimeo_url) {
         return {
             type: 'video',
             label: props.showingAnswerVideo ? 'Back to answer video' : 'Go to answer video',
         };
     }
-    if (viewerType.value === 'answer' && props.lesson.has_question_pdf) {
-        return { type: 'pdf', value: 'question', label: 'Go to questions' };
+    if (viewerType.value === 'answer' && questionResources.value.length) {
+        return { type: 'pdf', value: questionResources.value[0].type, label: 'Go to questions' };
     }
     return null;
 });
@@ -222,6 +253,15 @@ onBeforeUnmount(() => {
 .answer-hide-button { align-items: center; background: transparent; border: 0; color: #94a3b8; cursor: pointer; display: inline-flex; font-size: 0.68rem; font-weight: 700; gap: 0.3rem; justify-self: start; padding: 0.25rem 0.35rem; }
 .answer-hide-button:hover { color: #e2e8f0; }
 .answer-hide-button svg { height: 15px; width: 15px; }
+.lesson-resources.is-compact { background: transparent; border: 0; flex: 1 1 210px; min-width: 0; padding: 0; }
+.is-compact .resources-heading { display: none; }
+.is-compact .resource-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.is-compact .resource-button { display: inline-flex; flex: 1 1 94px; gap: 0.35rem; justify-content: center; min-height: 38px; padding: 0.45rem 0.55rem; text-align: center; width: auto; }
+.is-compact .resource-icon { background: transparent; height: auto; width: auto; }
+.is-compact .resource-icon svg { height: 17px; width: 17px; }
+.is-compact .resource-copy strong { font-size: 0.7rem; white-space: nowrap; }
+.is-compact .resource-copy small, .is-compact .resource-arrow { display: none; }
+.is-compact .answer-hide-button { flex: 1 1 100%; justify-content: center; padding: 0.15rem; }
 .pdf-screen { background: #0b1120; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; inset: 0; position: fixed; z-index: 2147483000; }
 .pdf-screen-header { align-items: center; background: #111827; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: grid; gap: 0.75rem; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 64px; padding: max(0.65rem, env(safe-area-inset-top)) 0.8rem 0.65rem; }
 .pdf-back-button, .pdf-return-button { align-items: center; background: #4f46e5; border: 0; border-radius: 9px; color: #fff; cursor: pointer; display: inline-flex; font-size: 0.75rem; font-weight: 800; gap: 0.4rem; padding: 0.6rem 0.75rem; }

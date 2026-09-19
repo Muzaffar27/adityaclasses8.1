@@ -22,6 +22,7 @@ class Lesson extends Model
         'answer_vimeo_url',
         'duration',
         'question_pdf_path',
+        'question_pdf_2_path',
         'answer_pdf_path',
         'is_active'
     ];
@@ -30,17 +31,24 @@ class Lesson extends Model
 
     protected $hidden = [
         'question_pdf_path',
+        'question_pdf_2_path',
         'answer_pdf_path',
     ];
 
     protected $appends = [
         'has_question_pdf',
+        'has_question_pdf_2',
         'has_answer_pdf',
     ];
 
     public function getHasQuestionPdfAttribute(): bool
     {
         return !empty($this->question_pdf_path);
+    }
+
+    public function getHasQuestionPdf2Attribute(): bool
+    {
+        return !empty($this->question_pdf_2_path);
     }
 
     public function getHasAnswerPdfAttribute(): bool

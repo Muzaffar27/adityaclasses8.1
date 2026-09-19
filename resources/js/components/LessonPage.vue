@@ -30,13 +30,13 @@
             <div v-for="group in paginatedTopics" :key="group.topic">
 
                 <div class="glass-card topic-header p-4 mb-2 clickable-card" @click.stop="toggleTopic(group.topic)">
-                    <div class="is-flex is-align-items-center">
-                        <h2 class="title is-6 has-text-white mb-0">{{ group.topic }}</h2>
-                        <span class="tag is-dark-accent ml-3">
+                    <div class="topic-header-row">
+                        <h2 class="title is-6 has-text-white mb-0 header-list-title">{{ group.topic }}</h2>
+                        <span class="tag is-dark-accent lesson-count-tag">
                             {{ group.lessons.length }} lessons
                         </span>
 
-                        <div class="ml-auto">
+                        <div class="header-arrow">
                             <ChevronRightIcon class="hero-icon-sm arrow-icon"
                                 :class="{ 'is-open': isTopicOpen(group.topic) }" />
                         </div>
@@ -49,14 +49,14 @@
                             <div v-for="subtopic in group.subtopics" :key="subtopic.key" class="subtopic-block">
                                 <div class="glass-card subtopic-header clickable-card"
                                     @click.stop="toggleSubTopic(group.topic, subtopic.name)">
-                                    <div class="is-flex is-align-items-center">
+                                    <div class="subtopic-header-row">
                                         <div class="subtopic-marker"></div>
-                                        <h3 class="subtopic-title mb-0">{{ subtopic.name }}</h3>
-                                        <span class="tag is-dark-accent ml-3">
+                                        <h3 class="subtopic-title mb-0 header-list-title">{{ subtopic.name }}</h3>
+                                        <span class="tag is-dark-accent lesson-count-tag">
                                             {{ subtopic.lessons.length }} lessons
                                         </span>
 
-                                        <div class="ml-auto">
+                                        <div class="header-arrow">
                                             <ChevronRightIcon class="hero-icon-sm arrow-icon"
                                                 :class="{ 'is-open': isSubTopicOpen(group.topic, subtopic.name) }" />
                                         </div>
@@ -140,6 +140,18 @@
                                                         <div class="icon-circle">
                                                             <PlayIcon class="hero-icon-sm has-text-primary" />
                                                         </div>
+
+                                                    </div>
+
+                                                    <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
+                                                        <button type="button" class="lesson-play-action"
+                                                            @click="openLesson(lesson)">
+                                                            <PlayIcon />
+                                                            <span>Watch lesson</span>
+                                                        </button>
+                                                        <LessonPdfResources :lesson="lesson" compact return-label="lessons"
+                                                            @play-answer-video="openLesson(lesson, 'answer')"
+                                                            @play-lesson-video="openLesson(lesson)" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -214,6 +226,17 @@
                                         <div class="icon-circle">
                                             <PlayIcon class="hero-icon-sm has-text-primary" />
                                         </div>
+
+                                    </div>
+
+                                    <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
+                                        <button type="button" class="lesson-play-action" @click="openLesson(lesson)">
+                                            <PlayIcon />
+                                            <span>Watch lesson</span>
+                                        </button>
+                                        <LessonPdfResources :lesson="lesson" compact return-label="lessons"
+                                            @play-answer-video="openLesson(lesson, 'answer')"
+                                            @play-lesson-video="openLesson(lesson)" />
                                     </div>
                                 </div>
                             </div>
@@ -411,9 +434,9 @@ function handleVideoFullscreenChange() {
     releaseVideoOrientation();
 }
 
-async function openLesson(lesson) {
+async function openLesson(lesson, mode = 'lesson') {
     isVideoLoading.value = true;
-    videoMode.value = 'lesson';
+    videoMode.value = mode;
     selectedLesson.value = lesson;
     isPlaying.value = false;
     void requestVideoOrientation('any');
@@ -812,6 +835,37 @@ function getVimeoThumbnail(url) {
     border-radius: 12px;
 }
 
+.topic-header-row,
+.subtopic-header-row {
+    align-items: center;
+    column-gap: 0.75rem;
+    display: grid;
+}
+
+.topic-header-row {
+    grid-template-columns: minmax(0, 18rem) auto minmax(0, 1fr) auto;
+}
+
+.subtopic-header-row {
+    grid-template-columns: 3px minmax(0, 18rem) auto minmax(0, 1fr) auto;
+}
+
+.header-list-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.lesson-count-tag {
+    justify-self: start;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.header-arrow {
+    display: flex;
+    justify-self: end;
+}
+
 .subtopic-list {
     display: flex;
     flex-direction: column;
@@ -855,13 +909,15 @@ function getVimeoThumbnail(url) {
 }
 
 .fixed-card {
-    min-height: 184px;
+    min-height: 220px;
     height: 100%;
 }
 
 .lesson-card {
     position: relative;
     display: flex;
+    flex-direction: column;
+    overflow: hidden;
     border-radius: 16px;
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
@@ -877,6 +933,7 @@ function getVimeoThumbnail(url) {
 }
 
 .lesson-card .card-content {
+    flex: 1 1 auto;
     width: 100%;
 }
 
@@ -884,10 +941,11 @@ function getVimeoThumbnail(url) {
     display: grid;
     grid-template-columns: 1fr;
     align-items: start;
+    position: relative;
     row-gap: 10px;
     padding: 1.15rem;
     text-align: left;
-    min-height: 184px;
+    min-height: 150px;
 }
 
 .lesson-sub-topic {
@@ -1018,6 +1076,50 @@ function getVimeoThumbnail(url) {
     transform: translate(-50%, -50%) scale(1.08);
 }
 
+.lesson-card-actions {
+    align-items: stretch;
+    background: rgba(2, 6, 23, 0.28);
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding: 0.65rem 0.75rem;
+}
+
+.lesson-play-action {
+    align-items: center;
+    background: rgba(79, 70, 229, 0.2);
+    border: 1px solid rgba(129, 140, 248, 0.42);
+    border-radius: 9px;
+    color: #e0e7ff;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 1 1 112px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    gap: 0.4rem;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0.45rem 0.65rem;
+    transition: 0.2s ease;
+}
+
+.lesson-play-action:hover {
+    background: rgba(79, 70, 229, 0.34);
+    border-color: rgba(165, 180, 252, 0.62);
+    transform: translateY(-1px);
+}
+
+.lesson-play-action:focus-visible {
+    box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.42);
+    outline: none;
+}
+
+.lesson-play-action svg {
+    height: 17px;
+    width: 17px;
+}
+
 .locked-overlay {
     position: absolute;
     inset: 0;
@@ -1068,8 +1170,26 @@ function getVimeoThumbnail(url) {
         font-size: 0.88rem;
     }
 
+    .topic-header-row,
+    .subtopic-header-row {
+        column-gap: 0.5rem;
+    }
+
+    .topic-header-row {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    .subtopic-header-row {
+        grid-template-columns: 3px minmax(0, 1fr) auto auto;
+    }
+
+    .topic-header-row .header-arrow,
+    .subtopic-header-row .header-arrow {
+        grid-column: -2;
+    }
+
     .fixed-card {
-        min-height: 172px;
+        min-height: 210px;
     }
 
     .lesson-card-content {
@@ -1077,10 +1197,18 @@ function getVimeoThumbnail(url) {
         padding: 1rem;
     }
 
+    .lesson-card-actions {
+        padding: 0.6rem;
+    }
+
     .icon-circle {
         width: 40px;
         height: 40px;
         min-width: 40px;
+    }
+
+    .lesson-play-action {
+        flex-basis: 100%;
     }
 
     .lesson-heading {

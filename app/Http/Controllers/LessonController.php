@@ -134,6 +134,7 @@ class LessonController extends Controller
                     $copy->topic = $topic;
                 }
                 $copy->question_pdf_path = null;
+                $copy->question_pdf_2_path = null;
                 $copy->answer_pdf_path = null;
                 $copy->save();
 
@@ -167,6 +168,7 @@ class LessonController extends Controller
     {
         Storage::disk('local')->delete(array_filter([
             $lesson->question_pdf_path,
+            $lesson->question_pdf_2_path,
             $lesson->answer_pdf_path,
         ]));
         $lesson->delete();
@@ -179,11 +181,11 @@ class LessonController extends Controller
         $this->ensureTutor($request);
         $type = $this->pdfType($request->input('type'));
         $request->validate([
-            'type' => 'required|in:question,answer',
+            'type' => 'required|in:question,question2,answer',
             'pdf' => 'required|file|mimes:pdf|max:20480',
         ]);
 
-        $field = $type . '_pdf_path';
+        $field = $this->pdfField($type);
         $oldPath = $lesson->{$field};
         $path = $request->file('pdf')->storeAs(
             'lesson-pdfs/' . $lesson->id,
@@ -198,6 +200,7 @@ class LessonController extends Controller
 
         return response()->json([
             'has_question_pdf' => $lesson->has_question_pdf,
+            'has_question_pdf_2' => $lesson->has_question_pdf_2,
             'has_answer_pdf' => $lesson->has_answer_pdf,
         ]);
     }
@@ -206,7 +209,7 @@ class LessonController extends Controller
     {
         $type = $this->pdfType($type);
         $this->ensurePdfAccess($request, $lesson);
-        $path = $lesson->{$type . '_pdf_path'};
+        $path = $lesson->{$this->pdfField($type)};
 
         abort_unless($path && Storage::disk('local')->exists($path), 404);
 
@@ -222,7 +225,7 @@ class LessonController extends Controller
     {
         $this->ensureTutor($request);
         $type = $this->pdfType($type);
-        $field = $type . '_pdf_path';
+        $field = $this->pdfField($type);
 
         if ($lesson->{$field}) {
             Storage::disk('local')->delete($lesson->{$field});
@@ -231,15 +234,25 @@ class LessonController extends Controller
 
         return response()->json([
             'has_question_pdf' => $lesson->has_question_pdf,
+            'has_question_pdf_2' => $lesson->has_question_pdf_2,
             'has_answer_pdf' => $lesson->has_answer_pdf,
         ]);
     }
 
     private function pdfType(?string $type): string
     {
-        abort_unless(in_array($type, ['question', 'answer'], true), 404);
+        abort_unless(in_array($type, ['question', 'question2', 'answer'], true), 404);
 
         return $type;
+    }
+
+    private function pdfField(string $type): string
+    {
+        return match ($type) {
+            'question' => 'question_pdf_path',
+            'question2' => 'question_pdf_2_path',
+            'answer' => 'answer_pdf_path',
+        };
     }
 
     private function ensureTutor(Request $request): void
