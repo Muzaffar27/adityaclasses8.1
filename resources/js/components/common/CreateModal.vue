@@ -4,7 +4,7 @@
             <div v-if="modelValue" ref="modalRoot" class="modal is-active">
                 <div class="modal-background" @click="close"></div>
 
-                <div class="modal-card" :class="{ 'is-wide': wide }">
+                <div class="modal-card" :class="{ 'is-wide': wide, 'is-form-tone': formTone }">
                     <header class="modal-card-head">
                         <div class="modal-heading-copy">
                             <p class="modal-card-title">{{ title }}</p>
@@ -33,7 +33,8 @@ const props = defineProps({
     modelValue: Boolean,
     title: String,
     subtitle: { type: String, default: '' },
-    wide: { type: Boolean, default: false }
+    wide: { type: Boolean, default: false },
+    formTone: { type: Boolean, default: false }
 });
 
 const modalRoot = ref(null);
@@ -107,6 +108,42 @@ onBeforeUnmount(() => {
     font-size: 0.73rem;
     line-height: 1.35;
     margin-top: 0.2rem;
+}
+
+.modal-card.is-form-tone .modal-card-head {
+    background:
+        linear-gradient(135deg, rgba(129, 140, 248, 0.12), transparent 42%),
+        linear-gradient(135deg, #344866 0%, #2b3b56 52%, #25324a 100%);
+    border-bottom-color: rgba(165, 180, 252, 0.3);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 8px 24px rgba(15, 23, 42, 0.2);
+}
+
+.modal-card.is-form-tone .modal-heading-copy {
+    border-left: 3px solid #818cf8;
+    padding-left: 0.75rem;
+}
+
+.modal-card.is-form-tone .modal-card-title {
+    color: #ffffff;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+}
+
+.modal-card.is-form-tone .modal-card-subtitle {
+    color: #cbd5e1;
+}
+
+.modal-card.is-form-tone .modal-close-button {
+    background-color: rgba(15, 23, 42, 0.24);
+    border-color: rgba(199, 210, 254, 0.28);
+}
+
+.modal-card.is-form-tone .modal-close-button:hover,
+.modal-card.is-form-tone .modal-close-button:focus {
+    background-color: rgba(99, 102, 241, 0.34);
+    border-color: rgba(199, 210, 254, 0.55);
 }
 
 .modal-close-button {

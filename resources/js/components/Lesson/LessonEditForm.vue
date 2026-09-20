@@ -1,7 +1,7 @@
 <template>
     <div class="edit-form-container" :class="{ 'is-create-page': !isEditMode, 'is-inline-form': inline }">
         <div class="box is-shadowless has-background-transparent">
-            <div v-if="isEditMode" class="mb-4">
+            <div v-if="isEditMode && !hideHeading" class="mb-4">
                 <h3 class="is-size-6 has-text-weight-bold">
                     Editing: <span class="has-text-primary">{{ lesson.title }}</span>
                 </h3>
@@ -202,6 +202,10 @@ const props = defineProps({
     grade_id: [String, Number],
     subject_id: [String, Number],
     inline: {
+        type: Boolean,
+        default: false
+    },
+    hideHeading: {
         type: Boolean,
         default: false
     },

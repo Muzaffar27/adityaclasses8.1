@@ -371,8 +371,8 @@
             </template>
         </createModal>
 
-        <createModal v-model="editModalOpen" :title="editModalTitle" :subtitle="editModalSubtitle" wide>
-            <LessonEditForm v-if="editingLesson" inline :lesson="editingLesson"
+        <createModal v-model="editModalOpen" :title="editModalTitle" :subtitle="editModalSubtitle" wide form-tone>
+            <LessonEditForm v-if="editingLesson" inline hide-heading :lesson="editingLesson"
                 :topic-options="topicOptionsForLesson(editingLesson)"
                 :sub-topic-options="subTopicOptionsForLesson(editingLesson)"
                 @resource-changed="onLessonResourceChanged"
@@ -380,7 +380,7 @@
         </createModal>
 
         <createModal v-model="lessonCreateModalOpen" :title="lessonCreateModalTitle"
-            :subtitle="lessonCreateMessage" wide>
+            :subtitle="lessonCreateMessage" wide form-tone>
             <LessonEditForm v-if="creating" inline :lesson="createDraft"
                 :grade_id="selectedGradeId" :subject_id="selectedSubjectId"
                 :topic-options="topicOptionsForLesson(createDraft)"

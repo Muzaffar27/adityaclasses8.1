@@ -10,7 +10,7 @@
     "src": "node_modules/pdfjs-dist/build/pdf.worker.min.mjs"
   },
   "resources/js/app.js": {
-    "file": "assets/app-oZcUC-aU.js",
+    "file": "assets/app-C-vX9ebN.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -24,14 +24,14 @@
       "resources/js/components/TutorSpace.vue"
     ],
     "css": [
-      "assets/app-7Q0Agbir.css"
+      "assets/app-Cwwz71TG.css"
     ],
     "assets": [
       "assets/pdf.worker.min-Cpi8b8z3.mjs"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-DEorJCLd.js",
+    "file": "assets/MyCourse-CmGHem-Y.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -43,7 +43,7 @@
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-CYV9jli6.js",
+    "file": "assets/PackageBuilder-BcHpvK0v.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -55,7 +55,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-Dym_1hY7.js",
+    "file": "assets/PackagePage-DRSr5vsH.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -67,7 +67,7 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-CJuuC-1m.js",
+    "file": "assets/Profile-xY3eqQMm.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -79,7 +79,7 @@
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-CVKIOP-a.js",
+    "file": "assets/StudentManagement-BpSFpjDF.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -91,7 +91,7 @@
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-BP_ZwBHg.js",
+    "file": "assets/TutorSpace-YVBv-imJ.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,
@@ -101,7 +101,7 @@
       "resources/js/components/StudentManagement.vue"
     ],
     "css": [
-      "assets/TutorSpace-Dls7YAnH.css"
+      "assets/TutorSpace-DFi17fcG.css"
     ]
   }
 }
