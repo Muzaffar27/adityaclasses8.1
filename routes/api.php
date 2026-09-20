@@ -23,6 +23,10 @@ Route::post('/login',    [AuthController::class, 'login']);
 
 Route::post('/client-error', function (Request $request) {
     $payload = $request->all();
+    $cacheNames = array_slice(array_map(
+        fn ($name) => substr((string) $name, 0, 120),
+        is_array($payload['cacheNames'] ?? null) ? $payload['cacheNames'] : []
+    ), 0, 12);
     $context = [
         'type' => substr((string) ($payload['type'] ?? 'unknown'), 0, 120),
         'message' => substr((string) ($payload['message'] ?? ''), 0, 1000),
@@ -37,6 +41,32 @@ Route::post('/client-error', function (Request $request) {
         'ip' => $request->ip(),
     ];
 
+    if ($context['type'] === 'pdf-viewer-error') {
+        $workerState = is_array($payload['serviceWorkerState'] ?? null)
+            ? array_intersect_key($payload['serviceWorkerState'], array_flip(['active', 'waiting', 'installing']))
+            : [];
+        $context['pdf_diagnostics'] = [
+            'stage' => substr((string) ($payload['pdfStage'] ?? ''), 0, 80),
+            'page' => is_numeric($payload['pdfPage'] ?? null) ? (int) $payload['pdfPage'] : null,
+            'pages' => is_numeric($payload['pdfPages'] ?? null) ? (int) $payload['pdfPages'] : null,
+            'pdf_path' => substr((string) ($payload['pdfPath'] ?? ''), 0, 500),
+            'worker_path' => substr((string) ($payload['workerPath'] ?? ''), 0, 500),
+            'online' => filter_var($payload['online'] ?? null, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE),
+            'viewport' => [
+                'width' => is_numeric($payload['viewportWidth'] ?? null) ? (int) $payload['viewportWidth'] : null,
+                'height' => is_numeric($payload['viewportHeight'] ?? null) ? (int) $payload['viewportHeight'] : null,
+                'pixel_ratio' => is_numeric($payload['devicePixelRatio'] ?? null) ? (float) $payload['devicePixelRatio'] : null,
+            ],
+            'device_memory' => is_numeric($payload['deviceMemory'] ?? null) ? (float) $payload['deviceMemory'] : null,
+            'hardware_concurrency' => is_numeric($payload['hardwareConcurrency'] ?? null) ? (int) $payload['hardwareConcurrency'] : null,
+            'cache_names' => $cacheNames,
+            'service_worker_state' => array_map(
+                fn ($state) => substr((string) $state, 0, 40),
+                $workerState
+            ),
+        ];
+    }
+
     Log::warning('Frontend client error', $context);
 
     file_put_contents(
@@ -44,6 +74,19 @@ Route::post('/client-error', function (Request $request) {
         now()->toDateTimeString() . ' ' . json_encode($context, JSON_UNESCAPED_SLASHES) . PHP_EOL,
         FILE_APPEND | LOCK_EX
     );
+
+    if (
+        ($context['type'] === 'pdf-viewer-error') ||
+        in_array($context['display_mode'], ['standalone', 'ios-standalone'], true)
+    ) {
+        $pwaContext = $context;
+        unset($pwaContext['ip']);
+        file_put_contents(
+            storage_path('logs/pwa-errors.log'),
+            now()->toDateTimeString() . ' ' . json_encode($pwaContext, JSON_UNESCAPED_SLASHES) . PHP_EOL,
+            FILE_APPEND | LOCK_EX
+        );
+    }
 
     return response()->noContent();
 });

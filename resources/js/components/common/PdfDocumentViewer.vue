@@ -13,6 +13,8 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
+const pdfWorkerSrc = `${pdfWorkerUrl}?v=20260920-mime`;
+
 const props = defineProps({ url: { type: String, required: true } });
 const viewport = ref(null);
 const loading = ref(true);
@@ -30,6 +32,8 @@ function setCanvas(element, pageNumber) {
 
 async function loadDocument() {
     const version = ++renderVersion;
+    let failureStage = 'module-import';
+    let renderingPage = null;
     await documentTask?.destroy?.();
     documentTask = null;
     pdfDocument = null;
@@ -40,7 +44,9 @@ async function loadDocument() {
 
     try {
         const pdfjs = await import('pdfjs-dist/build/pdf.mjs');
-        pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+        failureStage = 'worker-setup';
+        pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+        failureStage = 'document-load';
         documentTask = pdfjs.getDocument(props.url);
         pdfDocument = await documentTask.promise;
         if (version !== renderVersion) return;
@@ -48,22 +54,27 @@ async function loadDocument() {
         await nextTick();
         loading.value = false;
         await nextTick();
-        await renderPages(version);
+        failureStage = 'page-render';
+        await renderPages(version, pageNumber => {
+            renderingPage = pageNumber;
+        });
     } catch (loadError) {
         if (version !== renderVersion) return;
         console.error('PDF rendering failed:', loadError);
+        reportPdfFailure(loadError, failureStage, renderingPage);
         error.value = true;
         loading.value = false;
     }
 }
 
-async function renderPages(version = ++renderVersion) {
+async function renderPages(version = ++renderVersion, onPage = () => {}) {
     if (!pdfDocument || !viewport.value) return;
     const availableWidth = Math.max(280, Math.min(viewport.value.clientWidth - 20, 1000));
     const outputScale = Math.min(window.devicePixelRatio || 1, 1.5);
 
     for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber++) {
         if (version !== renderVersion) return;
+        onPage(pageNumber);
         const page = await pdfDocument.getPage(pageNumber);
         const baseViewport = page.getViewport({ scale: 1 });
         const displayScale = availableWidth / baseViewport.width;
@@ -80,6 +91,49 @@ async function renderPages(version = ++renderVersion) {
             viewport: displayViewport,
             transform: outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0],
         }).promise;
+    }
+}
+
+async function reportPdfFailure(loadError, stage, pageNumber) {
+    let cacheNames = [];
+    let serviceWorkerState = null;
+
+    try {
+        if ('caches' in window) cacheNames = await window.caches.keys();
+    } catch (_) { }
+
+    try {
+        const registration = await navigator.serviceWorker?.getRegistration();
+        serviceWorkerState = {
+            active: registration?.active?.state || null,
+            waiting: registration?.waiting?.state || null,
+            installing: registration?.installing?.state || null,
+        };
+    } catch (_) { }
+
+    window.reportAdityaClientError?.('pdf-viewer-error', loadError, {
+        source: 'PdfDocumentViewer',
+        pdfStage: stage,
+        pdfPage: pageNumber,
+        pdfPages: pdfDocument?.numPages || null,
+        pdfPath: safePath(props.url),
+        workerPath: safePath(pdfWorkerSrc),
+        online: navigator.onLine,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio || 1,
+        deviceMemory: navigator.deviceMemory || null,
+        hardwareConcurrency: navigator.hardwareConcurrency || null,
+        cacheNames,
+        serviceWorkerState,
+    });
+}
+
+function safePath(url) {
+    try {
+        return new URL(url, window.location.origin).pathname;
+    } catch (_) {
+        return '';
     }
 }
 
