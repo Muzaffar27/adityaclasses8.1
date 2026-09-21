@@ -139,6 +139,14 @@ router.beforeEach(async (to) => {
     if (to.meta.guestOnly && auth.isLoggedIn) {
         return { name: "home" };
     }
+
+    if (
+        auth.isStudent &&
+        auth.user?.student_profile?.must_change_password &&
+        to.name !== "profile"
+    ) {
+        return { name: "profile" };
+    }
 });
 
 export default router;

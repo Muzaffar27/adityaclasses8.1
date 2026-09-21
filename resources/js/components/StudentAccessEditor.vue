@@ -64,7 +64,7 @@
                             {{ access.status }}
                         </span>
                         <span>
-                            {{ access.lessons?.length || 0 }} lesson{{ (access.lessons?.length || 0) === 1 ? '' : 's' }}
+                            {{ lessonCount(access) }} lesson{{ lessonCount(access) === 1 ? '' : 's' }}
                         </span>
                         <span class="expiry-chip" :class="{ 'is-expired': isExpired(access) }">
                             Exp: {{ formatExpiryDate(access.expires_at) }}
@@ -212,6 +212,10 @@ function isExpired(access) {
     return access?.status === 'accepted'
         && access?.expires_at
         && new Date(access.expires_at).getTime() < Date.now();
+}
+
+function lessonCount(access) {
+    return access?.lesson_count ?? access?.lessons?.length ?? 0;
 }
 </script>
 

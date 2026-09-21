@@ -92,9 +92,10 @@ Route::post('/client-error', function (Request $request) {
 });
 
 //User routes
-Route::get('/getStudents', [UserController::class, 'getStudents']);
-Route::post('/students/{id}/reset-password', [UserController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/getStudents', [UserController::class, 'getStudents']);
+    Route::put('/students/{student}/profile', [UserController::class, 'updateStudentProfile']);
+    Route::post('/students/{student}/reset-password', [UserController::class, 'resetPassword']);
     Route::put('/updateUserInfo', [UserController::class, 'updateUserInfo']);
     Route::put('/updateUserPwd', [UserController::class, 'updateUserPwd']);
 });

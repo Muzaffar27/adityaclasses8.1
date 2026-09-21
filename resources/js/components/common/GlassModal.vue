@@ -2,7 +2,7 @@
     <transition name="fade">
         <div v-if="modelValue" class="modal-overlay" @click.self="handleOverlay">
 
-            <div class="glass-modal glass-card">
+            <div class="glass-modal glass-card" :class="{ 'is-wide': size === 'wide' }">
 
                 <!-- HEADER -->
                 <div v-if="title" class="modal-header">
@@ -81,6 +81,11 @@ const props = defineProps({
     loading: {
         type: Boolean,
         default: false
+    },
+
+    size: {
+        type: String,
+        default: "default"
     }
 });
 
@@ -148,6 +153,18 @@ const handleOverlay = () => {
     background: rgba(30, 41, 59, 0.96);
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.glass-modal.is-wide {
+    max-height: min(90vh, 760px);
+    width: min(680px, calc(100% - 28px));
+}
+
+.glass-modal.is-wide .modal-body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 2px;
+    text-align: left;
 }
 
 @keyframes pop {

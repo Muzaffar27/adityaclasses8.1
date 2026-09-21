@@ -12,4 +12,9 @@ class Grade extends Model
     {
         return $this->hasMany(Lesson::class);
     }
+
+    public function studentProfiles()
+    {
+        return $this->hasMany(StudentProfile::class);
+    }
 }

@@ -28,11 +28,12 @@
             </button>
           </div>
 
-          <div v-if="auth.isLoggedIn" class="user-identity-chip">
+          <button v-if="auth.isLoggedIn" class="user-identity-chip" type="button" aria-label="Open my profile"
+            title="My profile" @click="goProfile">
 
             <span class="initials">{{ userInitials }}</span>
             <div class="online-indicator"></div>
-          </div>
+          </button>
           <slot name="actions" />
         </div>
 
@@ -88,6 +89,10 @@ function goBack() {
 
 function goHome() {
   router.push({ name: 'home' });
+}
+
+function goProfile() {
+  router.push({ name: 'profile' });
 }
 
 function enterAdmin() {
@@ -245,6 +250,16 @@ function enterAdmin() {
   justify-content: center;
   position: relative;
   border: 2px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+
+.user-identity-chip:hover,
+.user-identity-chip:focus-visible {
+  border-color: rgba(255, 255, 255, 0.42);
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .initials {

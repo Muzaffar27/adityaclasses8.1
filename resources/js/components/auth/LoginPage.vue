@@ -39,6 +39,8 @@
                     </label>
                 </div>
 
+                <p class="password-help">Forgot your password? Ask your tutor for a temporary password.</p>
+
                 <button type="submit" class="login-btn" :disabled="loading">
                     {{ loading ? 'Logging in...' : 'Login' }}
                 </button>
@@ -178,6 +180,13 @@ async function submit() {
 
 .register-link a {
     color: #a5b4fc;
+}
+
+.password-help {
+    color: rgba(203, 213, 225, 0.62);
+    font-size: 0.72rem;
+    margin: -0.25rem 0 0.85rem;
+    text-align: right;
 }
 
 .eye-icon {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -21,12 +22,18 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role'     => 'student',
-        ]);
+        $user = DB::transaction(function () use ($data) {
+            $user = User::create([
+                'name'     => $data['name'],
+                'email'    => $data['email'],
+                'password' => Hash::make($data['password']),
+                'role'     => 'student',
+            ]);
+
+            $user->studentProfile()->create();
+
+            return $user;
+        });
 
         // 🔥 CREATE TOKEN
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -90,11 +97,17 @@ class AuthController extends Controller
 
     private function formatUser(User $user): array
     {
+        if ($user->role === 'student') {
+            $user->loadMissing('studentProfile.grade:id,name');
+        }
+
         return [
-            'id'    => $user->id,
-            'name'  => $user->name,
+            'id' => $user->id,
+            'name' => $user->name,
             'email' => $user->email,
-            'role'  => $user->role,
+            'role' => $user->role,
+            'created_at' => $user->created_at,
+            'student_profile' => $user->role === 'student' ? $user->studentProfile : null,
         ];
     }
 }
