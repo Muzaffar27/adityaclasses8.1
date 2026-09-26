@@ -1,5 +1,5 @@
 <template>
-  <section class="main-layout-wrapper">
+  <section class="main-layout-wrapper" :class="{ 'dashboard-background': route.name === 'dashboard' }">
     <header class="smooth-header">
       <div class="header-inner">
 
@@ -57,12 +57,13 @@
 import { ArrowLeftIcon } from "@heroicons/vue/24/outline";
 import Loader from "./Loader.vue";
 import PwaInstallButton from "./PwaInstallButton.vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 const logoUrl = '/menu_logo.png';
 
 const props = defineProps({
@@ -71,7 +72,8 @@ const props = defineProps({
   showBack: { type: Boolean, default: true }
 });
 
-const showPwaInstallButton = computed(() => props.title === 'Home');
+const homeRoute = computed(() => auth.isStudent ? 'dashboard' : 'home');
+const showPwaInstallButton = computed(() => props.title === 'Home' || route.name === 'dashboard');
 
 const userInitials = computed(() => {
   if (!auth.user?.name) return '?';
@@ -84,11 +86,11 @@ const userInitials = computed(() => {
 
 function goBack() {
   const canGoBack = window.history.state?.back;
-  canGoBack ? router.back() : router.replace({ name: 'home' });
+  canGoBack ? router.back() : router.replace({ name: homeRoute.value });
 }
 
 function goHome() {
-  router.push({ name: 'home' });
+  router.push({ name: homeRoute.value });
 }
 
 function goProfile() {
@@ -109,6 +111,12 @@ function enterAdmin() {
 .main-layout-wrapper {
   min-height: 100vh;
   background: transparent;
+}
+
+.main-layout-wrapper.dashboard-background {
+  background:
+    radial-gradient(circle at top, rgba(79, 70, 229, 0.24), transparent 34%),
+    linear-gradient(135deg, #0f172a, #111827 52%, #020617);
 }
 
 /* ── The Floating Header ── */

@@ -3,7 +3,6 @@ import { useAuthStore } from "../stores/auth";
 import SubjectPage from "../components/SubjectPage.vue";
 import RegisterPage from "../components/auth/RegisterPage.vue";
 import LoginPage from "../components/auth/LoginPage.vue";
-import Dashboard from "../components/Dashboard.vue";
 import HomePage from "../components/HomePage.vue";
 import GradePage from "../components/GradePage.vue";
 import LessonPage from "../components/LessonPage.vue";
@@ -33,7 +32,7 @@ const routes = [
     {
         path: "/dashboard",
         name: "dashboard",
-        component: Dashboard,
+        component: () => import("../components/Dashboard.vue"),
         meta: { requiresAuth: true },
     },
     {
@@ -136,10 +135,6 @@ router.beforeEach(async (to) => {
     }
 
     // 🚫 Prevent logged-in users from going to login/register
-    if (to.meta.guestOnly && auth.isLoggedIn) {
-        return { name: "home" };
-    }
-
     if (
         auth.isStudent &&
         auth.user?.student_profile?.must_change_password &&
@@ -147,6 +142,15 @@ router.beforeEach(async (to) => {
     ) {
         return { name: "profile" };
     }
+
+    if (auth.isStudent && to.name === "home") {
+        return { name: "dashboard" };
+    }
+
+    if (to.meta.guestOnly && auth.isLoggedIn) {
+        return { name: auth.isStudent ? "dashboard" : "home" };
+    }
+
 });
 
 export default router;

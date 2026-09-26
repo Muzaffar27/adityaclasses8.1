@@ -13,7 +13,7 @@ export function getVimeoPlayerUrl(value) {
     if (!baseUrl) return '';
 
     const separator = baseUrl.includes('?') ? '&' : '?';
-    return `${baseUrl}${separator}autoplay=1&muted=0&quality=360p`;
+    return `${baseUrl}${separator}autoplay=1&muted=0&quality=360p&api=1`;
 }
 
 function decodeHtmlEntities(value) {

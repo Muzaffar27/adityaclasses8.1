@@ -91,7 +91,7 @@ async function submit() {
             password: form.password,
             remember: form.remember,
         })
-        router.push({ name: 'home' })
+        router.replace({ name: auth.isStudent ? 'dashboard' : 'home' })
     } catch (err) {
         if (err.response && err.response.data.errors) {
             Object.assign(errors, err.response.data.errors)

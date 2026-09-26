@@ -303,6 +303,12 @@ const openSubTopics = ref({});
 const isPlaying = ref(false);
 const videoHistoryEntryOpen = ref(false);
 const searchQuery = ref('');
+let activeVimeoFrame = null;
+let resumeApplied = false;
+let progressLoadPromise = Promise.resolve(0);
+let latestPlayback = { seconds: 0, duration: 0 };
+let lastSavedSecond = -30;
+let progressSaveInFlight = false;
 
 const paginatedTopics = computed(() => {
     return groupLessons(filteredLessons.value);
@@ -337,12 +343,16 @@ watch(searchQuery, () => {
 onMounted(() => {
     fetchLessons();
     window.addEventListener('popstate', handleHistoryBack);
+    window.addEventListener('message', handleVimeoMessage);
     document.addEventListener('fullscreenchange', handleVideoFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleVideoFullscreenChange);
 });
 
 onBeforeUnmount(() => {
+    void saveCurrentProgress(true);
+    detachVimeoPlayer();
     window.removeEventListener('popstate', handleHistoryBack);
+    window.removeEventListener('message', handleVimeoMessage);
     document.removeEventListener('fullscreenchange', handleVideoFullscreenChange);
     document.removeEventListener('webkitfullscreenchange', handleVideoFullscreenChange);
     releaseVideoOrientation();
@@ -383,6 +393,18 @@ async function fetchLessons() {
         hasAccess.value = data.access?.has_access || false;
         requestStatus.value = data.access?.status || null;
 
+        const resumeLessonId = Number(route.query.resume);
+        const resumeLesson = rawLessons.find(lesson => lesson.id === resumeLessonId);
+
+        if (hasAccess.value && resumeLesson?.vimeo_url) {
+            openTopics.value[resumeLesson.topic || 'General'] = true;
+            openSubTopics.value[getSubTopicKey(
+                resumeLesson.topic || 'General',
+                getSubTopicLabel(resumeLesson)
+            )] = true;
+            await openLesson(resumeLesson, route.query.video === 'answer' ? 'answer' : 'lesson');
+        }
+
     } catch (e) {
         console.error(e);
     } finally {
@@ -410,7 +432,62 @@ function toggleSubTopic(topic, subtopic) {
 const isTopicOpen = (topic) => openTopics.value[topic] === true;
 const isSubTopicOpen = (topic, subtopic) => openSubTopics.value[getSubTopicKey(topic, subtopic)] === true;
 
-function onVideoLoaded() { isVideoLoading.value = false; }
+function onVideoLoaded(event) {
+    detachVimeoPlayer();
+    isVideoLoading.value = false;
+
+    if (!event?.target || !selectedLesson.value) return;
+
+    activeVimeoFrame = event.target;
+    subscribeToVimeoEvents();
+}
+
+function postToVimeo(message) {
+    activeVimeoFrame?.contentWindow?.postMessage(message, 'https://player.vimeo.com');
+}
+
+function subscribeToVimeoEvents() {
+    ['timeupdate', 'pause', 'ended'].forEach((eventName) => {
+        postToVimeo({ method: 'addEventListener', value: eventName });
+    });
+    postToVimeo({ method: 'ping' });
+}
+
+async function handleVimeoMessage(event) {
+    if (!activeVimeoFrame || event.source !== activeVimeoFrame.contentWindow) return;
+    if (event.origin !== 'https://player.vimeo.com') return;
+
+    let message = event.data;
+
+    if (typeof message === 'string') {
+        try {
+            message = JSON.parse(message);
+        } catch {
+            return;
+        }
+    }
+
+    if (!message || typeof message !== 'object') return;
+
+    if (message.event === 'ready' || message.method === 'ping') {
+        ['timeupdate', 'pause', 'ended'].forEach((eventName) => {
+            postToVimeo({ method: 'addEventListener', value: eventName });
+        });
+
+        if (!resumeApplied) {
+            resumeApplied = true;
+            const resumeSeconds = await progressLoadPromise;
+
+            if (resumeSeconds >= 5) {
+                postToVimeo({ method: 'setCurrentTime', value: resumeSeconds });
+            }
+        }
+    }
+
+    if (message.event === 'timeupdate') handlePlaybackUpdate(message.data || {});
+    if (message.event === 'pause') handlePlaybackPause(message.data || latestPlayback);
+    if (message.event === 'ended') handlePlaybackEnded(message.data || latestPlayback);
+}
 
 function getFullscreenElement() {
     return document.fullscreenElement || document.webkitFullscreenElement || null;
@@ -479,10 +556,19 @@ function openPrimaryLesson(lesson) {
 }
 
 async function openLesson(lesson, mode = 'lesson') {
+    if (selectedLesson.value) {
+        void saveCurrentProgress(true);
+        detachVimeoPlayer();
+    }
+
     isVideoLoading.value = true;
     videoMode.value = mode;
     selectedLesson.value = lesson;
     isPlaying.value = false;
+    latestPlayback = { seconds: 0, duration: 0 };
+    lastSavedSecond = -30;
+    progressLoadPromise = loadSavedProgress(lesson.id, mode);
+    void markVideoViewed(lesson.id, mode);
     void requestVideoOrientation('any');
 
     if (!videoHistoryEntryOpen.value) {
@@ -522,13 +608,110 @@ function getVideoUrl(lesson) {
 
 function playAnswerVideo(lesson) {
     if (!lesson?.answer_vimeo_url) return;
+    void saveCurrentProgress(true);
+    detachVimeoPlayer();
     isVideoLoading.value = true;
     videoMode.value = 'answer';
+    latestPlayback = { seconds: 0, duration: 0 };
+    lastSavedSecond = -30;
+    progressLoadPromise = loadSavedProgress(lesson.id, 'answer');
+    void markVideoViewed(lesson.id, 'answer');
 }
 
 function playLessonVideo() {
+    void saveCurrentProgress(true);
+    detachVimeoPlayer();
     isVideoLoading.value = true;
     videoMode.value = 'lesson';
+    latestPlayback = { seconds: 0, duration: 0 };
+    lastSavedSecond = -30;
+    progressLoadPromise = loadSavedProgress(selectedLesson.value?.id, 'lesson');
+    void markVideoViewed(selectedLesson.value?.id, 'lesson');
+}
+
+async function markVideoViewed(lessonId, mode) {
+    if (!lessonId) return;
+
+    try {
+        await api.put(`/lesson-progress/${lessonId}`, {
+            video_type: mode,
+            viewed_only: true,
+        });
+    } catch (error) {
+        if (![403, 503].includes(error.response?.status)) {
+            console.warn('Could not mark video as viewed', error);
+        }
+    }
+}
+
+async function loadSavedProgress(lessonId, mode) {
+    if (!lessonId) return 0;
+
+    try {
+        const { data } = await api.get(`/lesson-progress/${lessonId}`, {
+            params: { video_type: mode },
+        });
+        return Number(data.position_seconds) || 0;
+    } catch (error) {
+        if (![403, 503].includes(error.response?.status)) {
+            console.warn('Could not load video progress', error);
+        }
+        return 0;
+    }
+}
+
+function handlePlaybackUpdate(data) {
+    latestPlayback = {
+        seconds: Number(data.seconds) || 0,
+        duration: Number(data.duration) || 0,
+    };
+
+    if (Math.abs(latestPlayback.seconds - lastSavedSecond) >= 30) {
+        void saveCurrentProgress();
+    }
+}
+
+function handlePlaybackPause(data) {
+    handlePlaybackUpdate(data);
+    void saveCurrentProgress(true);
+}
+
+function handlePlaybackEnded(data) {
+    latestPlayback = {
+        seconds: Number(data.seconds || data.duration) || 0,
+        duration: Number(data.duration) || 0,
+    };
+    void saveCurrentProgress(true);
+}
+
+async function saveCurrentProgress(force = false) {
+    const lessonId = selectedLesson.value?.id;
+    const { seconds, duration } = latestPlayback;
+
+    if (!lessonId || seconds < 1 || progressSaveInFlight) return;
+    if (!force && Math.abs(seconds - lastSavedSecond) < 30) return;
+
+    progressSaveInFlight = true;
+    lastSavedSecond = seconds;
+
+    try {
+        await api.put(`/lesson-progress/${lessonId}`, {
+            video_type: videoMode.value,
+            position_seconds: seconds,
+            duration_seconds: duration || null,
+        });
+    } catch (error) {
+        if (![403, 503].includes(error.response?.status)) {
+            console.warn('Could not save video progress', error);
+        }
+    } finally {
+        progressSaveInFlight = false;
+    }
+}
+
+function detachVimeoPlayer() {
+    activeVimeoFrame = null;
+    resumeApplied = false;
 }
 
 function getSubTopic(lesson) {
@@ -622,6 +805,8 @@ function closeLesson() {
 }
 
 function clearSelectedLesson() {
+    void saveCurrentProgress(true);
+    detachVimeoPlayer();
     selectedLesson.value = null;
     videoMode.value = 'lesson';
     isVideoLoading.value = false;

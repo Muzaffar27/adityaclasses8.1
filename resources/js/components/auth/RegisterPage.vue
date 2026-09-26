@@ -105,7 +105,7 @@ async function submit() {
             password: form.password,
             password_confirmation: form.passwordConfirmation,
         })
-        router.push({ name: 'home' })
+        router.replace({ name: 'dashboard' })
     } catch (err) {
         console.error('Full error:', err)
         console.error('Response:', err.response)
