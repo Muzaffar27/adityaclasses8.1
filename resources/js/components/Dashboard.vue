@@ -308,10 +308,19 @@ onMounted(fetchDashboard)
 .test-card { border-radius: 20px; min-height: 225px; padding: 1.3rem; }
 
 .resume-card {
-    background: linear-gradient(135deg, #312e81, #3730a3 55%, #4338ca);
-    border: 1px solid rgba(165, 180, 252, 0.32);
-    box-shadow: 0 18px 42px rgba(30, 27, 75, 0.34);
+    animation: resumePulse 2.5s ease-in-out infinite;
+    background:
+        linear-gradient(135deg, rgba(79, 70, 229, 0.28), rgba(99, 102, 241, 0.12)),
+        rgba(15, 23, 42, 0.68);
+    border: 1.5px solid rgba(99, 102, 241, 0.55);
+    box-shadow: 0 18px 42px rgba(30, 27, 75, 0.28);
     color: #fff;
+    position: relative;
+}
+
+@keyframes resumePulse {
+    0%, 100% { box-shadow: 0 18px 42px rgba(30, 27, 75, 0.28), 0 0 0 0 rgba(99, 102, 241, 0.4); }
+    50% { box-shadow: 0 18px 42px rgba(30, 27, 75, 0.28), 0 0 0 8px rgba(99, 102, 241, 0); }
 }
 
 .resume-top { align-items: center; display: flex; gap: 0.5rem; }
@@ -415,7 +424,10 @@ onMounted(fetchDashboard)
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .resume-card,
     .course-card,
     .profile-button { transition: none; }
+
+    .resume-card { animation: none; }
 }
 </style>

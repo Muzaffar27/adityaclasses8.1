@@ -143,10 +143,6 @@ router.beforeEach(async (to) => {
         return { name: "profile" };
     }
 
-    if (auth.isStudent && to.name === "home") {
-        return { name: "dashboard" };
-    }
-
     if (to.meta.guestOnly && auth.isLoggedIn) {
         return { name: auth.isStudent ? "dashboard" : "home" };
     }

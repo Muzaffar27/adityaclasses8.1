@@ -1,14 +1,26 @@
 <template>
-  <section class="main-layout-wrapper" :class="{ 'dashboard-background': route.name === 'dashboard' }">
+  <section class="main-layout-wrapper" :class="{ 'learning-background': ['dashboard', 'profile'].includes(route.name) }">
     <header class="smooth-header">
       <div class="header-inner">
 
         <div class="header-side-left">
           <transition name="fade">
-            <div v-if="showBack" class="header-action-btn" @click="goBack">
+            <button v-if="showBack" class="header-action-btn" type="button" aria-label="Go back" title="Back"
+              @click="goBack">
               <ArrowLeftIcon class="h-icon" />
-            </div>
+            </button>
           </transition>
+
+          <nav v-if="auth.isLoggedIn" class="header-quick-nav" aria-label="Primary navigation">
+            <router-link v-if="route.name !== 'home'" :to="{ name: 'home' }" class="header-nav-link"
+              active-class="is-active" exact-active-class="is-active" aria-label="Homepage" title="Homepage">
+              <HomeIcon class="h-icon" /><span>Home</span>
+            </router-link>
+            <router-link v-if="route.name !== 'dashboard'" :to="{ name: 'dashboard' }" class="header-nav-link"
+              active-class="is-active" aria-label="Dashboard" title="Dashboard">
+              <Squares2X2Icon class="h-icon" /><span>Dashboard</span>
+            </router-link>
+          </nav>
 
         </div>
 
@@ -54,7 +66,7 @@
 </template>
 
 <script setup>
-import { ArrowLeftIcon } from "@heroicons/vue/24/outline";
+import { ArrowLeftIcon, HomeIcon, Squares2X2Icon } from "@heroicons/vue/24/outline";
 import Loader from "./Loader.vue";
 import PwaInstallButton from "./PwaInstallButton.vue";
 import { useRoute, useRouter } from "vue-router";
@@ -113,7 +125,7 @@ function enterAdmin() {
   background: transparent;
 }
 
-.main-layout-wrapper.dashboard-background {
+.main-layout-wrapper.learning-background {
   background:
     radial-gradient(circle at top, rgba(79, 70, 229, 0.24), transparent 34%),
     linear-gradient(135deg, #0f172a, #111827 52%, #020617);
@@ -216,6 +228,7 @@ function enterAdmin() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  padding: 0;
   transition: all 0.2s ease;
 }
 
@@ -243,8 +256,50 @@ function enterAdmin() {
   justify-content: flex-start;
   /* Aligns content to the start */
   align-items: center;
+  gap: 8px;
   padding-left: 5px;
   /* Adjust this to 0 if you want it touching the edge */
+}
+
+.header-quick-nav {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.header-nav-link {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  color: rgba(226, 232, 240, 0.78);
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 750;
+  gap: 0.38rem;
+  min-height: 40px;
+  padding: 0 0.7rem;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.header-nav-link:hover,
+.header-nav-link:focus-visible,
+.header-nav-link.is-active {
+  background: rgba(79, 70, 229, 0.2);
+  border-color: rgba(129, 140, 248, 0.38);
+  color: #fff;
+  outline: none;
+}
+
+.header-nav-link:hover,
+.header-nav-link:focus-visible {
+  transform: translateY(-1px);
+}
+
+.header-nav-link .h-icon {
+  flex: 0 0 auto;
+  height: 18px;
+  width: 18px;
 }
 
 .user-identity-chip {
@@ -333,7 +388,29 @@ function enterAdmin() {
   }
 
   .header-side-left {
+    gap: 5px;
     padding-left: 2px;
+  }
+
+  .header-action-btn,
+  .header-nav-link {
+    border-radius: 11px;
+    height: 36px;
+    min-height: 36px;
+    width: 36px;
+  }
+
+  .header-nav-link {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .header-nav-link span {
+    display: none;
+  }
+
+  .header-quick-nav {
+    gap: 5px;
   }
 
   .tutor-space-btn {
