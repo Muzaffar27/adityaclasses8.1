@@ -10,7 +10,7 @@
     "src": "node_modules/pdfjs-dist/build/pdf.worker.min.mjs"
   },
   "resources/js/app.js": {
-    "file": "assets/app-Q1krp-8A.js",
+    "file": "assets/app-v9VWXXuO.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -31,7 +31,7 @@
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-CKhAF-r-.js",
+    "file": "assets/MyCourse-B0it2pul.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -43,7 +43,7 @@
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-B6IhAUqN.js",
+    "file": "assets/PackageBuilder-DErxVT9q.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -55,7 +55,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-eFrF7vpF.js",
+    "file": "assets/PackagePage-AnY7Ql6f.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -67,7 +67,7 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-shUztVQW.js",
+    "file": "assets/Profile-q5RptjG2.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -79,7 +79,7 @@
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-C9IszyUD.js",
+    "file": "assets/StudentManagement-D8nSGfQX.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -91,7 +91,7 @@
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-3NsAhzvo.js",
+    "file": "assets/TutorSpace-DAAMJlxT.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,
@@ -101,7 +101,7 @@
       "resources/js/components/StudentManagement.vue"
     ],
     "css": [
-      "assets/TutorSpace-DFi17fcG.css"
+      "assets/TutorSpace-CsM8LoCf.css"
     ]
   }
 }

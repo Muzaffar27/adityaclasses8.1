@@ -12,7 +12,10 @@
 
                     <div v-for="tool in tools" :key="tool.key" class="sidebar-item"
                         :class="{ active: currentView.name === tool.key }" @click="openView(tool.key)">
-                        <span class="icon">{{ tool.icon }}</span>
+                        <span class="icon">
+                            <component :is="tool.iconComponent" v-if="tool.iconComponent" />
+                            <template v-else>{{ tool.icon }}</template>
+                        </span>
 
                         <div class="text">
                             <p class="name">{{ tool.label }}</p>
@@ -51,11 +54,14 @@ import StudentManagement from "./StudentManagement.vue";
 import HomeImageManager from "./HomeImageManager.vue";
 import HomeDemoEditor from "./HomeDemoEditor.vue";
 import HomeFooterEditor from "./HomeFooterEditor.vue";
+import WhatsAppTest from "./WhatsAppTest.vue";
+import WhatsAppIcon from "./common/WhatsAppIcon.vue";
 
 const tools = [
     { key: "announcement", label: "Announcement", icon: "\u{1F4E2}", desc: "Site notice" },
     { key: "access", label: "Request Access", icon: "\u{1F465}", desc: "Approvals" },
     { key: "students", label: "Students", icon: "\u{1F393}", desc: "List" },
+    { key: "whatsapp", label: "WhatsApp", iconComponent: WhatsAppIcon, desc: "Report preview" },
     { key: "lessons", label: "Lessons", icon: "\u{1F4DA}", desc: "Create & Edit" },
     { key: "package", label: "Package", icon: "\u{1F4C2}", desc: "Create" },
     { key: "packageList", label: "Package List", icon: "\u{1F4E6}", desc: "List" },
@@ -76,6 +82,7 @@ const toolMap = {
     lessonList: LessonList,
     access: AccessRequestPage,
     students: StudentManagement,
+    whatsapp: WhatsAppTest,
     package: PackageBuilder,
     packageList: PackageList,
     demoVideos: HomeDemoEditor,
@@ -166,7 +173,16 @@ function handleNavigation(event) {
 }
 
 .icon {
+    align-items: center;
+    display: inline-flex;
     font-size: 18px;
+    justify-content: center;
+}
+
+.icon svg {
+    color: #86efac;
+    height: 18px;
+    width: 18px;
 }
 
 .text .name {
@@ -189,5 +205,32 @@ function handleNavigation(event) {
 /* RIGHT SIDE */
 .admin-content {
     flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+
+    .admin-sidebar {
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    .sidebar-list {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+    }
+
+    .sidebar-item {
+        flex: 0 0 138px;
+    }
+
+    .sidebar-item:hover {
+        transform: translateY(-1px);
+    }
 }
 </style>

@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\HomeImageController;
 use App\Http\Controllers\HomepageContentController;
+use App\Http\Controllers\WhatsAppController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -98,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/students/{student}/reset-password', [UserController::class, 'resetPassword']);
     Route::put('/updateUserInfo', [UserController::class, 'updateUserInfo']);
     Route::put('/updateUserPwd', [UserController::class, 'updateUserPwd']);
+    Route::post('/whatsapp/test', [WhatsAppController::class, 'sendTest']);
 });
 
 //Lessons routes
