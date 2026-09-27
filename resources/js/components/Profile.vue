@@ -401,16 +401,16 @@ async function updatePassword() {
 
 <style scoped>
 .profile-page {
-    --glass: rgba(255, 255, 255, 0.04);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --muted: rgba(203, 213, 225, 0.72);
+    --glass: var(--app-glass);
+    --glass-border: var(--app-border);
+    --muted: var(--app-muted);
     color: #fff;
     margin: 0 auto 2rem;
     width: 100%;
 }
 
 .profile-header {
-    background: linear-gradient(118deg, rgba(79, 70, 229, 0.16), rgba(255, 255, 255, 0.035) 48%, rgba(99, 102, 241, 0.07)), var(--glass);
+    background: var(--app-header);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
@@ -648,7 +648,7 @@ async function updatePassword() {
 }
 
 select.profile-input option {
-    background: #0f172a;
+    background: var(--app-panel);
     color: #f8fafc;
 }
 
@@ -665,7 +665,7 @@ select.profile-input option {
 }
 
 .form-actions .button {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    background: var(--app-primary-gradient);
     border: 1px solid transparent;
     border-radius: 999px;
     font-size: 0.76rem;
@@ -760,7 +760,7 @@ select.profile-input option {
     background: linear-gradient(145deg, rgba(69, 10, 10, 0.48), rgba(24, 12, 20, 0.88));
     border-color: rgba(248, 113, 113, 0.3);
     box-shadow: 0 16px 40px rgba(2, 6, 23, 0.24), inset 0 1px rgba(254, 202, 202, 0.035);
-    scroll-margin-top: 110px;
+    scroll-margin-top: 170px;
 }
 
 .security-card .eyebrow {

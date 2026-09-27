@@ -115,7 +115,7 @@ const handleOverlay = () => {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--app-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -137,7 +137,7 @@ const handleOverlay = () => {
     padding: 14px;
     border-radius: 14px;
 
-    background: rgba(30, 41, 59, 0.96);
+    background: var(--app-modal);
     border: 1px solid rgba(255, 255, 255, 0.12);
 
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -150,7 +150,7 @@ const handleOverlay = () => {
 
 .glass-modal:hover {
     transform: scale(1);
-    background: rgba(30, 41, 59, 0.96);
+    background: var(--app-modal);
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }

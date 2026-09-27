@@ -125,9 +125,11 @@ function handleNavigation(event) {
 /* LEFT SIDEBAR */
 .admin-sidebar {
     width: 240px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    background: var(--app-glass);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
     padding: 14px;
     backdrop-filter: blur(16px);
 }
@@ -136,7 +138,7 @@ function handleNavigation(event) {
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #6366f1;
+    color: var(--app-accent);
     margin-bottom: 10px;
 }
 
@@ -206,6 +208,10 @@ function handleNavigation(event) {
 .admin-content {
     flex: 1;
     min-width: 0;
+}
+
+.admin-content :deep(.package-container) {
+    padding: 0 !important;
 }
 
 @media (max-width: 768px) {

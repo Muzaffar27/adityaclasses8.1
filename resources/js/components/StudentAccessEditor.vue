@@ -221,7 +221,7 @@ function lessonCount(access) {
 
 <style scoped>
 .student-access-editor {
-    background: hsl(221, 14%, 9%);
+    background: var(--app-glass);
     border-left: 4px solid #4f46e5;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding: 0.85rem;
@@ -280,7 +280,7 @@ function lessonCount(access) {
 
 .access-card,
 .access-row {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--app-glass);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
 }

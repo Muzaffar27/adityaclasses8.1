@@ -262,8 +262,8 @@ onBeforeUnmount(closeViewer);
 .pdf-title { color: #fff; font-size: 0.8rem; font-weight: 700; }
 .pdf-status { color: #94a3b8; font-size: 0.68rem; }
 .pdf-status.uploaded { color: #34d399; }
-.pdf-modal { align-items: center; background: rgba(0, 0, 0, 0.86); display: flex; inset: 0; justify-content: center; padding: 1rem; position: fixed; z-index: 1000; }
-.pdf-viewer-card { background: #111827; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; flex-direction: column; height: 92vh; overflow: hidden; width: min(1000px, 96vw); }
+.pdf-modal { align-items: center; background: var(--app-overlay); display: flex; inset: 0; justify-content: center; padding: 1rem; position: fixed; z-index: 1000; }
+.pdf-viewer-card { background: var(--app-panel); border: 1px solid var(--app-border); border-radius: 12px; display: flex; flex-direction: column; height: 92vh; overflow: hidden; width: min(1000px, 96vw); }
 .pdf-viewer-header { align-items: center; color: #fff; display: flex; font-weight: 700; justify-content: space-between; padding: 0.7rem 0.9rem; }
 .pdf-viewer-card :deep(.pdf-document-viewer) { flex: 1; min-height: 0; }
 @media (max-width: 900px) { .pdf-grid { grid-template-columns: 1fr; } }

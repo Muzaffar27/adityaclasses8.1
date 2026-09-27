@@ -935,7 +935,7 @@ onMounted(async () => {
 }
 
 .table-wrapper {
-    background: white;
+    background: var(--app-glass);
     border-radius: 12px;
     overflow-x: auto;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -946,7 +946,8 @@ onMounted(async () => {
 }
 
 .mobile-card {
-    background: white;
+    background: var(--app-glass);
+    border: 1px solid var(--app-border);
     border-radius: 14px;
     padding: 14px;
     margin-bottom: 12px;
@@ -968,7 +969,7 @@ onMounted(async () => {
 
 .topic-header {
     padding: 12px;
-    background: #f5f5f5;
+    background: var(--app-glass);
     border-radius: 10px;
     margin-bottom: 10px;
     cursor: pointer;
@@ -1169,6 +1170,6 @@ onMounted(async () => {
 .glass-card {
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--app-border);
 }
 </style>

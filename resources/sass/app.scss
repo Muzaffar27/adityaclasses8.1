@@ -45,7 +45,7 @@ html.theme-dark {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    background-color: #1e293b;
+    background-color: var(--app-panel);
     z-index: 100;
     transition: transform 0.3s ease;
 
@@ -370,7 +370,7 @@ html.theme-dark {
     justify-content: center;
 
     padding: 20px;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
+    background: transparent;
 }
 
 /* CARD */
@@ -378,7 +378,7 @@ html.theme-dark {
     width: 100%;
     max-width: 400px;
 
-    background: #1e2a38;
+    background: var(--app-glass);
     border-radius: 20px;
     padding: 30px 25px;
 
@@ -413,7 +413,7 @@ html.theme-dark {
     padding: 10px 12px;
     border-radius: 10px;
 
-    background: #0f172a;
+    background: var(--app-input);
     border: 1px solid rgba(255, 255, 255, 0.08);
 
     color: #fff;
@@ -507,8 +507,8 @@ html.theme-dark {
 .glass-card {
     border-radius: 20px;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--app-glass);
+    border: 1px solid var(--app-border);
     position: relative;
     overflow: hidden;
     height: 100%;
@@ -516,7 +516,7 @@ html.theme-dark {
 
 .glass-card:hover {
     transform: translateY(-8px);
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--app-glass-hover);
     border-color: #4f46e5;
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
 }
@@ -558,7 +558,7 @@ html.theme-dark {
 .skeleton-card {
     height: 200px;
     border-radius: 20px;
-    background: linear-gradient(90deg, #121212 25%, #1a1a1a 50%, #121212 75%);
+    background: linear-gradient(90deg, var(--app-base) 25%, var(--app-raised) 50%, var(--app-base) 75%);
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
 }
@@ -649,7 +649,7 @@ html.theme-dark {
 /* page pill */
 .page-pill {
     border: none;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--app-glass-hover);
     color: #fff;
     padding: 6px 10px;
     border-radius: 8px;
@@ -704,7 +704,7 @@ html.theme-dark {
     padding: 10px;
     margin-top: 10px;
     border-radius: 10px;
-    background: rgba(0,0,0,0.2);
+    background: var(--app-inset);
     font-family: monospace;
     color: #fff;
 }
@@ -962,3 +962,6 @@ input[type="checkbox"]:disabled {
     border-color: #881337 !important;
     color: rgba(255, 247, 237, 0.75) !important;
   }
+
+// Shared theme follows framework and legacy defaults.
+@import "theme";

@@ -265,7 +265,7 @@ async function handleLogoutConfirm() {
     height: 32px;
     border-radius: 50%;
     color: white !important;
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: var(--app-border) !important;
     display: flex;
     align-items: center;
     justify-content: center;

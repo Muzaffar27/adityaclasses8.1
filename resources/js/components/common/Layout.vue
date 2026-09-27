@@ -125,12 +125,6 @@ function enterAdmin() {
   background: transparent;
 }
 
-.main-layout-wrapper.learning-background {
-  background:
-    radial-gradient(circle at top, rgba(79, 70, 229, 0.24), transparent 34%),
-    linear-gradient(135deg, #0f172a, #111827 52%, #020617);
-}
-
 /* ── The Floating Header ── */
 .smooth-header {
   overflow: visible !important;
@@ -223,7 +217,7 @@ function enterAdmin() {
   height: 42px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--app-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -312,7 +306,7 @@ function enterAdmin() {
   align-items: center;
   justify-content: center;
   position: relative;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--app-border);
   cursor: pointer;
   padding: 0;
   transition: border-color 0.18s ease, transform 0.18s ease;
@@ -345,12 +339,17 @@ function enterAdmin() {
 
 /* ── Content Area ── */
 .page-main-title {
-  font-size: 1.5rem;
+  background: var(--app-header);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+  padding: clamp(1.15rem, 3vw, 2.25rem);
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
   font-weight: 800;
-  color: #fff;
+  color: var(--app-text);
   margin-bottom: 1.5rem;
   text-align: left;
-  margin-left: 0.5rem;
+  overflow-wrap: anywhere;
 }
 
 /* Loader centering */
@@ -460,5 +459,25 @@ function enterAdmin() {
   background: #d97706 !important;
   border-color: #d97706;
   color: #2f1202;
+}
+
+@media (max-width: 360px) {
+  .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    height: auto;
+    row-gap: 8px;
+  }
+
+  .header-center {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: center;
+  }
+
+  .header-side-left,
+  .header-side-right {
+    grid-row: 2;
+    min-width: 0;
+  }
 }
 </style>

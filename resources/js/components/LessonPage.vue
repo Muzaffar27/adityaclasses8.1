@@ -885,7 +885,7 @@ function getVimeoThumbnail(url) {
 <style scoped>
 /* ── MOBILE OPTIMIZED MODAL ── */
 .inline-video-card {
-    background: #0f172a !important;
+    background: var(--app-panel) !important;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
@@ -897,7 +897,7 @@ function getVimeoThumbnail(url) {
     width: 100%;
     /* This maintains the 16:9 shape strictly */
     aspect-ratio: 16 / 9;
-    background: #000;
+    background: var(--app-panel);
 }
 
 .video-frame {
@@ -932,7 +932,7 @@ function getVimeoThumbnail(url) {
 }
 
 .close-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--app-border);
     border: none;
     color: #fff;
     padding: 8px;
@@ -988,7 +988,7 @@ function getVimeoThumbnail(url) {
 /* ── ANIMATIONS ── */
 /* ── ACCORDION ── */
 .lesson-finder {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: var(--app-glass) !important;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 1rem;
@@ -1023,7 +1023,7 @@ function getVimeoThumbnail(url) {
     top: 50%;
     width: 18px;
     height: 18px;
-    color: rgba(203, 213, 225, 0.72);
+    color: var(--app-muted);
     transform: translateY(-50%);
     pointer-events: none;
 }
@@ -1060,7 +1060,7 @@ function getVimeoThumbnail(url) {
 }
 
 .topic-header {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: var(--app-glass) !important;
     border-radius: 12px;
 }
 
@@ -1393,7 +1393,7 @@ function getVimeoThumbnail(url) {
 .locked-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--app-overlay);
     backdrop-filter: blur(2px);
     z-index: 10;
     display: flex;
@@ -1506,7 +1506,7 @@ function getVimeoThumbnail(url) {
     height: 100%;
 
     /* 2. Create the dark background */
-    background: #0f172a;
+    background: var(--app-panel);
     z-index: 10;
     /* Stay above the iframe while loading */
 
@@ -1526,7 +1526,7 @@ function getVimeoThumbnail(url) {
 .video-loading .loader {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
+    border: 3px solid var(--app-border);
     border-top-color: #4f46e5;
     /* Use your primary purple/blue */
     border-radius: 50%;
@@ -1564,7 +1564,7 @@ function getVimeoThumbnail(url) {
     font-size: 50px;
     color: white;
 
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--app-overlay);
     border-radius: 50%;
     padding: 10px 20px;
 

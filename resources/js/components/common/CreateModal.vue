@@ -86,7 +86,7 @@ onBeforeUnmount(() => {
 
 .modal-card-head {
     align-items: center;
-    background: linear-gradient(135deg, #1e293b, #172033);
+    background: var(--app-modal);
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     gap: 1rem;
     padding: 1rem 1.15rem;
@@ -111,9 +111,8 @@ onBeforeUnmount(() => {
 }
 
 .modal-card.is-form-tone .modal-card-head {
-    background:
-        linear-gradient(135deg, rgba(129, 140, 248, 0.12), transparent 42%),
-        linear-gradient(135deg, #344866 0%, #2b3b56 52%, #25324a 100%);
+    background: var(--app-header);
+    background-color: var(--app-panel);
     border-bottom-color: rgba(165, 180, 252, 0.3);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.08),

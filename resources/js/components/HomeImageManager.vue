@@ -191,7 +191,7 @@ onMounted(fetchImages);
 }
 
 .image-card {
-    background: hsl(221, 14%, 9%);
+    background: var(--app-glass);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     overflow: hidden;
@@ -199,7 +199,7 @@ onMounted(fetchImages);
 
 .image-preview {
     aspect-ratio: 16 / 9;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--app-glass);
 }
 
 .image-preview img {

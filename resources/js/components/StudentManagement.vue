@@ -598,7 +598,7 @@ onMounted(() => Promise.all([fetchStudents(), fetchGrades()]));
 }
 
 .table-wrapper {
-    background: hsl(221, 14%, 9%);
+    background: var(--app-glass);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     overflow: hidden;
@@ -616,7 +616,7 @@ onMounted(() => Promise.all([fetchStudents(), fetchGrades()]));
 }
 
 .access-filter {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--app-glass);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     display: inline-flex;
@@ -750,7 +750,7 @@ onMounted(() => Promise.all([fetchStudents(), fetchGrades()]));
 }
 
 .mobile-card {
-    background: hsl(221, 14%, 9%) !important;
+    background: var(--app-glass) !important;
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 14px;
     margin-bottom: 12px;

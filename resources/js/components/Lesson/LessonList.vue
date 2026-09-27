@@ -333,7 +333,7 @@ const subjectName = computed(() => lessons.value[0]?.subject?.name || '');
 }
 
 .table-wrapper {
-    background: white;
+    background: var(--app-glass);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);

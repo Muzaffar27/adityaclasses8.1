@@ -130,16 +130,14 @@ async function submit() {
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background:
-        radial-gradient(circle at top, rgba(79, 70, 229, 0.24), transparent 34%),
-        linear-gradient(135deg, #0f172a, #111827 52%, #020617);
+    background: transparent;
 }
 
 .login-card {
     width: 100%;
     max-width: 460px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--app-glass);
+    border: 1px solid var(--app-border);
     border-radius: 18px;
     padding: 28px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
@@ -181,13 +179,13 @@ async function submit() {
 }
 
 .input-field {
-    background: rgba(15, 23, 42, 0.82);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--app-input);
+    border: 1px solid var(--app-border);
     color: #fff;
 }
 
 .login-btn {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    background: var(--app-primary-gradient);
     box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
 }
 

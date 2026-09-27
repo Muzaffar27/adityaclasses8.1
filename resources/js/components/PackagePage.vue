@@ -487,7 +487,7 @@ watch(selectedPackage, () => {
 
 .duration-btn {
     border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--app-glass);
     color: #fff;
 }
 
@@ -575,7 +575,7 @@ watch(selectedPackage, () => {
 
 /* On mouse-over, add a slightly brighter background */
 .custom-checkbox:hover input~.checkmark {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--app-border);
     border-color: rgba(255, 255, 255, 0.3);
 }
 

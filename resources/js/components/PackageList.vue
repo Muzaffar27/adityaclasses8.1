@@ -229,7 +229,7 @@ onMounted(fetchPackages);
 
 .edit-panel {
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--app-glass);
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 

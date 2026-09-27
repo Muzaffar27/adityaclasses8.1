@@ -289,8 +289,8 @@ onBeforeUnmount(() => {
 .is-compact .resource-copy strong { font-size: 0.7rem; white-space: nowrap; }
 .is-compact .resource-copy small, .is-compact .resource-arrow { display: none; }
 .is-compact .answer-hide-button { flex: 1 1 100%; justify-content: center; padding: 0.15rem; }
-.pdf-screen { background: #0b1120; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; inset: 0; position: fixed; z-index: 2147483000; }
-.pdf-screen-header { align-items: center; background: #111827; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: grid; gap: 0.75rem; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 64px; padding: max(0.65rem, env(safe-area-inset-top)) 0.8rem 0.65rem; }
+.pdf-screen { background: var(--app-panel); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; inset: 0; position: fixed; z-index: 2147483000; }
+.pdf-screen-header { align-items: center; background: var(--app-panel); border-bottom: 1px solid var(--app-border); display: grid; gap: 0.75rem; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 64px; padding: max(0.65rem, env(safe-area-inset-top)) 0.8rem 0.65rem; }
 .pdf-back-button, .pdf-return-button { align-items: center; background: #4f46e5; border: 0; border-radius: 9px; color: #fff; cursor: pointer; display: inline-flex; font-size: 0.75rem; font-weight: 800; gap: 0.4rem; padding: 0.6rem 0.75rem; }
 .pdf-back-button svg, .pdf-return-button svg { height: 18px; width: 18px; }
 .pdf-back-button:focus-visible, .pdf-return-button:focus-visible { box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.55); outline: none; }
@@ -307,9 +307,9 @@ onBeforeUnmount(() => {
 .pdf-switch-button:disabled { cursor: wait; opacity: 0.6; }
 .pdf-switch-button svg { height: 16px; width: 16px; }
 .pdf-switch-button:focus-visible { box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.55); outline: none; }
-.pdf-screen-body { background: #374151; min-height: 0; overflow: hidden; }
+.pdf-screen-body { background: var(--app-panel); min-height: 0; overflow: hidden; }
 .pdf-screen-body :deep(.pdf-document-viewer) { height: 100%; }
-.pdf-screen-footer { background: #111827; border-top: 1px solid rgba(255, 255, 255, 0.1); display: none; padding: 0.55rem 0.75rem max(0.55rem, env(safe-area-inset-bottom)); }
+.pdf-screen-footer { background: var(--app-panel); border-top: 1px solid var(--app-border); display: none; padding: 0.55rem 0.75rem max(0.55rem, env(safe-area-inset-bottom)); }
 @media (max-width: 600px) {
     .pdf-screen-header { grid-template-columns: auto minmax(0, 1fr) auto; }
     .pdf-back-button span { display: none; }

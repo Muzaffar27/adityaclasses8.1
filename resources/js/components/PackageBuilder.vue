@@ -411,8 +411,14 @@ onMounted(async () => {
 
 <style scoped>
 .package-container {
-    max-width: 1050px;
-    margin: 0 auto;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+}
+
+.package-container > .is-flex {
+    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
 /* =========================
@@ -422,7 +428,14 @@ onMounted(async () => {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    border-radius: 14px;
+    border-radius: var(--app-radius);
+}
+
+.compact-card:hover {
+    transform: none;
+    background: var(--app-glass);
+    border-color: var(--app-border);
+    box-shadow: var(--app-shadow);
 }
 
 .package-actions {
@@ -454,7 +467,7 @@ onMounted(async () => {
 }
 
 .package-action-btn.is-primary-action {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    background: var(--app-primary-gradient);
     box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
 }
 
@@ -486,7 +499,7 @@ onMounted(async () => {
     margin: 4px 0;
     /* Reduced from 0.5rem */
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--app-border);
     opacity: 0.15;
 }
 
@@ -516,7 +529,7 @@ onMounted(async () => {
     font-size: 0.65rem;
     color: #cbd5e1;
 
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--app-glass);
     border: 1px solid rgba(255, 255, 255, 0.08);
 
     cursor: pointer;
@@ -532,7 +545,7 @@ onMounted(async () => {
 }
 
 .subject-pill-glass:hover {
-    background: rgba(15, 15, 20, 0.55);
+    background: var(--app-inset);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
     border-color: rgba(255, 255, 255, 0.08);
 }
@@ -579,7 +592,7 @@ onMounted(async () => {
 
 .item-mini:hover {
     transform: translateY(-4px);
-    background: rgba(15, 15, 20, 0.55);
+    background: var(--app-inset);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
     border-color: rgba(255, 255, 255, 0.08);
 }
@@ -705,6 +718,19 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
+    .compact-card > .columns {
+        flex-wrap: wrap;
+    }
+
+    .compact-card > .columns > .column {
+        flex: none;
+        width: 100%;
+    }
+
+    .custom-input {
+        font-size: 16px;
+    }
+
     .total-bar {
         align-items: stretch;
         flex-direction: column;

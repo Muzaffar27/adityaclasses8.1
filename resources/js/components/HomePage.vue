@@ -453,7 +453,7 @@ onMounted(async () => {
 .section-label {
   font-size: 0.68rem;
   font-weight: 700;
-  color: #6366f1;
+  color: var(--app-accent);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   display: flex;
@@ -781,7 +781,7 @@ onMounted(async () => {
   padding: 10px 22px;
   background: rgba(99, 102, 241, 0.06);
   border-top: 1px solid rgba(255, 255, 255, 0.07);
-  color: rgba(203, 213, 225, 0.72);
+  color: var(--app-muted);
   font-size: 0.68rem;
 }
 
@@ -809,7 +809,7 @@ onMounted(async () => {
   padding: 16px;
   border-radius: 18px;
 
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--app-glass);
   border: 1px solid rgba(255, 255, 255, 0.08);
 
   backdrop-filter: blur(16px);
@@ -910,7 +910,7 @@ onMounted(async () => {
 .video-placeholder {
   position: absolute;
   inset: 0;
-  background: #000;
+  background: var(--app-panel);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -924,7 +924,7 @@ onMounted(async () => {
   transform: translate(-50%, -50%);
   font-size: 50px;
   color: white;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--app-overlay);
   border-radius: 50%;
   padding: 10px 20px;
   display: flex;
@@ -935,7 +935,7 @@ onMounted(async () => {
 .video-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--app-overlay);
   z-index: 9999;
 
   display: flex;
@@ -951,7 +951,7 @@ onMounted(async () => {
   height: auto !important;
   border-radius: 14px;
   overflow: hidden;
-  background: #0f172a !important;
+  background: var(--app-panel) !important;
 
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
 }
@@ -1010,7 +1010,7 @@ onMounted(async () => {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: #000;
+  background: var(--app-panel);
   overflow: hidden;
   line-height: 0;
 }
@@ -1040,7 +1040,7 @@ onMounted(async () => {
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+  box-shadow: inset 0 0 0 1px var(--app-border),
     0 4px 15px rgba(0, 0, 0, 0.5);
   transform: translateZ(0);
 }

@@ -496,8 +496,8 @@ function uniqueSorted(values) {
     animation: slideDown 0.2s ease-out;
     border-left: 4px solid #4f46e5;
     /* Matches primary color */
-    background-color: #fafafa;
-    border-bottom: 1px solid #dbdbdb;
+    background-color: var(--app-inset);
+    border-bottom: 1px solid var(--app-border);
 }
 
 @keyframes slideDown {
@@ -552,7 +552,7 @@ function uniqueSorted(values) {
     overflow-y: auto;
     border: 1px solid rgba(148, 163, 184, 0.32);
     border-radius: 8px;
-    background: #111827;
+    background: var(--app-panel);
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
     padding: 0.25rem;
 }
@@ -643,8 +643,7 @@ input:checked+.slider:before {
 /* Base container style */
 .edit-form-container {
     animation: slideDown 0.2s ease-out;
-    background:
-        linear-gradient(145deg, #26324a 0%, #1d273b 100%) !important;
+    background: var(--app-panel) !important;
     border: 1px solid rgba(203, 213, 225, 0.22);
     border-radius: 14px;
     box-shadow:
@@ -655,8 +654,7 @@ input:checked+.slider:before {
 }
 
 .edit-form-container:hover {
-    background:
-        linear-gradient(145deg, #344866 0%, #273a56 100%) !important;
+    background: var(--app-raised) !important;
     border-color: rgba(147, 197, 253, 0.38);
     box-shadow:
         0 20px 46px rgba(0, 0, 0, 0.34),

@@ -312,8 +312,8 @@ onMounted(fetchContent);
 }
 
 .custom-input {
-    background: rgba(15, 23, 42, 0.82);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--app-input);
+    border: 1px solid var(--app-border);
     color: #fff;
     font-size: 0.8rem;
 }

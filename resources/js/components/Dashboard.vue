@@ -161,10 +161,10 @@ onMounted(fetchDashboard)
 
 <style scoped>
 .dashboard-surface {
-    --glass: rgba(255, 255, 255, 0.04);
-    --glass-hover: rgba(255, 255, 255, 0.065);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --muted: rgba(203, 213, 225, 0.72);
+    --glass: var(--app-glass);
+    --glass-hover: var(--app-glass-hover);
+    --glass-border: var(--app-border);
+    --muted: var(--app-muted);
     background: transparent;
     border: 0;
     border-radius: 0;
@@ -191,9 +191,7 @@ onMounted(fetchDashboard)
 
 .dashboard-header {
     align-items: center;
-    background:
-        linear-gradient(118deg, rgba(79, 70, 229, 0.16), rgba(255, 255, 255, 0.035) 48%, rgba(99, 102, 241, 0.07)),
-        var(--glass);
+    background: var(--app-header);
     border-radius: 20px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
     display: flex;

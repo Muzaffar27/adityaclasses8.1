@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.pdf-document-viewer { background: #252a33; height: 100%; overflow: auto; overscroll-behavior: contain; width: 100%; }
+.pdf-document-viewer { background: var(--app-panel); height: 100%; overflow: auto; overscroll-behavior: contain; width: 100%; }
 .pdf-pages { align-items: center; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.65rem; }
 .pdf-pages canvas { background: #fff; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3); display: block; max-width: 100%; }
 .pdf-viewer-state { align-items: center; color: #dbeafe; display: flex; font-size: 0.85rem; font-weight: 700; height: 100%; justify-content: center; padding: 2rem; text-align: center; }

@@ -1,0 +1,120 @@
+// Shared visual theme. Keep semantic warning, success and security colours in components.
+:root {
+    --app-background: radial-gradient(circle at top, rgba(79, 70, 229, 0.24), transparent 34%),
+        linear-gradient(135deg, #0f172a, #111827 52%, #020617);
+    --app-base: #0f172a;
+    --app-panel: #162033;
+    --app-raised: #1e293b;
+    --app-glass: rgba(255, 255, 255, 0.04);
+    --app-glass-hover: rgba(255, 255, 255, 0.065);
+    --app-border: rgba(255, 255, 255, 0.1);
+    --app-muted: rgba(203, 213, 225, 0.72);
+    --app-text: #f8fafc;
+    --app-accent: #a5b4fc;
+    --app-primary: #4f46e5;
+    --app-primary-gradient: linear-gradient(135deg, #4f46e5, #6366f1);
+    --app-input: rgba(15, 23, 42, 0.82);
+    --app-inset: rgba(15, 23, 42, 0.55);
+    --app-overlay: rgba(2, 6, 23, 0.78);
+    --app-modal: linear-gradient(145deg, #1e293b, #111827);
+    --app-header: linear-gradient(118deg, rgba(79, 70, 229, 0.16), rgba(255, 255, 255, 0.035) 48%, rgba(99, 102, 241, 0.07)), var(--app-glass);
+    --app-radius: 20px;
+    --app-shadow: 0 16px 40px rgba(2, 6, 23, 0.2);
+    --app-blur: 18px;
+}
+
+html.theme-dark {
+    background: var(--app-base);
+    color-scheme: dark;
+}
+
+body {
+    background: var(--app-base);
+    color: var(--app-text);
+    min-height: 100vh;
+}
+
+.app-layout {
+    isolation: isolate;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+// Size the backdrop to the screen, so long tutor pages and short student pages
+// show the same gradient. This also avoids mobile background-attachment quirks.
+.app-layout::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--app-background);
+}
+
+// Bulma defaults otherwise introduce charcoal panels within the navy theme.
+.box,
+.card {
+    --bulma-box-background-color: var(--app-glass);
+    --bulma-box-color: var(--app-text);
+    --bulma-box-radius: var(--app-radius);
+    --bulma-card-background-color: var(--app-glass);
+    --bulma-card-color: var(--app-text);
+    --bulma-card-radius: var(--app-radius);
+    border: 1px solid var(--app-border);
+    box-shadow: var(--app-shadow);
+}
+
+.table {
+    --bulma-table-background-color: transparent;
+    --bulma-table-color: var(--app-text);
+    --bulma-table-cell-border-color: var(--app-border);
+    --bulma-table-head-cell-color: var(--app-text);
+    --bulma-table-cell-heading-color: var(--app-text);
+    --bulma-table-row-hover-background-color: var(--app-glass-hover);
+    --bulma-table-striped-row-even-background-color: var(--app-glass);
+    --bulma-table-striped-row-even-hover-background-color: var(--app-glass-hover);
+}
+
+.input,
+.textarea,
+.select select {
+    background-color: var(--app-input);
+    border-color: var(--app-border);
+    color: var(--app-text);
+    border-radius: 10px;
+    max-width: 100%;
+}
+
+.input::placeholder,
+.textarea::placeholder { color: var(--app-muted); }
+.select select option { background: var(--app-panel); color: var(--app-text); }
+
+.input:focus,
+.textarea:focus,
+.select select:focus {
+    border-color: var(--app-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
+}
+
+.modal-background { background: var(--app-overlay); }
+.modal-card-head,
+.modal-card-foot,
+.modal-card-body { background: var(--app-panel); color: var(--app-text); }
+.modal-card-head,
+.modal-card-foot { border-color: var(--app-border); }
+.modal-card { border-radius: var(--app-radius); }
+
+// Optional primitives for new pages; scoped components also consume these tokens.
+.theme-surface {
+    background: var(--app-glass);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    backdrop-filter: blur(var(--app-blur));
+    -webkit-backdrop-filter: blur(var(--app-blur));
+}
+.theme-header { background: var(--app-header); }
+
+@media (max-width: 768px) {
+    .input, .textarea, .select select { font-size: 16px; }
+    .empty-container { padding: 1.5rem 1rem; }
+}
