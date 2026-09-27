@@ -171,10 +171,10 @@ onMounted(fetchDashboard)
     box-shadow: none;
     color: #fff;
     margin: 0 auto 2rem;
-    max-width: 1480px;
+    width: 100%;
     min-height: calc(100vh - 130px);
     overflow: visible;
-    padding: clamp(1rem, 2.2vw, 2rem);
+    padding: 0;
 }
 
 .dashboard-header,
@@ -307,20 +307,23 @@ onMounted(fetchDashboard)
 .start-card,
 .test-card { border-radius: 20px; min-height: 225px; padding: 1.3rem; }
 
+.resume-card,
+.start-card {
+    background: linear-gradient(145deg, rgba(124, 45, 18, 0.48), rgba(28, 17, 12, 0.88));
+    border: 1px solid rgba(251, 146, 60, 0.3);
+    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.24), inset 0 1px rgba(254, 215, 170, 0.035);
+}
+
 .resume-card {
     animation: resumePulse 2.5s ease-in-out infinite;
-    background:
-        linear-gradient(135deg, rgba(79, 70, 229, 0.28), rgba(99, 102, 241, 0.12)),
-        rgba(15, 23, 42, 0.68);
-    border: 1.5px solid rgba(99, 102, 241, 0.55);
-    box-shadow: 0 18px 42px rgba(30, 27, 75, 0.28);
+    border-width: 1.5px;
     color: #fff;
     position: relative;
 }
 
 @keyframes resumePulse {
-    0%, 100% { box-shadow: 0 18px 42px rgba(30, 27, 75, 0.28), 0 0 0 0 rgba(99, 102, 241, 0.4); }
-    50% { box-shadow: 0 18px 42px rgba(30, 27, 75, 0.28), 0 0 0 8px rgba(99, 102, 241, 0); }
+    0%, 100% { box-shadow: 0 18px 42px rgba(2, 6, 23, 0.24), 0 0 0 0 rgba(234, 88, 12, 0.24); }
+    50% { box-shadow: 0 18px 42px rgba(2, 6, 23, 0.24), 0 0 0 8px rgba(234, 88, 12, 0); }
 }
 
 .resume-top { align-items: center; display: flex; gap: 0.5rem; }
@@ -329,25 +332,29 @@ onMounted(fetchDashboard)
 .resume-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .resume-time { background: rgba(15, 23, 42, 0.28); border-radius: 999px; font-size: 0.68rem; font-weight: 800; margin-left: auto; padding: 0.3rem 0.55rem; }
 .resume-content { margin-top: 1.15rem; }
-.resume-content p { color: rgba(224, 231, 255, 0.78); font-size: 0.68rem; margin: 0 0 0.3rem; }
+.resume-content p { color: rgba(255, 237, 213, 0.78); font-size: 0.68rem; margin: 0 0 0.3rem; }
 .resume-content h3 { color: #fff; font-size: clamp(1.1rem, 2.5vw, 1.45rem); margin: 0; }
 .answer-tag { background: rgba(255, 255, 255, 0.14); border-radius: 999px; display: inline-block; font-size: 0.62rem; font-weight: 800; margin-top: 0.45rem; padding: 0.26rem 0.48rem; }
 .progress-track { background: rgba(255, 255, 255, 0.18); border-radius: 999px; height: 8px; margin-top: 1.3rem; overflow: hidden; }
-.progress-track span { background: rgba(203, 213, 225, 0.88); border-radius: inherit; display: block; height: 100%; min-width: 4px; }
+.progress-track span { background: #fb923c; border-radius: inherit; display: block; height: 100%; min-width: 4px; }
 .resume-footer { align-items: center; display: flex; justify-content: space-between; margin-top: 0.7rem; }
-.resume-footer small { color: rgba(238, 242, 255, 0.8); font-size: 0.64rem; }
+.resume-footer small { color: rgba(255, 237, 213, 0.8); font-size: 0.64rem; }
 .resume-footer button,
 .start-card button { align-items: center; border: 0; border-radius: 999px; cursor: pointer; display: flex; font-size: 0.72rem; font-weight: 800; gap: 0.35rem; min-height: 38px; padding: 0.5rem 0.75rem; }
-.resume-footer button {
-    background: rgba(15, 23, 42, 0.78);
-    border: 1px solid rgba(199, 210, 254, 0.2);
-    color: #eef2ff;
+.resume-footer button,
+.start-card button {
+    background: #9a3412;
+    border: 1px solid rgba(253, 186, 116, 0.3);
+    color: #fff7ed;
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 .resume-footer button:hover,
-.resume-footer button:focus-visible {
-    background: rgba(30, 41, 59, 0.92);
-    border-color: rgba(199, 210, 254, 0.42);
+.resume-footer button:focus-visible,
+.start-card button:hover,
+.start-card button:focus-visible {
+    background: #c2410c;
+    border-color: #fdba74;
+    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.14);
     outline: none;
     transform: translateY(-1px);
 }
@@ -357,6 +364,10 @@ onMounted(fetchDashboard)
 .start-card { align-items: flex-start; display: grid; gap: 0.75rem; grid-template-columns: auto minmax(0, 1fr); }
 .start-icon,
 .test-icon { align-items: center; background: rgba(99, 102, 241, 0.16); border-radius: 12px; color: #a5b4fc; display: flex; height: 42px; justify-content: center; width: 42px; }
+.resume-icon,
+.start-icon { background: rgba(249, 115, 22, 0.14); color: #fdba74; }
+.resume-label,
+.start-card .card-kicker { color: #fdba74; }
 .start-icon svg,
 .test-icon svg { height: 21px; width: 21px; }
 .start-card h3,
@@ -365,10 +376,19 @@ onMounted(fetchDashboard)
 .start-card p:not(.card-kicker),
 .test-card p:not(.card-kicker),
 .empty-courses p { color: var(--muted); font-size: 0.71rem; line-height: 1.5; margin: 0.25rem 0 0; }
-.start-card button { background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; grid-column: 1 / -1; justify-self: start; margin-top: auto; }
-.test-card { display: flex; flex-direction: column; justify-content: space-between; }
+.start-card button { grid-column: 1 / -1; justify-self: start; margin-top: auto; }
+.test-card {
+    background: linear-gradient(145deg, rgba(6, 78, 59, 0.28), rgba(8, 20, 16, 0.6)), #10251f;
+    border-color: rgba(52, 211, 153, 0.3);
+    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.24), inset 0 1px rgba(167, 243, 208, 0.035);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.test-card .test-icon { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; }
+.test-card .card-kicker { color: #6ee7b7; }
 .test-card-top { align-items: center; display: flex; justify-content: space-between; }
-.soon-badge { background: rgba(99, 102, 241, 0.14); border: 1px solid rgba(129, 140, 248, 0.2); border-radius: 999px; color: #c7d2fe; font-size: 0.6rem; font-weight: 800; padding: 0.32rem 0.52rem; }
+.soon-badge { background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 999px; color: #a7f3d0; font-size: 0.6rem; font-weight: 800; padding: 0.32rem 0.52rem; }
 
 .course-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .course-card { align-items: center; border-radius: 18px; color: inherit; cursor: pointer; display: grid; gap: 0.75rem; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 92px; padding: 0.85rem; text-align: left; transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease; }
@@ -402,7 +422,7 @@ onMounted(fetchDashboard)
 }
 
 @media (max-width: 760px) {
-    .dashboard-surface { min-height: calc(100vh - 118px); padding: 0.8rem; }
+    .dashboard-surface { min-height: calc(100vh - 118px); }
     .dashboard-header { align-items: flex-start; flex-direction: column; gap: 1rem; min-height: 0; padding: 1.15rem; }
     .profile-button { min-height: 40px; }
     .stats-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }

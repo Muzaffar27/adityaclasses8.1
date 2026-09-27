@@ -1,6 +1,11 @@
 <template>
-    <Layout title="My Profile" :loading="false">
+    <Layout title="" :loading="false">
         <div v-if="user" class="profile-page">
+            <header class="profile-header">
+                <p class="eyebrow">Your account</p>
+                <h1>My profile</h1>
+                <p>Manage your personal details and keep your account secure.</p>
+            </header>
             <div v-if="profile.must_change_password" class="password-notice" role="alert">
                 <div>
                     <strong>Your temporary password needs to be changed.</strong>
@@ -396,8 +401,35 @@ async function updatePassword() {
 
 <style scoped>
 .profile-page {
-    margin: 0 auto;
-    max-width: 1120px;
+    --glass: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --muted: rgba(203, 213, 225, 0.72);
+    color: #fff;
+    margin: 0 auto 2rem;
+    width: 100%;
+}
+
+.profile-header {
+    background: linear-gradient(118deg, rgba(79, 70, 229, 0.16), rgba(255, 255, 255, 0.035) 48%, rgba(99, 102, 241, 0.07)), var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    margin-bottom: 1rem;
+    padding: clamp(1.25rem, 3vw, 2.25rem);
+}
+
+.profile-header h1 {
+    color: #fff;
+    font-size: clamp(1.65rem, 4vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin: 0;
+}
+
+.profile-header > p:not(.eyebrow) {
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-top: 0.4rem;
 }
 
 .password-notice {
@@ -433,15 +465,21 @@ async function updatePassword() {
     align-items: start;
     display: grid;
     gap: 1rem;
-    grid-template-columns: minmax(220px, 0.7fr) minmax(0, 2fr);
+    grid-template-columns: minmax(240px, 0.7fr) minmax(0, 2fr);
 }
 
 .summary-card,
 .profile-card {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.74), rgba(15, 23, 42, 0.78));
-    border: 1px solid rgba(148, 163, 184, 0.13);
-    border-radius: 18px;
-    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.2);
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+}
+
+.profile-header,
+.summary-card,
+.profile-card {
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 }
 
 .summary-card {
@@ -453,11 +491,10 @@ async function updatePassword() {
 
 .profile-avatar {
     align-items: center;
-    background: linear-gradient(135deg, #4f46e5, #818cf8);
+    background: rgba(99, 102, 241, 0.18);
     border: 3px solid rgba(255, 255, 255, 0.11);
     border-radius: 22px;
-    box-shadow: 0 14px 28px rgba(79, 70, 229, 0.28);
-    color: white;
+    color: #a5b4fc;
     display: flex;
     font-size: 1.55rem;
     font-weight: 850;
@@ -501,9 +538,8 @@ async function updatePassword() {
 }
 
 .grade-tag {
-    background: rgba(14, 165, 233, 0.1);
-    border-color: rgba(56, 189, 248, 0.25);
-    color: #bae6fd;
+    background: rgba(129, 140, 248, 0.14);
+    color: #e0e7ff;
 }
 
 .summary-meta {
@@ -561,11 +597,11 @@ async function updatePassword() {
 }
 
 .eyebrow {
-    color: #818cf8;
-    font-size: 0.62rem;
-    font-weight: 850;
+    color: #a5b4fc;
+    font-size: 0.69rem;
+    font-weight: 800;
     letter-spacing: 0.1em;
-    margin-bottom: 0.16rem;
+    margin-bottom: 0.38rem;
     text-transform: uppercase;
 }
 
@@ -629,14 +665,18 @@ select.profile-input option {
 }
 
 .form-actions .button {
-    border-radius: 10px;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    border: 1px solid transparent;
+    border-radius: 999px;
     font-size: 0.76rem;
     font-weight: 800;
-    min-height: 40px;
+    min-height: 44px;
 }
 
-.academic-card {
-    border-color: rgba(56, 189, 248, 0.17);
+.form-actions .button:hover,
+.form-actions .button:focus-visible {
+    border-color: #a5b4fc;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
 }
 
 .locked-phone {
@@ -720,6 +760,7 @@ select.profile-input option {
     background: linear-gradient(145deg, rgba(69, 10, 10, 0.48), rgba(24, 12, 20, 0.88));
     border-color: rgba(248, 113, 113, 0.3);
     box-shadow: 0 16px 40px rgba(2, 6, 23, 0.24), inset 0 1px rgba(254, 202, 202, 0.035);
+    scroll-margin-top: 110px;
 }
 
 .security-card .eyebrow {
@@ -736,8 +777,11 @@ select.profile-input option {
     border-color: transparent;
 }
 
-.security-card .form-actions .button:hover {
+.security-card .form-actions .button:hover,
+.security-card .form-actions .button:focus-visible {
     background: #dc2626;
+    border-color: #fca5a5;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14);
 }
 
 .strength-row {
@@ -767,6 +811,10 @@ select.profile-input option {
 }
 
 @media (max-width: 768px) {
+    .profile-header {
+        padding: 1.15rem;
+    }
+
     .profile-grid {
         grid-template-columns: 1fr;
     }
