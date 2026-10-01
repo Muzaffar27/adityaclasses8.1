@@ -11,7 +11,7 @@
                 <span class="resource-icon"><DocumentTextIcon /></span>
                 <span class="resource-copy">
                     <strong>{{ loadingType === 'lesson' ? 'Loading lesson...' : 'Open PDF lesson' }}</strong>
-                    <small>{{ lesson.progress?.pdfs?.lesson === 'viewed' ? 'Viewed · Read again' : 'Read the lesson material' }}</small>
+                    <small>Read the lesson material</small>
                 </span>
                 <ChevronRightIcon class="resource-arrow" />
             </button>
@@ -21,7 +21,7 @@
                 <span class="resource-icon"><DocumentTextIcon /></span>
                 <span class="resource-copy">
                     <strong>{{ loadingType === question.type ? 'Loading questions...' : question.label }}</strong>
-                    <small>{{ lesson.progress?.pdfs?.[question.type] === 'viewed' ? 'Viewed · Open again' : `Open ${question.description}` }}</small>
+                    <small>Open {{ question.description }}</small>
                 </span>
                 <ChevronRightIcon class="resource-arrow" />
             </button>
@@ -41,7 +41,7 @@
                     <span class="resource-icon"><VideoCameraIcon /></span>
                     <span class="resource-copy">
                         <strong>{{ showingAnswerVideo ? 'Return to lesson video' : 'Watch answer video' }}</strong>
-                        <small>{{ showingAnswerVideo ? 'Continue with the original lesson' : answerProgressLabel }}</small>
+                        <small>{{ showingAnswerVideo ? 'Continue with the original lesson' : 'Play the tutor\'s video solution' }}</small>
                     </span>
                     <ChevronRightIcon class="resource-arrow" />
                 </button>
@@ -50,7 +50,7 @@
                     <span class="resource-icon"><DocumentTextIcon /></span>
                     <span class="resource-copy">
                         <strong>{{ loadingType === 'answer' ? 'Loading answer...' : 'Open answer PDF' }}</strong>
-                        <small>{{ lesson.progress?.pdfs?.answer === 'viewed' ? 'Viewed · Open again' : 'View the written answers' }}</small>
+                        <small>View the written answers</small>
                     </span>
                     <ChevronRightIcon class="resource-arrow" />
                 </button>
@@ -111,13 +111,7 @@ const props = defineProps({
     includeAnswerVideo: { type: Boolean, default: true },
     returnLabel: { type: String, default: 'lesson video' },
 });
-const emit = defineEmits(['play-answer-video', 'play-lesson-video', 'pdf-viewed']);
-const answerProgressLabel = computed(() => {
-    const progress = props.lesson.progress?.answer_video;
-    if (progress?.status === 'completed') return 'Completed · Watch again';
-    if (progress?.status === 'in_progress') return `In progress · ${progress.percent}% · Resume`;
-    return 'Not started · Video solution';
-});
+const emit = defineEmits(['play-answer-video', 'play-lesson-video']);
 const loadingType = ref('');
 const answersRevealed = ref(false);
 const viewerUrl = ref('');
@@ -217,7 +211,6 @@ async function openPdf(type) {
         const oldUrl = viewerUrl.value;
         viewerType.value = type;
         viewerUrl.value = URL.createObjectURL(data);
-        emit('pdf-viewed', props.lesson.id);
         if (!isSwitching) {
             previousBodyOverflow = document.body.style.overflow;
             document.body.style.overflow = 'hidden';

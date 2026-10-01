@@ -29,11 +29,15 @@
 
             <div v-for="group in paginatedTopics" :key="group.topic">
 
-                <div class="glass-card topic-header p-4 mb-2 clickable-card" @click.stop="toggleTopic(group.topic)">
+                <div class="glass-card topic-header p-4 mb-2 clickable-card"
+                    :class="{ 'topic-completed': group.isCompleted }" @click.stop="toggleTopic(group.topic)">
                     <div class="topic-header-row">
                         <h2 class="title is-6 has-text-white mb-0 header-list-title">{{ group.topic }}</h2>
                         <span class="tag is-dark-accent lesson-count-tag">
                             {{ group.lessons.length }} lessons
+                        </span>
+                        <span v-if="group.isCompleted" class="topic-complete-badge">
+                            <CheckCircleIcon /> Topic completed
                         </span>
 
                         <div class="header-arrow">
@@ -101,7 +105,7 @@
                                                             <p class="mt-2">Buffering...</p>
                                                         </div>
                                                     </div>
-                                                    <LessonPdfResources @pdf-viewed="refreshLessonProgress" :lesson="lesson"
+                                                    <LessonPdfResources :lesson="lesson"
                                                         :showing-answer-video="videoMode === 'answer'"
                                                         @play-answer-video="playAnswerVideo(lesson)"
                                                         @play-lesson-video="playLessonVideo" />
@@ -154,7 +158,7 @@
 
                                                     </div>
 
-                                                    <LessonProgressStatus v-if="hasAccess" :progress="lesson.progress" />
+                                                    <LessonProgressStatus v-if="hasAccess && lesson.vimeo_url" :progress="lesson.progress" />
 
                                                     <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
                                                         <button v-if="lesson.vimeo_url" type="button" class="lesson-play-action"
@@ -162,7 +166,7 @@
                                                             <PlayIcon />
                                                             <span>{{ lessonAction(lesson) }}</span>
                                                         </button>
-                                                        <LessonPdfResources @pdf-viewed="refreshLessonProgress" :ref="el => setResourceRef(lesson.id, el)"
+                                                        <LessonPdfResources :ref="el => setResourceRef(lesson.id, el)"
                                                             :lesson="lesson" compact return-label="lessons"
                                                             @play-answer-video="openLesson(lesson, 'answer')"
                                                             @play-lesson-video="openLesson(lesson)" />
@@ -203,7 +207,7 @@
                                             <p class="mt-2">Buffering...</p>
                                         </div>
                                     </div>
-                                    <LessonPdfResources @pdf-viewed="refreshLessonProgress" :lesson="lesson"
+                                    <LessonPdfResources :lesson="lesson"
                                         :showing-answer-video="videoMode === 'answer'"
                                         @play-answer-video="playAnswerVideo(lesson)"
                                         @play-lesson-video="playLessonVideo" />
@@ -254,7 +258,7 @@
 
                                     </div>
 
-                                    <LessonProgressStatus v-if="hasAccess" :progress="lesson.progress" />
+                                    <LessonProgressStatus v-if="hasAccess && lesson.vimeo_url" :progress="lesson.progress" />
 
                                     <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
                                         <button v-if="lesson.vimeo_url" type="button" class="lesson-play-action"
@@ -262,7 +266,7 @@
                                             <PlayIcon />
                                             <span>{{ lessonAction(lesson) }}</span>
                                         </button>
-                                        <LessonPdfResources @pdf-viewed="refreshLessonProgress" :ref="el => setResourceRef(lesson.id, el)"
+                                        <LessonPdfResources :ref="el => setResourceRef(lesson.id, el)"
                                             :lesson="lesson" compact return-label="lessons"
                                             @play-answer-video="openLesson(lesson, 'answer')"
                                             @play-lesson-video="openLesson(lesson)" />
@@ -288,7 +292,7 @@ import Layout from "./common/Layout.vue";
 import LessonPdfResources from "./LessonPdfResources.vue";
 import LessonProgressStatus from "./Lesson/LessonProgressStatus.vue";
 import { getVimeoPlayerUrl } from "../utils/vimeo";
-import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
+import { PlayIcon, LockClosedIcon, ChevronRightIcon, CheckCircleIcon, XMarkIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();
 const subjectId = route.params.subjectId;
@@ -753,10 +757,6 @@ function applyLessonProgress(lessonId, progress) {
     lesson.progress = progress;
 }
 
-async function refreshLessonProgress(lessonId) {
-    await loadSavedProgress(lessonId, 'lesson');
-}
-
 function lessonAction(lesson) {
     if (lesson.progress?.status === 'completed') return 'Watch again';
     if (lesson.progress?.status === 'in_progress') return 'Resume';
@@ -804,6 +804,9 @@ function groupLessons(list) {
         return {
             topic,
             lessons: sortedLessons,
+            isCompleted: sortedLessons.some(lesson => Boolean(lesson.vimeo_url))
+                && sortedLessons.filter(lesson => lesson.vimeo_url)
+                    .every(lesson => lesson.progress?.status === 'completed'),
             hasSubTopics: sortedLessons.some(lesson => Boolean(getSubTopic(lesson)?.trim())),
             subtopics: Object.keys(map[topic].subtopics).map(subtopic => ({
                 key: getSubTopicKey(topic, subtopic),
@@ -1118,6 +1121,12 @@ function getVimeoThumbnail(url) {
     border-radius: 12px;
 }
 
+.topic-header.topic-completed {
+    background: linear-gradient(125deg, rgba(6, 78, 59, 0.5), rgba(15, 23, 42, 0.82)) !important;
+    border-color: rgba(110, 231, 183, 0.52);
+    box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.12), 0 12px 28px rgba(6, 78, 59, 0.2);
+}
+
 .topic-header-row,
 .subtopic-header-row {
     align-items: center;
@@ -1143,6 +1152,19 @@ function getVimeoThumbnail(url) {
     margin: 0;
     white-space: nowrap;
 }
+
+.topic-complete-badge {
+    align-items: center;
+    color: #a7f3d0;
+    display: inline-flex;
+    font-size: 0.7rem;
+    font-weight: 800;
+    gap: 0.32rem;
+    justify-self: start;
+    white-space: nowrap;
+}
+
+.topic-complete-badge svg { height: 17px; width: 17px; }
 
 .header-arrow {
     display: flex;
@@ -1501,6 +1523,11 @@ function getVimeoThumbnail(url) {
 
     .topic-header-row {
         grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    .topic-header-row .topic-complete-badge {
+        grid-column: 1 / -1;
+        grid-row: 2;
     }
 
     .subtopic-header-row {

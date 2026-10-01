@@ -17,7 +17,7 @@ import { computed } from 'vue';
 import { CheckCircleIcon } from '@heroicons/vue/24/outline';
 const props = defineProps({ progress: Object });
 const status = computed(() => props.progress?.status || 'not_started');
-const labels = { not_started: 'Not started', in_progress: 'In progress', completed: 'Completed', viewed: 'Viewed' };
+const labels = { not_started: 'Not started', in_progress: 'In progress', completed: 'Completed' };
 </script>
 
 <style scoped>
@@ -27,7 +27,6 @@ const labels = { not_started: 'Not started', in_progress: 'In progress', complet
 .progress-caption svg { height: 16px; width: 16px; }
 .in_progress { color: #fdba74; }
 .completed { color: #6ee7b7; }
-.viewed { color: var(--app-accent); }
 .progress-track { height: 5px; border-radius: 99px; background: var(--app-glass-hover); overflow: hidden; margin-top: 0.45rem; }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: #fb923c; }
 </style>
