@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use Illuminate\Http\Request;
 use App\Models\LessonAccess;
+use App\Models\LessonProgress;
+use App\Services\LessonProgressService;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -216,6 +219,14 @@ class LessonController extends Controller
 
         abort_unless($path && Storage::disk('local')->exists($path), 404);
 
+        if (Schema::hasTable('lesson_progress')) {
+            LessonProgress::updateOrCreate([
+                'user_id' => $request->user()->id,
+                'lesson_id' => $lesson->id,
+                'video_type' => 'pdf_' . $type,
+            ], ['last_viewed_at' => now()]);
+        }
+
         return response()->file(Storage::disk('local')->path($path), [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . $type . '-lesson-' . $lesson->id . '.pdf"',
@@ -309,13 +320,22 @@ class LessonController extends Controller
                 ->first();
         }
 
+        $hasAccess = $access && $access->status === 'accepted'
+            && (!$access->expires_at || $access->expires_at->isFuture());
+        if ($hasAccess && Schema::hasTable('lesson_progress')) {
+            $progress = LessonProgress::where('user_id', $userId)
+                ->whereIn('lesson_id', $lessons->modelKeys())->get()->groupBy('lesson_id');
+            $service = app(LessonProgressService::class);
+            foreach ($lessons as $lesson) {
+                $lesson->setAttribute('progress', $service->summary($lesson, $progress->get($lesson->id, collect())));
+            }
+        }
+
         // 3. Return structured response
         return response()->json([
             'lessons' => $lessons,
             'access' => [
-                'has_access' => $access
-                    && $access->status === 'accepted'
-                    && (!$access->expires_at || $access->expires_at->isFuture()),
+                'has_access' => (bool) $hasAccess,
                 'status' => $access->status ?? null,
                 'expires_at' => $access->expires_at ?? null,
             ]

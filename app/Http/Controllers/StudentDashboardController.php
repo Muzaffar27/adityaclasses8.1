@@ -80,6 +80,7 @@ class StudentDashboardController extends Controller
                 'lesson.subject:id,name',
             ])
                 ->where('user_id', $user->id)
+                ->whereIn('video_type', ['lesson', 'answer'])
                 ->whereNull('completed_at')
                 ->whereHas('lesson', function ($query) use ($accesses) {
                     $query->where('is_active', true)

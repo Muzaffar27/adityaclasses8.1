@@ -101,7 +101,7 @@
                                                             <p class="mt-2">Buffering...</p>
                                                         </div>
                                                     </div>
-                                                    <LessonPdfResources :lesson="lesson"
+                                                    <LessonPdfResources @pdf-viewed="refreshLessonProgress" :lesson="lesson"
                                                         :showing-answer-video="videoMode === 'answer'"
                                                         @play-answer-video="playAnswerVideo(lesson)"
                                                         @play-lesson-video="playLessonVideo" />
@@ -154,13 +154,15 @@
 
                                                     </div>
 
+                                                    <LessonProgressStatus v-if="hasAccess" :progress="lesson.progress" />
+
                                                     <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
                                                         <button v-if="lesson.vimeo_url" type="button" class="lesson-play-action"
                                                             @click="openLesson(lesson)">
                                                             <PlayIcon />
-                                                            <span>Watch lesson</span>
+                                                            <span>{{ lessonAction(lesson) }}</span>
                                                         </button>
-                                                        <LessonPdfResources :ref="el => setResourceRef(lesson.id, el)"
+                                                        <LessonPdfResources @pdf-viewed="refreshLessonProgress" :ref="el => setResourceRef(lesson.id, el)"
                                                             :lesson="lesson" compact return-label="lessons"
                                                             @play-answer-video="openLesson(lesson, 'answer')"
                                                             @play-lesson-video="openLesson(lesson)" />
@@ -201,7 +203,7 @@
                                             <p class="mt-2">Buffering...</p>
                                         </div>
                                     </div>
-                                    <LessonPdfResources :lesson="lesson"
+                                    <LessonPdfResources @pdf-viewed="refreshLessonProgress" :lesson="lesson"
                                         :showing-answer-video="videoMode === 'answer'"
                                         @play-answer-video="playAnswerVideo(lesson)"
                                         @play-lesson-video="playLessonVideo" />
@@ -252,13 +254,15 @@
 
                                     </div>
 
+                                    <LessonProgressStatus v-if="hasAccess" :progress="lesson.progress" />
+
                                     <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
                                         <button v-if="lesson.vimeo_url" type="button" class="lesson-play-action"
                                             @click="openLesson(lesson)">
                                             <PlayIcon />
-                                            <span>Watch lesson</span>
+                                            <span>{{ lessonAction(lesson) }}</span>
                                         </button>
-                                        <LessonPdfResources :ref="el => setResourceRef(lesson.id, el)"
+                                        <LessonPdfResources @pdf-viewed="refreshLessonProgress" :ref="el => setResourceRef(lesson.id, el)"
                                             :lesson="lesson" compact return-label="lessons"
                                             @play-answer-video="openLesson(lesson, 'answer')"
                                             @play-lesson-video="openLesson(lesson)" />
@@ -282,6 +286,7 @@ import api from "../api";
 import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
 import LessonPdfResources from "./LessonPdfResources.vue";
+import LessonProgressStatus from "./Lesson/LessonProgressStatus.vue";
 import { getVimeoPlayerUrl } from "../utils/vimeo";
 import { PlayIcon, LockClosedIcon, ChevronRightIcon, XMarkIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
 
@@ -309,6 +314,7 @@ let progressLoadPromise = Promise.resolve(0);
 let latestPlayback = { seconds: 0, duration: 0 };
 let lastSavedSecond = -30;
 let progressSaveInFlight = false;
+let pendingProgressSave = null;
 
 const paginatedTopics = computed(() => {
     return groupLessons(filteredLessons.value);
@@ -633,10 +639,11 @@ async function markVideoViewed(lessonId, mode) {
     if (!lessonId) return;
 
     try {
-        await api.put(`/lesson-progress/${lessonId}`, {
+        const { data } = await api.put(`/lesson-progress/${lessonId}`, {
             video_type: mode,
             viewed_only: true,
         });
+        applyLessonProgress(lessonId, data.progress);
     } catch (error) {
         if (![403, 503].includes(error.response?.status)) {
             console.warn('Could not mark video as viewed', error);
@@ -651,7 +658,8 @@ async function loadSavedProgress(lessonId, mode) {
         const { data } = await api.get(`/lesson-progress/${lessonId}`, {
             params: { video_type: mode },
         });
-        return Number(data.position_seconds) || 0;
+        applyLessonProgress(lessonId, data.progress);
+        return data.completed ? 0 : Number(data.position_seconds) || 0;
     } catch (error) {
         if (![403, 503].includes(error.response?.status)) {
             console.warn('Could not load video progress', error);
@@ -666,8 +674,12 @@ function handlePlaybackUpdate(data) {
         duration: Number(data.duration) || 0,
     };
 
-    if (Math.abs(latestPlayback.seconds - lastSavedSecond) >= 30) {
-        void saveCurrentProgress();
+    const progress = selectedLesson.value?.progress?.[`${videoMode.value}_video`];
+    const reachedCompletion = latestPlayback.duration > 0
+        && latestPlayback.seconds / latestPlayback.duration >= 0.95
+        && progress?.status !== 'completed';
+    if (reachedCompletion || Math.abs(latestPlayback.seconds - lastSavedSecond) >= 30) {
+        void saveCurrentProgress(reachedCompletion);
     }
 }
 
@@ -688,25 +700,67 @@ async function saveCurrentProgress(force = false) {
     const lessonId = selectedLesson.value?.id;
     const { seconds, duration } = latestPlayback;
 
-    if (!lessonId || seconds < 1 || progressSaveInFlight) return;
+    if (!lessonId || seconds < 1) return;
     if (!force && Math.abs(seconds - lastSavedSecond) < 30) return;
+
+    const snapshot = { lessonId, mode: videoMode.value, seconds, duration };
+    if (progressSaveInFlight) {
+        if (force) pendingProgressSave = snapshot;
+        return;
+    }
+    return persistProgress(snapshot);
+}
+
+async function persistProgress({ lessonId, mode, seconds, duration }) {
 
     progressSaveInFlight = true;
     lastSavedSecond = seconds;
 
     try {
-        await api.put(`/lesson-progress/${lessonId}`, {
-            video_type: videoMode.value,
+        const { data } = await api.put(`/lesson-progress/${lessonId}`, {
+            video_type: mode,
             position_seconds: seconds,
             duration_seconds: duration || null,
         });
+        applyLessonProgress(lessonId, data.progress);
     } catch (error) {
         if (![403, 503].includes(error.response?.status)) {
             console.warn('Could not save video progress', error);
         }
     } finally {
         progressSaveInFlight = false;
+        if (pendingProgressSave) {
+            const next = pendingProgressSave;
+            pendingProgressSave = null;
+            void persistProgress(next);
+        }
     }
+}
+
+function applyLessonProgress(lessonId, progress) {
+    const lesson = lessons.value.find(item => item.id === lessonId);
+    if (!lesson || !progress) return;
+    // Ignore older responses that arrive after a completion response.
+    for (const key of ['lesson_video', 'answer_video']) {
+        if (lesson.progress?.[key]?.status === 'completed') progress[key] = lesson.progress[key];
+    }
+    progress.pdfs = { ...progress.pdfs };
+    for (const [type, status] of Object.entries(lesson.progress?.pdfs || {})) {
+        if (status === 'viewed') progress.pdfs[type] = status;
+    }
+    progress.status = lesson.vimeo_url ? progress.lesson_video.status : progress.pdfs.lesson;
+    progress.percent = lesson.vimeo_url ? progress.lesson_video.percent : null;
+    lesson.progress = progress;
+}
+
+async function refreshLessonProgress(lessonId) {
+    await loadSavedProgress(lessonId, 'lesson');
+}
+
+function lessonAction(lesson) {
+    if (lesson.progress?.status === 'completed') return 'Watch again';
+    if (lesson.progress?.status === 'in_progress') return 'Resume';
+    return 'Watch lesson';
 }
 
 function detachVimeoPlayer() {

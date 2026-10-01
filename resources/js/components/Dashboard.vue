@@ -376,17 +376,17 @@ onMounted(fetchDashboard)
 .empty-courses p { color: var(--muted); font-size: 0.71rem; line-height: 1.5; margin: 0.25rem 0 0; }
 .start-card button { grid-column: 1 / -1; justify-self: start; margin-top: auto; }
 .test-card {
-    background: linear-gradient(145deg, rgba(6, 78, 59, 0.28), rgba(8, 20, 16, 0.6)), #10251f;
-    border-color: rgba(52, 211, 153, 0.3);
-    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.24), inset 0 1px rgba(167, 243, 208, 0.035);
+    background: linear-gradient(145deg, rgba(131, 24, 67, 0.28), rgba(28, 12, 24, 0.6)), #291421;
+    border-color: rgba(244, 114, 182, 0.3);
+    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.24), inset 0 1px rgba(251, 207, 232, 0.035);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
-.test-card .test-icon { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; }
-.test-card .card-kicker { color: #6ee7b7; }
+.test-card .test-icon { background: rgba(236, 72, 153, 0.14); color: #f9a8d4; }
+.test-card .card-kicker { color: #f9a8d4; }
 .test-card-top { align-items: center; display: flex; justify-content: space-between; }
-.soon-badge { background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 999px; color: #a7f3d0; font-size: 0.6rem; font-weight: 800; padding: 0.32rem 0.52rem; }
+.soon-badge { background: rgba(236, 72, 153, 0.14); border: 1px solid rgba(244, 114, 182, 0.2); border-radius: 999px; color: #fbcfe8; font-size: 0.6rem; font-weight: 800; padding: 0.32rem 0.52rem; }
 
 .course-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .course-card { align-items: center; border-radius: 18px; color: inherit; cursor: pointer; display: grid; gap: 0.75rem; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 92px; padding: 0.85rem; text-align: left; transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease; }
