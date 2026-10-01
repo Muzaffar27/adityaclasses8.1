@@ -12,14 +12,17 @@ class LessonProgress extends Model
         'user_id',
         'lesson_id',
         'video_type',
+        'video_source',
         'position_seconds',
         'duration_seconds',
+        'video_started_at',
         'completed_at',
         'last_viewed_at',
     ];
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'video_started_at' => 'datetime',
         'last_viewed_at' => 'datetime',
     ];
 

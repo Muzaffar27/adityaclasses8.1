@@ -21,10 +21,7 @@ class LessonProgressController extends Controller
             'video_type' => ['nullable', 'in:lesson,answer'],
         ])['video_type'] ?? 'lesson';
 
-        $progress = LessonProgress::where('user_id', $request->user()->id)
-            ->where('lesson_id', $lesson->id)
-            ->where('video_type', $videoType)
-            ->first();
+        $progress = $this->currentProgress($lesson, $request->user()->id, $videoType);
 
         return response()->json([
             'position_seconds' => $progress?->position_seconds ?? 0,
@@ -48,27 +45,31 @@ class LessonProgressController extends Controller
         $videoField = $validated['video_type'] === 'answer' ? 'answer_vimeo_url' : 'vimeo_url';
         abort_unless($lesson->{$videoField}, 422, 'This video is not available.');
 
-        if ($validated['viewed_only'] ?? false) {
-            $progress = LessonProgress::updateOrCreate([
-                'user_id' => $request->user()->id,
-                'lesson_id' => $lesson->id,
-                'video_type' => $validated['video_type'],
-            ], ['last_viewed_at' => now()]);
-
-            return response()->json([
-                'saved' => true,
-                'completed' => (bool) $progress->completed_at,
-                'progress' => app(LessonProgressService::class)->forUser($lesson, $request->user()->id),
-            ]);
-        }
-
-        $progress = DB::transaction(function () use ($request, $lesson, $validated) {
+        $progress = DB::transaction(function () use ($request, $lesson, $validated, $videoField) {
+            $service = app(LessonProgressService::class);
+            $source = $service->videoSource($lesson->{$videoField});
             $record = LessonProgress::firstOrCreate([
                 'user_id' => $request->user()->id,
                 'lesson_id' => $lesson->id,
                 'video_type' => $validated['video_type'],
             ]);
             $record = LessonProgress::whereKey($record->id)->lockForUpdate()->firstOrFail();
+
+            if (!hash_equals((string) $source, (string) $record->video_source)) {
+                $record->video_source = $source;
+                $record->position_seconds = 0;
+                $record->duration_seconds = null;
+                $record->video_started_at = now();
+                $record->completed_at = null;
+            }
+
+            if ($validated['viewed_only'] ?? false) {
+                $record->last_viewed_at = now();
+                $record->save();
+
+                return $record;
+            }
+
             $position = (float) $validated['position_seconds'];
             $duration = $validated['duration_seconds'] ?? $record->duration_seconds;
             if ($duration !== null && $position > (float) $duration) {
@@ -76,7 +77,20 @@ class LessonProgressController extends Controller
                     'position_seconds' => ['Playback position cannot exceed the video duration.'],
                 ]);
             }
+            if ($duration !== null && $record->duration_seconds !== null
+                && abs($duration - $record->duration_seconds) > LessonProgressService::DURATION_TOLERANCE_SECONDS) {
+                throw ValidationException::withMessages([
+                    'duration_seconds' => ['Video duration does not match the started video.'],
+                ]);
+            }
+
+            $record->video_started_at ??= now();
             $completed = $duration > 0 && $position / $duration >= LessonProgressService::COMPLETION_THRESHOLD;
+            if ($completed && $record->video_started_at->greaterThan(now()->subSeconds($service->completionDelay((int) $duration)))) {
+                throw ValidationException::withMessages([
+                    'position_seconds' => ['Watch more of the video before marking it complete.'],
+                ]);
+            }
             $record->position_seconds = (int) round($position);
             $record->duration_seconds = $duration === null ? null : (int) round($duration);
             // A replay or delayed earlier save must never erase earned completion.
@@ -94,6 +108,18 @@ class LessonProgressController extends Controller
             'completed' => (bool) $progress->completed_at,
             'progress' => app(LessonProgressService::class)->forUser($lesson, $request->user()->id),
         ]);
+    }
+
+    private function currentProgress(Lesson $lesson, int $userId, string $videoType): ?LessonProgress
+    {
+        $field = $videoType === 'answer' ? 'answer_vimeo_url' : 'vimeo_url';
+        $source = app(LessonProgressService::class)->videoSource($lesson->{$field});
+
+        return LessonProgress::where('user_id', $userId)
+            ->where('lesson_id', $lesson->id)
+            ->where('video_type', $videoType)
+            ->where('video_source', $source)
+            ->first();
     }
 
     private function ensureReadyAndAccessible(Request $request, Lesson $lesson): void

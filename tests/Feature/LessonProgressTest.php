@@ -58,6 +58,7 @@ class LessonProgressTest extends TestCase
         $this->lessonList()->assertOk()->assertJsonPath('lessons.0.progress.status', 'not_started');
         $this->saveProgress(94.9)->assertOk()->assertJsonPath('completed', false)
             ->assertJsonPath('progress.status', 'in_progress')->assertJsonPath('progress.percent', 94);
+        $this->travel(30)->seconds();
         $this->saveProgress(95)->assertOk()->assertJsonPath('completed', true)
             ->assertJsonPath('progress.percent', 100);
         $completedAt = LessonProgress::first()->completed_at->toISOString();
@@ -74,6 +75,8 @@ class LessonProgressTest extends TestCase
 
     public function test_answer_progress_is_separate_and_does_not_complete_the_lesson(): void
     {
+        $this->saveProgress(94, 100, 'answer')->assertOk();
+        $this->travel(30)->seconds();
         $this->saveProgress(100, 100, 'answer')->assertOk()
             ->assertJsonPath('progress.answer_video.status', 'completed')
             ->assertJsonPath('progress.status', 'not_started');
@@ -97,6 +100,38 @@ class LessonProgressTest extends TestCase
         $this->saveProgress(101, null)->assertUnprocessable();
         $this->lesson->update(['answer_vimeo_url' => null]);
         $this->saveProgress(100, 100, 'answer')->assertUnprocessable();
+    }
+
+    public function test_completion_requires_consistent_duration_and_elapsed_viewing_time(): void
+    {
+        $this->saveProgress(95, 100)->assertUnprocessable()
+            ->assertJsonValidationErrors('position_seconds');
+        $this->saveProgress(40, 100)->assertOk();
+        $this->saveProgress(45, 130)->assertUnprocessable()
+            ->assertJsonValidationErrors('duration_seconds');
+        $this->travel(30)->seconds();
+        $this->saveProgress(95, 100)->assertOk()->assertJsonPath('completed', true);
+    }
+
+    public function test_replacing_a_video_resets_only_that_video_progress(): void
+    {
+        $this->saveProgress(40)->assertOk();
+        $this->saveProgress(20, 100, 'answer')->assertOk();
+        $tutor = User::factory()->create(['role' => 'tutor']);
+        Sanctum::actingAs($tutor);
+        $this->putJson('/api/admin/lessons/' . $this->lesson->id, [
+            'vimeo_url' => 'https://player.vimeo.com/video/999',
+        ])->assertOk();
+
+        Sanctum::actingAs($this->student);
+        $this->lesson->refresh();
+        $this->lessonList()->assertJsonPath('lessons.0.progress.status', 'not_started')
+            ->assertJsonPath('lessons.0.progress.answer_video.status', 'in_progress');
+        $this->getJson('/api/lesson-progress/' . $this->lesson->id)
+            ->assertJsonPath('position_seconds', 0)
+            ->assertJsonPath('completed', false);
+        $this->getJson('/api/lesson-progress/' . $this->lesson->id . '?video_type=answer')
+            ->assertJsonPath('position_seconds', 20);
     }
 
     public function test_pdf_opens_are_viewed_without_completing_video_or_entering_continue_watching(): void

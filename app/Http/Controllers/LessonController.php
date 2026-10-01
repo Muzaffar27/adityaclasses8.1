@@ -35,6 +35,7 @@ class LessonController extends Controller
     // CREATE
     public function store(Request $request)
     {
+        $this->ensureTutor($request);
         $validated = $request->validate([
             'grade_id' => 'required',
             'subject_id' => 'required',
@@ -54,7 +55,8 @@ class LessonController extends Controller
     // UPDATE
     public function update(Request $request, Lesson $lesson)
     {
-        $lesson->update($request->only([
+        $this->ensureTutor($request);
+        $changes = $request->only([
             'grade_id',
             'subject_id',
             'topic',
@@ -66,7 +68,28 @@ class LessonController extends Controller
             'answer_vimeo_url',
             'duration',
             'is_active',
-        ]));
+        ]);
+        $replacedVideoTypes = collect([
+            'lesson' => 'vimeo_url',
+            'answer' => 'answer_vimeo_url',
+        ])->filter(fn (string $field) => array_key_exists($field, $changes)
+            && trim((string) $changes[$field]) !== trim((string) $lesson->{$field}));
+
+        DB::transaction(function () use ($lesson, $changes, $replacedVideoTypes) {
+            $lesson->update($changes);
+
+            if ($replacedVideoTypes->isNotEmpty() && Schema::hasTable('lesson_progress')) {
+                LessonProgress::where('lesson_id', $lesson->id)
+                    ->whereIn('video_type', $replacedVideoTypes->keys())
+                    ->update([
+                        'video_source' => null,
+                        'position_seconds' => 0,
+                        'duration_seconds' => null,
+                        'video_started_at' => null,
+                        'completed_at' => null,
+                    ]);
+            }
+        });
 
         return $lesson;
     }

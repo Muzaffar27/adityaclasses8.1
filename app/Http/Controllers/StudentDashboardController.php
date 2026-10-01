@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lesson;
 use App\Models\LessonAccess;
 use App\Models\LessonProgress;
+use App\Services\LessonProgressService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -94,7 +95,8 @@ class StudentDashboardController extends Controller
                         });
                 })
                 ->latest('last_viewed_at')
-                ->first();
+                ->get()
+                ->first(fn (LessonProgress $row) => app(LessonProgressService::class)->matchesCurrentSource($row));
 
             if ($progress?->lesson) {
                 $duration = (int) ($progress->duration_seconds ?? 0);
