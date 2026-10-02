@@ -9,15 +9,14 @@ use App\Models\LessonProgress;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\LessonProgressService;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
+use Tests\Concerns\UsesIsolatedLearningDatabase;
 
 class RecentLearningActivityTest extends TestCase
 {
+    use UsesIsolatedLearningDatabase;
     private User $student;
     private Lesson $lesson;
     private LessonAccess $access;
@@ -25,34 +24,9 @@ class RecentLearningActivityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // A new private in-memory connection: never migrate or reset the application database.
-        config(['database.default' => 'activity_testing', 'database.connections.activity_testing' => [
-            'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '', 'foreign_key_constraints' => true,
-        ]]);
-        foreach ([
-            '2014_10_12_000000_create_users_table.php',
-            '2026_03_24_163241_create_grades_table.php',
-            '2026_03_24_163313_create_subjects_table.php',
-            '2026_03_24_163323_create_lessons_table.php',
-            '2026_03_26_185603_create_lesson_access_table.php',
-            '2026_06_04_000001_add_duration_price_and_expiry_to_lesson_access_table.php',
-            '2026_09_21_000001_create_student_profiles_table.php',
-            '2026_09_26_000002_create_lesson_progress_table.php',
-            '2026_10_01_000001_add_video_source_to_lesson_progress_table.php',
-        ] as $migration) {
-            if ($migration === '2026_09_21_000001_create_student_profiles_table.php') {
-                Schema::table('users', fn (Blueprint $table) => $table->string('role')->default('student'));
-            }
-            (require database_path('migrations/' . $migration))->up();
-        }
-        Schema::table('lessons', function (Blueprint $table) {
-            foreach (['answer_vimeo_url', 'lesson_pdf_path', 'question_pdf_path', 'question_pdf_2_path', 'answer_pdf_path'] as $field) {
-                $table->string($field)->nullable();
-            }
-        });
-        DB::beginTransaction();
+        $this->prepareLearningDatabase();
         Storage::fake('local');
-        $this->student = User::factory()->create(['role' => 'student']);
+        $this->student = User::factory()->create(['id' => random_int(1000000, 2000000), 'role' => 'student']);
         $this->lesson = Lesson::create([
             'grade_id' => Grade::create(['name' => 'Grade 10'])->id,
             'subject_id' => Subject::create(['name' => 'Mathematics'])->id,
@@ -68,8 +42,7 @@ class RecentLearningActivityTest extends TestCase
 
     protected function tearDown(): void
     {
-        DB::connection('activity_testing')->rollBack();
-        DB::purge('activity_testing');
+        $this->closeLearningDatabase();
         parent::tearDown();
     }
 
@@ -92,7 +65,8 @@ class RecentLearningActivityTest extends TestCase
 
     public function test_empty_activity_and_no_access(): void
     {
-        $this->getJson('/api/student/dashboard')->assertOk()->assertJsonPath('recent_activity', []);
+        $this->getJson('/api/student/dashboard')->assertOk()->assertJsonPath('recent_activity', [])
+            ->assertJsonPath('learning_activity.available', false);
         $this->record('lesson');
         $this->access->update(['status' => 'pending']);
         $this->getJson('/api/student/dashboard')->assertOk()->assertJsonPath('recent_activity', []);

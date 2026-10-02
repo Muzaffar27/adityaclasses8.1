@@ -16,6 +16,7 @@ import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 const pdfWorkerSrc = `${pdfWorkerUrl}?v=20260920-mime`;
 
 const props = defineProps({ url: { type: String, required: true } });
+const emit = defineEmits(['ready']);
 const viewport = ref(null);
 const loading = ref(true);
 const error = ref(false);
@@ -58,6 +59,7 @@ async function loadDocument() {
         await renderPages(version, pageNumber => {
             renderingPage = pageNumber;
         });
+        if (version === renderVersion) emit('ready', props.url);
     } catch (loadError) {
         if (version !== renderVersion) return;
         console.error('PDF rendering failed:', loadError);

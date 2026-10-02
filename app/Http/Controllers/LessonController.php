@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\LessonAccess;
 use App\Models\LessonProgress;
 use App\Services\LessonProgressService;
+use App\Services\StudentLearningActivityService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -256,6 +257,37 @@ class LessonController extends Controller
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+    }
+
+    public function recordPdfActivity(Request $request, Lesson $lesson, string $type)
+    {
+        abort_unless(in_array($type, ['question', 'question2'], true), 422);
+        abort_unless($lesson->is_active, 404);
+        $this->ensurePdfAccess($request, $lesson);
+        abort_unless($request->user()->role === 'student', 403);
+        $path = $lesson->{$this->pdfField($type)};
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+        $validated = $request->validate([
+            'activity_session_id' => ['required', 'uuid'],
+            'activity_active' => ['required', 'boolean'],
+        ]);
+        $service = app(StudentLearningActivityService::class);
+        if (!$service->ready()) return response()->json(['saved' => false, 'available' => false]);
+
+        DB::transaction(function () use ($request, $lesson, $type, $path, $validated, $service) {
+            $record = LessonProgress::firstOrCreate([
+                'user_id' => $request->user()->id, 'lesson_id' => $lesson->id, 'video_type' => 'pdf_' . $type,
+            ]);
+            $record = LessonProgress::whereKey($record->id)->lockForUpdate()->firstOrFail();
+            $source = hash('sha256', $path);
+            $sourceChanged = $record->video_source !== $source;
+            $record->video_source = $source;
+            $service->recordActivity($record, $validated, $sourceChanged);
+            $record->last_viewed_at = now();
+            $record->save();
+        });
+
+        return response()->json(['saved' => true, 'available' => true]);
     }
 
     public function removePdf(Request $request, Lesson $lesson, string $type)

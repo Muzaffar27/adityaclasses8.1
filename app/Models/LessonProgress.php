@@ -24,6 +24,8 @@ class LessonProgress extends Model
         'completed_at' => 'datetime',
         'video_started_at' => 'datetime',
         'last_viewed_at' => 'datetime',
+        'activity_observed_at' => 'datetime',
+        'activity_active' => 'boolean',
     ];
 
     public function lesson()

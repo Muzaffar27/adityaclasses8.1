@@ -320,6 +320,8 @@ let latestPlayback = { seconds: 0, duration: 0 };
 let lastSavedSecond = -30;
 let progressSaveInFlight = false;
 let pendingProgressSave = null;
+let activitySessionId = null;
+let activityHeartbeat = null;
 
 const paginatedTopics = computed(() => {
     return groupLessons(filteredLessons.value);
@@ -353,6 +355,9 @@ watch(searchQuery, () => {
 
 onMounted(() => {
     fetchLessons();
+    activityHeartbeat = window.setInterval(() => {
+        if (isPlaying.value) void saveCurrentProgress(true);
+    }, 20000);
     window.addEventListener('popstate', handleHistoryBack);
     window.addEventListener('message', handleVimeoMessage);
     document.addEventListener('fullscreenchange', handleVideoFullscreenChange);
@@ -360,7 +365,9 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+    isPlaying.value = false;
     void saveCurrentProgress(true);
+    window.clearInterval(activityHeartbeat);
     detachVimeoPlayer();
     window.removeEventListener('popstate', handleHistoryBack);
     window.removeEventListener('message', handleVimeoMessage);
@@ -477,7 +484,7 @@ function postToVimeo(message) {
 }
 
 function subscribeToVimeoEvents() {
-    ['timeupdate', 'pause', 'ended'].forEach((eventName) => {
+    ['play', 'timeupdate', 'pause', 'ended'].forEach((eventName) => {
         postToVimeo({ method: 'addEventListener', value: eventName });
     });
     postToVimeo({ method: 'ping' });
@@ -500,7 +507,7 @@ async function handleVimeoMessage(event) {
     if (!message || typeof message !== 'object') return;
 
     if (message.event === 'ready' || message.method === 'ping') {
-        ['timeupdate', 'pause', 'ended'].forEach((eventName) => {
+        ['play', 'timeupdate', 'pause', 'ended'].forEach((eventName) => {
             postToVimeo({ method: 'addEventListener', value: eventName });
         });
 
@@ -514,6 +521,11 @@ async function handleVimeoMessage(event) {
         }
     }
 
+    if (message.event === 'play') {
+        isPlaying.value = true;
+        latestPlayback = { seconds: Number(message.data?.seconds) || latestPlayback.seconds, duration: Number(message.data?.duration) || latestPlayback.duration };
+        void saveCurrentProgress(true);
+    }
     if (message.event === 'timeupdate') handlePlaybackUpdate(message.data || {});
     if (message.event === 'pause') handlePlaybackPause(message.data || latestPlayback);
     if (message.event === 'ended') handlePlaybackEnded(message.data || latestPlayback);
@@ -587,6 +599,7 @@ function openPrimaryLesson(lesson) {
 
 async function openLesson(lesson, mode = 'lesson') {
     if (selectedLesson.value) {
+        isPlaying.value = false;
         void saveCurrentProgress(true);
         detachVimeoPlayer();
     }
@@ -595,6 +608,7 @@ async function openLesson(lesson, mode = 'lesson') {
     videoMode.value = mode;
     selectedLesson.value = lesson;
     isPlaying.value = false;
+    activitySessionId = crypto.randomUUID();
     latestPlayback = { seconds: 0, duration: 0 };
     lastSavedSecond = -30;
     progressLoadPromise = loadSavedProgress(lesson.id, mode);
@@ -638,7 +652,9 @@ function getVideoUrl(lesson) {
 
 function playAnswerVideo(lesson) {
     if (!lesson?.answer_vimeo_url) return;
+    isPlaying.value = false;
     void saveCurrentProgress(true);
+    activitySessionId = crypto.randomUUID();
     detachVimeoPlayer();
     isVideoLoading.value = true;
     videoMode.value = 'answer';
@@ -649,7 +665,9 @@ function playAnswerVideo(lesson) {
 }
 
 function playLessonVideo() {
+    isPlaying.value = false;
     void saveCurrentProgress(true);
+    activitySessionId = crypto.randomUUID();
     detachVimeoPlayer();
     isVideoLoading.value = true;
     videoMode.value = 'lesson';
@@ -708,11 +726,13 @@ function handlePlaybackUpdate(data) {
 }
 
 function handlePlaybackPause(data) {
+    isPlaying.value = false;
     handlePlaybackUpdate(data);
     void saveCurrentProgress(true);
 }
 
 function handlePlaybackEnded(data) {
+    isPlaying.value = false;
     latestPlayback = {
         seconds: Number(data.seconds || data.duration) || 0,
         duration: Number(data.duration) || 0,
@@ -724,10 +744,10 @@ async function saveCurrentProgress(force = false) {
     const lessonId = selectedLesson.value?.id;
     const { seconds, duration } = latestPlayback;
 
-    if (!lessonId || seconds < 1) return;
+    if (!lessonId || (!force && seconds < 1)) return;
     if (!force && Math.abs(seconds - lastSavedSecond) < 30) return;
 
-    const snapshot = { lessonId, mode: videoMode.value, seconds, duration };
+    const snapshot = { lessonId, mode: videoMode.value, seconds, duration, session: activitySessionId, active: isPlaying.value };
     if (progressSaveInFlight) {
         if (force) pendingProgressSave = snapshot;
         return;
@@ -735,7 +755,7 @@ async function saveCurrentProgress(force = false) {
     return persistProgress(snapshot);
 }
 
-async function persistProgress({ lessonId, mode, seconds, duration }) {
+async function persistProgress({ lessonId, mode, seconds, duration, session, active }) {
 
     progressSaveInFlight = true;
     lastSavedSecond = seconds;
@@ -745,6 +765,8 @@ async function persistProgress({ lessonId, mode, seconds, duration }) {
             video_type: mode,
             position_seconds: seconds,
             duration_seconds: duration || null,
+            activity_session_id: session,
+            activity_active: active,
         });
         applyLessonProgress(lessonId, data.progress);
     } catch (error) {
@@ -882,6 +904,7 @@ function closeLesson() {
 }
 
 function clearSelectedLesson() {
+    isPlaying.value = false;
     void saveCurrentProgress(true);
     detachVimeoPlayer();
     selectedLesson.value = null;

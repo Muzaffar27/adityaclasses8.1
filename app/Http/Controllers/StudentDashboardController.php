@@ -6,6 +6,7 @@ use App\Models\Lesson;
 use App\Models\LessonAccess;
 use App\Models\LessonProgress;
 use App\Services\LessonProgressService;
+use App\Services\StudentLearningActivityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -136,6 +137,7 @@ class StudentDashboardController extends Controller
             'recent_activity' => Schema::hasTable('lesson_progress')
                 ? app(LessonProgressService::class)->recentActivity($user->id, $accesses) : [],
             'recent_results' => [],
+            'learning_activity' => app(StudentLearningActivityService::class)->summary($user->id),
         ]);
     }
 }

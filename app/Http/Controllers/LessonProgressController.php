@@ -6,6 +6,7 @@ use App\Models\Lesson;
 use App\Models\LessonAccess;
 use App\Models\LessonProgress;
 use App\Services\LessonProgressService;
+use App\Services\StudentLearningActivityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -40,6 +41,8 @@ class LessonProgressController extends Controller
             'viewed_only' => ['sometimes', 'boolean'],
             'position_seconds' => ['required_unless:viewed_only,true', 'numeric', 'min:0', 'max:86400'],
             'duration_seconds' => ['nullable', 'numeric', 'min:1', 'max:86400'],
+            'activity_session_id' => ['nullable', 'uuid'],
+            'activity_active' => ['sometimes', 'boolean'],
         ]);
 
         $videoField = $validated['video_type'] === 'answer' ? 'answer_vimeo_url' : 'vimeo_url';
@@ -55,12 +58,16 @@ class LessonProgressController extends Controller
             ]);
             $record = LessonProgress::whereKey($record->id)->lockForUpdate()->firstOrFail();
 
-            if (!hash_equals((string) $source, (string) $record->video_source)) {
+            $sourceChanged = !hash_equals((string) $source, (string) $record->video_source);
+            if ($sourceChanged) {
                 $record->video_source = $source;
                 $record->position_seconds = 0;
                 $record->duration_seconds = null;
                 $record->video_started_at = now();
                 $record->completed_at = null;
+                if ($request->user()->role === 'student') {
+                    app(StudentLearningActivityService::class)->recordActivity($record, [], true);
+                }
             }
 
             if ($validated['viewed_only'] ?? false) {
@@ -98,6 +105,9 @@ class LessonProgressController extends Controller
                 $record->completed_at = now();
             }
             $record->last_viewed_at = now();
+            if ($request->user()->role === 'student') {
+                app(StudentLearningActivityService::class)->recordActivity($record, $validated, $sourceChanged);
+            }
             $record->save();
 
             return $record;

@@ -85,7 +85,7 @@
                     </div>
                 </header>
                 <main class="pdf-screen-body">
-                    <PdfDocumentViewer :url="viewerUrl" />
+                    <PdfDocumentViewer :url="viewerUrl" @ready="startQuestionActivity" />
                 </main>
                 <footer class="pdf-screen-footer">
                     <button type="button" class="pdf-return-button" @click.stop="closeViewer">
@@ -103,6 +103,7 @@ import { ArrowLeftIcon, ArrowsRightLeftIcon, ChevronRightIcon, DocumentTextIcon,
 import api from '../api';
 import { showAlert } from '../composables/dialog';
 import PdfDocumentViewer from './common/PdfDocumentViewer.vue';
+import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
     lesson: { type: Object, required: true },
@@ -112,6 +113,7 @@ const props = defineProps({
     returnLabel: { type: String, default: 'lesson video' },
 });
 const emit = defineEmits(['play-answer-video', 'play-lesson-video']);
+const auth = useAuthStore();
 const loadingType = ref('');
 const answersRevealed = ref(false);
 const viewerUrl = ref('');
@@ -175,6 +177,42 @@ const nextResource = computed(() => {
 let previousBodyOverflow = '';
 let returnFocusElement = null;
 let requestSerial = 0;
+let questionActivity = null;
+let questionHeartbeat = null;
+let questionSaveQueue = Promise.resolve();
+
+function sendQuestionActivity(session, active) {
+    const lessonId = props.lesson.id;
+    questionSaveQueue = questionSaveQueue.then(() => api.put(`/lessons/${lessonId}/pdf/${session.type}/activity`, {
+        activity_session_id: session.id, activity_active: active,
+    })).catch(error => {
+        if (![403, 404, 503].includes(error.response?.status)) console.warn('Could not save question viewing activity', error);
+    });
+    return questionSaveQueue;
+}
+
+function updateQuestionActivity() {
+    if (!questionActivity) return;
+    const active = document.visibilityState === 'visible' && document.hasFocus();
+    if (!active && !questionActivity.active) return;
+    questionActivity.active = active;
+    void sendQuestionActivity(questionActivity, active);
+}
+
+function startQuestionActivity(url) {
+    if (url !== viewerUrl.value || !auth.isStudent || !['question', 'question2'].includes(viewerType.value)) return;
+    stopQuestionActivity();
+    questionActivity = { id: crypto.randomUUID(), type: viewerType.value, active: false };
+    updateQuestionActivity();
+    questionHeartbeat = window.setInterval(updateQuestionActivity, 20000);
+}
+
+function stopQuestionActivity() {
+    window.clearInterval(questionHeartbeat);
+    questionHeartbeat = null;
+    if (questionActivity) void sendQuestionActivity(questionActivity, false);
+    questionActivity = null;
+}
 
 function toggleAnswerVideo() {
     emit(props.showingAnswerVideo ? 'play-lesson-video' : 'play-answer-video');
@@ -197,6 +235,7 @@ function hideAnswers() {
 }
 
 async function openPdf(type) {
+    stopQuestionActivity();
     const request = ++requestSerial;
     const isSwitching = Boolean(viewerUrl.value);
     loadingType.value = type;
@@ -230,6 +269,7 @@ async function openPdf(type) {
 defineExpose({ openPdf });
 
 async function closeViewer(restoreFocus = true) {
+    stopQuestionActivity();
     requestSerial++;
     loadingType.value = '';
     const url = viewerUrl.value;
@@ -248,8 +288,17 @@ function handleKeydown(event) {
     }
 }
 
-onMounted(() => window.addEventListener('keydown', handleKeydown));
+onMounted(() => {
+    window.addEventListener('keydown', handleKeydown);
+    window.addEventListener('focus', updateQuestionActivity);
+    window.addEventListener('blur', updateQuestionActivity);
+    document.addEventListener('visibilitychange', updateQuestionActivity);
+});
 onBeforeUnmount(() => {
+    stopQuestionActivity();
+    window.removeEventListener('focus', updateQuestionActivity);
+    window.removeEventListener('blur', updateQuestionActivity);
+    document.removeEventListener('visibilitychange', updateQuestionActivity);
     window.removeEventListener('keydown', handleKeydown);
     closeViewer(false);
 });

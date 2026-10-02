@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use App\Models\Package;
 use App\Models\User;
+use App\Services\StudentLearningActivityService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,6 +19,23 @@ class UserController extends Controller
 {
 
     private const PHONE_RULE = 'regex:/^\+?[0-9\s().-]{7,25}$/';
+
+    public function learningActivity(Request $request, User $student)
+    {
+        $this->ensureTutor($request);
+        abort_unless($student->role === 'student', 404);
+        $today = now()->timezone(StudentLearningActivityService::TIMEZONE)->toDateString();
+        $validated = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:' . $today],
+            'to' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:' . $today],
+        ]);
+        if (($validated['from'] ?? '') > ($validated['to'] ?? $today)) {
+            throw ValidationException::withMessages(['from' => ['The start date must be on or before the end date.']]);
+        }
+        return response()->json(app(StudentLearningActivityService::class)->summary(
+            $student->id, $validated['from'] ?? null, $validated['to'] ?? null
+        ));
+    }
 
     public function getStudents(Request $request)
     {

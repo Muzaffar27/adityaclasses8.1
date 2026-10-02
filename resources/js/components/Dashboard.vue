@@ -27,6 +27,22 @@
                     </article>
                 </section>
 
+                <section class="section-block" aria-labelledby="study-days-heading">
+                    <div class="section-heading">
+                        <div><p class="overline">Study consistency</p><h2 id="study-days-heading">Your active-learning days</h2></div>
+                        <span>Last 30 days · Mauritius time</span>
+                    </div>
+                    <div v-if="dashboard.learning_activity?.available" class="study-days-card">
+                        <div class="study-day-total"><strong>{{ dashboard.learning_activity.active_days }}</strong><span>{{ dashboard.learning_activity.active_days === 1 ? 'active day' : 'active days' }} in the last 30 days</span></div>
+                        <div class="study-today">
+                            <strong>{{ dashboard.learning_activity.today_active ? 'Today counts as an active day' : 'Keep studying to make today count' }}</strong>
+                            <p>{{ studyMinutes(dashboard.learning_activity.today_playback_seconds) }} min of video · {{ studyMinutes(dashboard.learning_activity.today_question_pdf_seconds) }} min of question PDFs today</p>
+                            <small>A day counts after {{ studyMinutes(dashboard.learning_activity.minimum_active_seconds) }} minutes of video or {{ studyMinutes(dashboard.learning_activity.minimum_active_seconds) }} minutes viewing question PDFs. The two totals stay separate.</small>
+                        </div>
+                    </div>
+                    <p v-else class="activity-empty">Study-day tracking is not available yet.</p>
+                </section>
+
                 <section class="section-block">
                     <div class="section-heading">
                         <div><p class="overline">Next up</p><h2>Quick access</h2></div>
@@ -123,7 +139,7 @@ const error = ref('')
 const dashboard = reactive({
     student: { name: '', grade_id: null, grade: null, is_preview: false },
     stats: { active_courses: 0, available_lessons: 0, tests_attempted: 0, average_score: null },
-    courses: [], continue_learning: null, recent_results: [], recent_activity: [],
+    courses: [], continue_learning: null, recent_results: [], recent_activity: [], learning_activity: null,
 })
 
 const firstName = computed(() => dashboard.student.name?.trim().split(/\s+/)[0] || 'Student')
@@ -154,6 +170,7 @@ async function fetchDashboard() {
         dashboard.continue_learning = data.continue_learning || null
         dashboard.recent_results = data.recent_results || []
         dashboard.recent_activity = data.recent_activity || []
+        dashboard.learning_activity = data.learning_activity || null
     } catch (requestError) {
         console.error('Could not fetch student dashboard', requestError)
         error.value = 'Please check your connection and try again.'
@@ -167,6 +184,7 @@ function resumeLesson() {
     router.push({ name: 'lesson', params: { subjectId: item.subject_id, gradeId: item.grade_id }, query: { resume: item.lesson_id, video: item.video_type } })
 }
 function courseInitial(subject) { return subject?.trim().charAt(0).toUpperCase() || 'C' }
+function studyMinutes(seconds) { return Math.floor(Math.max(0, Number(seconds) || 0) / 60) }
 const resourceLabels = { lesson: 'Lesson video', answer: 'Answer video', pdf_lesson: 'Lesson PDF', pdf_question: 'Question PDF 1', pdf_question2: 'Question PDF 2', pdf_answer: 'Answer PDF' }
 function openActivity(item) {
     const query = { resume: item.lesson_id }
@@ -197,6 +215,13 @@ onMounted(fetchDashboard)
 </script>
 
 <style scoped>
+.study-days-card { display: flex; align-items: center; gap: 1.5rem; padding: 1.2rem; border-radius: 16px; background: var(--app-glass); border: 1px solid var(--app-border); color: var(--app-text); }
+.study-day-total { display: flex; flex-direction: column; min-width: 150px; }
+.study-day-total strong { font-size: 2rem; color: #a5b4fc; }
+.study-day-total span, .study-today p, .study-today small { color: var(--app-muted); }
+.study-today p { margin: 0.4rem 0; }
+.study-today small { font-size: 0.75rem; }
+@media (max-width: 600px) { .study-days-card { align-items: flex-start; flex-direction: column; gap: 1rem; } }
 .activity-list, .activity-empty { background: var(--app-glass); border: 1px solid var(--app-border); border-radius: 16px; overflow: hidden; }
 .activity-row { display: flex; align-items: center; gap: 0.85rem; width: 100%; padding: 1rem; border: 0; background: transparent; color: var(--app-text); text-align: left; cursor: pointer; }
 .activity-row + .activity-row { border-top: 1px solid var(--app-border); }

@@ -99,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getStudents', [UserController::class, 'getStudents']);
     Route::put('/students/{student}/profile', [UserController::class, 'updateStudentProfile']);
     Route::post('/students/{student}/reset-password', [UserController::class, 'resetPassword']);
+    Route::get('/students/{student}/learning-activity', [UserController::class, 'learningActivity']);
     Route::put('/updateUserInfo', [UserController::class, 'updateUserInfo']);
     Route::put('/updateUserPwd', [UserController::class, 'updateUserPwd']);
     Route::post('/whatsapp/test', [WhatsAppController::class, 'sendTest']);
@@ -119,6 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/lessons/{lesson}/pdf', [LessonController::class, 'uploadPdf']);
     Route::delete('/admin/lessons/{lesson}/pdf/{type}', [LessonController::class, 'removePdf']);
     Route::get('/lessons/{lesson}/pdf/{type}', [LessonController::class, 'viewPdf']);
+    Route::put('/lessons/{lesson}/pdf/{type}/activity', [LessonController::class, 'recordPdfActivity']);
     Route::apiResource('admin/lessons', LessonController::class);
 });
 
