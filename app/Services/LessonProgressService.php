@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class LessonProgressService
 {
@@ -75,5 +76,49 @@ class LessonProgressService
     {
         return $this->summary($lesson, LessonProgress::where('user_id', $userId)
             ->where('lesson_id', $lesson->id)->get());
+    }
+
+    public function recentActivity(int $userId, Collection $accesses): array
+    {
+        if ($accesses->isEmpty()) return [];
+
+        $pdfFields = [
+            'pdf_lesson' => 'lesson_pdf_path', 'pdf_question' => 'question_pdf_path',
+            'pdf_question2' => 'question_pdf_2_path', 'pdf_answer' => 'answer_pdf_path',
+        ];
+
+        return LessonProgress::with(['lesson.grade:id,name', 'lesson.subject:id,name'])
+            ->where('user_id', $userId)
+            ->whereHas('lesson', function ($query) use ($accesses) {
+                $query->where('is_active', true)->where(function ($pairs) use ($accesses) {
+                    foreach ($accesses as $access) {
+                        $pairs->orWhere(function ($pair) use ($access) {
+                            $pair->where('grade_id', $access->grade_id)->where('subject_id', $access->subject_id);
+                        });
+                    }
+                });
+            })
+            ->orderByDesc('last_viewed_at')->orderByDesc('id')
+            ->lazy(100)
+            ->filter(function ($row) use ($pdfFields) {
+                if (in_array($row->video_type, ['lesson', 'answer'], true)) {
+                    return $this->matchesCurrentSource($row);
+                }
+                $field = $pdfFields[$row->video_type] ?? null;
+                $path = $field ? $row->lesson->{$field} : null;
+                return $path && Storage::disk('local')->exists($path);
+            })
+            ->take(5)
+            ->map(fn ($row) => [
+                'id' => $row->id,
+                'lesson_id' => $row->lesson_id,
+                'grade_id' => $row->lesson->grade_id,
+                'subject_id' => $row->lesson->subject_id,
+                'title' => $row->lesson->title,
+                'subject' => $row->lesson->subject?->name,
+                'topic' => $row->lesson->topic,
+                'resource_type' => $row->video_type,
+                'last_viewed_at' => $row->last_viewed_at->toISOString(),
+            ])->values()->all();
     }
 }

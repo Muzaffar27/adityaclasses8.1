@@ -133,6 +133,8 @@ class StudentDashboardController extends Controller
             ],
             'courses' => $courses,
             'continue_learning' => $continueLearning,
+            'recent_activity' => Schema::hasTable('lesson_progress')
+                ? app(LessonProgressService::class)->recentActivity($user->id, $accesses) : [],
             'recent_results' => [],
         ]);
     }

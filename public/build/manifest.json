@@ -1,6 +1,6 @@
 {
-  "_ArrowRightIcon-B-M_IPyF.js": {
-    "file": "assets/ArrowRightIcon-B-M_IPyF.js",
+  "_ArrowRightIcon-Dx3HbYm1.js": {
+    "file": "assets/ArrowRightIcon-Dx3HbYm1.js",
     "name": "ArrowRightIcon",
     "imports": [
       "resources/js/app.js"
@@ -17,7 +17,7 @@
     "src": "node_modules/pdfjs-dist/build/pdf.worker.min.mjs"
   },
   "resources/js/app.js": {
-    "file": "assets/app-CsN_wigh.js",
+    "file": "assets/app-BG5fTAgz.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -32,40 +32,40 @@
       "resources/js/components/TutorSpace.vue"
     ],
     "css": [
-      "assets/app-CE57YD1E.css"
+      "assets/app-Dvv2d5pL.css"
     ],
     "assets": [
       "assets/pdf.worker.min-Cpi8b8z3.mjs"
     ]
   },
   "resources/js/components/Dashboard.vue": {
-    "file": "assets/Dashboard-CY-zI1_x.js",
+    "file": "assets/Dashboard-DT411mC5.js",
     "name": "Dashboard",
     "src": "resources/js/components/Dashboard.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_ArrowRightIcon-B-M_IPyF.js"
+      "_ArrowRightIcon-Dx3HbYm1.js"
     ],
     "css": [
-      "assets/Dashboard-CX0e1Zi-.css"
+      "assets/Dashboard-QyZQhTq7.css"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-BYUwpnCG.js",
+    "file": "assets/MyCourse-BtE_9N8l.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_ArrowRightIcon-B-M_IPyF.js"
+      "_ArrowRightIcon-Dx3HbYm1.js"
     ],
     "css": [
       "assets/MyCourse-CvABHYpD.css"
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-iEdbJu0f.js",
+    "file": "assets/PackageBuilder-rIWC5Yhc.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -77,7 +77,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-CAuSrPUj.js",
+    "file": "assets/PackagePage-B_zPn-OF.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -89,7 +89,7 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-De54cdvN.js",
+    "file": "assets/Profile-B16QNfIT.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -101,7 +101,7 @@
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-Uq7WQ4gp.js",
+    "file": "assets/StudentManagement-CKtofDiA.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -113,7 +113,7 @@
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-DOaoGyu9.js",
+    "file": "assets/TutorSpace-DJ_OCVig.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,

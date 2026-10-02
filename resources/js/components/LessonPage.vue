@@ -291,6 +291,7 @@ import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
 import LessonPdfResources from "./LessonPdfResources.vue";
 import LessonProgressStatus from "./Lesson/LessonProgressStatus.vue";
+import { showAlert } from '../composables/dialog';
 import { getVimeoPlayerUrl } from "../utils/vimeo";
 import { PlayIcon, LockClosedIcon, ChevronRightIcon, CheckCircleIcon, XMarkIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
 
@@ -406,13 +407,32 @@ async function fetchLessons() {
         const resumeLessonId = Number(route.query.resume);
         const resumeLesson = rawLessons.find(lesson => lesson.id === resumeLessonId);
 
-        if (hasAccess.value && resumeLesson?.vimeo_url) {
+        if (route.query.resume) {
+            const pdfFields = { lesson: 'has_lesson_pdf', question: 'has_question_pdf', question2: 'has_question_pdf_2', answer: 'has_answer_pdf' };
+            const pdf = route.query.pdf;
+            const mode = route.query.video || 'lesson';
+            const available = hasAccess.value && resumeLesson && (pdf
+                ? pdfFields[pdf] && resumeLesson[pdfFields[pdf]]
+                : ['lesson', 'answer'].includes(mode) && resumeLesson[mode === 'answer' ? 'answer_vimeo_url' : 'vimeo_url']);
+            if (!available) {
+                loading.value = false;
+                await showAlert({ title: 'Resource unavailable', message: 'This resource is no longer available. You can choose another lesson from this course.' });
+                return;
+            }
             openTopics.value[resumeLesson.topic || 'General'] = true;
             openSubTopics.value[getSubTopicKey(
                 resumeLesson.topic || 'General',
                 getSubTopicLabel(resumeLesson)
             )] = true;
-            await openLesson(resumeLesson, route.query.video === 'answer' ? 'answer' : 'lesson');
+            loading.value = false;
+            await nextTick();
+            if (pdf) {
+                const resource = resourceRefs.get(resumeLesson.id);
+                if (resource) await resource.openPdf(pdf);
+                else await showAlert({ title: 'Resource unavailable', message: 'This resource could not be opened. Please select it from the lesson materials.' });
+            } else {
+                await openLesson(resumeLesson, mode);
+            }
         }
 
     } catch (e) {

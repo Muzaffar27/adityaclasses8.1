@@ -71,6 +71,24 @@
                     </div>
                 </section>
 
+                <section class="section-block" aria-labelledby="recent-activity-heading">
+                    <div class="section-heading">
+                        <div><p class="overline">Pick up where you left off</p><h2 id="recent-activity-heading">Recent learning activity</h2></div>
+                    </div>
+                    <div v-if="dashboard.recent_activity.length" class="activity-list">
+                        <button v-for="item in dashboard.recent_activity" :key="item.id" class="activity-row" type="button" @click="openActivity(item)">
+                            <span class="activity-icon"><DocumentTextIcon v-if="item.resource_type.startsWith('pdf_')" /><PlayIcon v-else /></span>
+                            <span class="activity-copy"><strong>{{ item.title }}</strong><small>{{ item.subject }} · {{ item.topic }} · {{ resourceLabels[item.resource_type] }}</small></span>
+                            <time :datetime="item.last_viewed_at">{{ activityDate(item.last_viewed_at) }}</time>
+                            <ChevronRightIcon class="activity-arrow" />
+                        </button>
+                    </div>
+                    <div v-else class="activity-empty">
+                        <p>No recent activity yet. Open a video or PDF and it will appear here.</p>
+                        <router-link :to="{ name: 'myCourses' }">Browse your courses <ArrowRightIcon /></router-link>
+                    </div>
+                </section>
+
                 <section class="section-block courses-section">
                     <div class="section-heading">
                         <div><p class="overline">Learning library</p><h2>Your courses</h2></div>
@@ -97,6 +115,7 @@ import { useRouter } from 'vue-router'
 import { ArrowRightIcon, BookOpenIcon, ChevronRightIcon, ClipboardDocumentCheckIcon, ExclamationTriangleIcon, PlayIcon, PresentationChartLineIcon, Squares2X2Icon, UserCircleIcon } from '@heroicons/vue/24/outline'
 import api from '../api'
 import Layout from './common/Layout.vue'
+import { DocumentTextIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const loading = ref(true)
@@ -104,7 +123,7 @@ const error = ref('')
 const dashboard = reactive({
     student: { name: '', grade_id: null, grade: null, is_preview: false },
     stats: { active_courses: 0, available_lessons: 0, tests_attempted: 0, average_score: null },
-    courses: [], continue_learning: null, recent_results: [],
+    courses: [], continue_learning: null, recent_results: [], recent_activity: [],
 })
 
 const firstName = computed(() => dashboard.student.name?.trim().split(/\s+/)[0] || 'Student')
@@ -134,6 +153,7 @@ async function fetchDashboard() {
         dashboard.courses = data.courses || []
         dashboard.continue_learning = data.continue_learning || null
         dashboard.recent_results = data.recent_results || []
+        dashboard.recent_activity = data.recent_activity || []
     } catch (requestError) {
         console.error('Could not fetch student dashboard', requestError)
         error.value = 'Please check your connection and try again.'
@@ -147,6 +167,23 @@ function resumeLesson() {
     router.push({ name: 'lesson', params: { subjectId: item.subject_id, gradeId: item.grade_id }, query: { resume: item.lesson_id, video: item.video_type } })
 }
 function courseInitial(subject) { return subject?.trim().charAt(0).toUpperCase() || 'C' }
+const resourceLabels = { lesson: 'Lesson video', answer: 'Answer video', pdf_lesson: 'Lesson PDF', pdf_question: 'Question PDF 1', pdf_question2: 'Question PDF 2', pdf_answer: 'Answer PDF' }
+function openActivity(item) {
+    const query = { resume: item.lesson_id }
+    if (item.resource_type.startsWith('pdf_')) query.pdf = item.resource_type.slice(4)
+    else query.video = item.resource_type
+    router.push({ name: 'lesson', params: { subjectId: item.subject_id, gradeId: item.grade_id }, query })
+}
+function activityDate(value) {
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    const dayFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Indian/Mauritius', year: 'numeric', month: '2-digit', day: '2-digit' })
+    const day = dayFormatter.format(date)
+    const now = new Date()
+    if (day === dayFormatter.format(now)) return 'Today'
+    if (day === dayFormatter.format(new Date(now.getTime() - 86400000))) return 'Yesterday'
+    return new Intl.DateTimeFormat('en-GB', { timeZone: 'Indian/Mauritius', day: 'numeric', month: 'short', year: 'numeric' }).format(date)
+}
 function lessonLabel(count) { return `${count} ${count === 1 ? 'lesson' : 'lessons'}` }
 function formatTime(seconds) {
     const total = Math.max(0, Number(seconds) || 0)
@@ -160,6 +197,20 @@ onMounted(fetchDashboard)
 </script>
 
 <style scoped>
+.activity-list, .activity-empty { background: var(--app-glass); border: 1px solid var(--app-border); border-radius: 16px; overflow: hidden; }
+.activity-row { display: flex; align-items: center; gap: 0.85rem; width: 100%; padding: 1rem; border: 0; background: transparent; color: var(--app-text); text-align: left; cursor: pointer; }
+.activity-row + .activity-row { border-top: 1px solid var(--app-border); }
+.activity-row:hover { background: var(--app-glass-hover); }
+.activity-icon { display: flex; flex: 0 0 36px; color: var(--app-muted); }
+.activity-icon svg, .activity-arrow { width: 22px; height: 22px; }
+.activity-arrow { flex-shrink: 0; }
+.activity-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 0.25rem; overflow-wrap: anywhere; }
+.activity-copy small, .activity-row time { color: var(--app-muted); font-size: 0.75rem; }
+.activity-row time { flex-shrink: 0; }
+.activity-empty { padding: 1rem; color: var(--app-muted); }
+.activity-empty a { display: inline-flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+.activity-empty svg { width: 18px; height: 18px; }
+@media (max-width: 480px) { .activity-row { flex-wrap: wrap; gap: 0.5rem; } .activity-copy { flex-basis: calc(100% - 50px); } .activity-row time { margin-left: 44px; } .activity-arrow { margin-left: auto; } }
 .dashboard-surface {
     --glass: var(--app-glass);
     --glass-hover: var(--app-glass-hover);
