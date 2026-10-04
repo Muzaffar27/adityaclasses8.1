@@ -40,6 +40,34 @@
                 </aside>
 
                 <main class="profile-content">
+                    <section v-if="isStudent" class="profile-card" aria-labelledby="active-subjects-heading">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Learning</p>
+                                <h3 id="active-subjects-heading">Active subjects</h3>
+                            </div>
+                            <p>Your current course access, managed by your tutor.</p>
+                        </div>
+                        <div aria-live="polite" :aria-busy="subjectsLoading">
+                            <p v-if="subjectsLoading" class="field-note">Loading your subjects…</p>
+                            <div v-else-if="subjectsError">
+                                <p class="field-error">Could not load your active subjects.</p>
+                                <div class="form-actions">
+                                    <button type="button" class="button is-primary has-text-white" @click="loadSubjects">
+                                        Retry subjects
+                                    </button>
+                                </div>
+                            </div>
+                            <ul v-else-if="activeSubjects.length" class="detail-grid subjects-list">
+                                <li v-for="subject in activeSubjects" :key="subject.key" class="detail-item">
+                                    <strong>{{ subject.name }}</strong>
+                                    <span>{{ subject.grade }}</span>
+                                </li>
+                            </ul>
+                            <p v-else class="field-note">No active subjects yet. Contact your tutor to arrange course access.</p>
+                        </div>
+                    </section>
+
                     <section class="profile-card">
                         <div class="section-heading">
                             <div>
@@ -90,19 +118,18 @@
                                 <p class="eyebrow">Student details</p>
                                 <h3>Class and parent contact</h3>
                             </div>
-                            <span class="managed-badge">Update anytime</span>
+                            <span class="managed-badge">Class managed by your tutor</span>
                         </div>
 
                         <form @submit.prevent="updateInfo">
                             <div class="form-grid">
                                 <div class="field-block">
-                                    <label for="profile-grade">Class</label>
-                                    <select id="profile-grade" v-model="studentForm.grade_id" class="profile-input">
-                                        <option :value="null">Select your class</option>
-                                        <option v-for="grade in grades" :key="grade.id" :value="grade.id">
-                                            {{ grade.name }}
-                                        </option>
-                                    </select>
+                                    <label>Class</label>
+                                    <div class="locked-phone">
+                                        <strong>{{ profile.grade?.name || 'Not assigned yet' }}</strong>
+                                        <span class="locked-badge">Tutor managed</span>
+                                    </div>
+                                    <p class="field-note">Contact your tutor to assign or change your class.</p>
                                     <p v-if="infoErrors.grade_id" class="field-error">{{ infoErrors.grade_id[0] }}</p>
                                 </div>
 
@@ -254,6 +281,42 @@ const isStudent = computed(() => user.value?.role === 'student')
 const profile = computed(() => user.value?.student_profile || {})
 const parentPhoneLocked = computed(() => Boolean(profile.value.guardian_phone?.trim()))
 
+const activeSubjects = ref([])
+const subjectsLoading = ref(false)
+const subjectsError = ref(false)
+let subjectsRequest = 0
+
+async function loadSubjects() {
+    const request = ++subjectsRequest
+    activeSubjects.value = []
+    subjectsError.value = false
+    subjectsLoading.value = true
+    try {
+        const { data } = await api.get('/myCourses')
+        if (request !== subjectsRequest) return
+        activeSubjects.value = data.map(access => ({
+            key: `${access.grade_id}:${access.subject_id}`,
+            name: access.subject?.name || 'Subject unavailable',
+            grade: access.grade?.name || 'Class unavailable',
+        })).sort((a, b) => a.name.localeCompare(b.name) || a.grade.localeCompare(b.grade))
+    } catch {
+        if (request === subjectsRequest) subjectsError.value = true
+    } finally {
+        if (request === subjectsRequest) subjectsLoading.value = false
+    }
+}
+
+watch(() => isStudent.value ? user.value.id : null, (studentId) => {
+    if (studentId) {
+        loadSubjects()
+    } else {
+        ++subjectsRequest
+        activeSubjects.value = []
+        subjectsLoading.value = false
+        subjectsError.value = false
+    }
+}, { immediate: true })
+
 const userInitials = computed(() =>
     user.value?.name?.split(' ').filter(Boolean).map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?'
 )
@@ -285,13 +348,11 @@ const showError = (message) => {
 
 const infoForm = ref({ name: '', email: '', student_phone: '' })
 const studentForm = ref({
-    grade_id: null,
     academic_year: '',
     guardian_name: '',
     guardian_relationship: '',
     guardian_phone: '',
 })
-const grades = ref([])
 const infoErrors = ref({})
 const infoLoading = ref(false)
 
@@ -303,26 +364,10 @@ watch(user, (value) => {
         student_phone: value.student_profile?.student_phone || '',
     }
     studentForm.value = {
-        grade_id: value.student_profile?.grade_id || null,
         academic_year: value.student_profile?.academic_year || '',
         guardian_name: value.student_profile?.guardian_name || '',
         guardian_relationship: value.student_profile?.guardian_relationship || '',
         guardian_phone: value.student_profile?.guardian_phone || '',
-    }
-}, { immediate: true })
-
-watch(isStudent, async (value) => {
-    if (!value || grades.value.length) return
-
-    try {
-        const { data } = await api.get('/grades')
-        grades.value = data
-
-        if (profile.value.grade?.id && !grades.value.some(grade => grade.id === profile.value.grade.id)) {
-            grades.value.unshift(profile.value.grade)
-        }
-    } catch (error) {
-        console.error('Failed to load grades', error)
     }
 }, { immediate: true })
 
@@ -720,6 +765,12 @@ select.profile-input option {
     border-radius: 11px;
     min-width: 0;
     padding: 0.75rem;
+}
+
+.subjects-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 .detail-item span,

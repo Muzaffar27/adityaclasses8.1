@@ -132,6 +132,12 @@ class UserController extends Controller
     {
         $user = $request->user();
 
+        if ($user->role === 'student' && array_key_exists('grade_id', $request->all())) {
+            throw ValidationException::withMessages([
+                'grade_id' => ['Only your tutor can change or remove your assigned class.'],
+            ]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
@@ -154,7 +160,6 @@ class UserController extends Controller
                     ?? $user->studentProfile()->make();
 
                 $editableFields = [
-                    'grade_id',
                     'academic_year',
                     'student_phone',
                     'guardian_name',
