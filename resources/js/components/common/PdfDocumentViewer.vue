@@ -1,26 +1,27 @@
 <template>
-    <div ref="viewport" class="pdf-document-viewer">
+    <div ref="viewport" class="pdf-document-viewer" :class="{ 'single-page': pageNumber }">
         <div v-if="loading" class="pdf-viewer-state">Preparing document…</div>
         <div v-else-if="error" class="pdf-viewer-state is-error">The document could not be displayed.</div>
         <div v-show="!loading && !error" class="pdf-pages">
-            <canvas v-for="pageNumber in pageCount" :key="pageNumber"
+            <canvas v-for="pageNumber in displayedPages" :key="pageNumber"
                 :ref="element => setCanvas(element, pageNumber)"></canvas>
         </div>
     </div>
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 const pdfWorkerSrc = `${pdfWorkerUrl}?v=20260920-mime`;
 
-const props = defineProps({ url: { type: String, required: true } });
+const props = defineProps({ url: { type: String, required: true }, pageNumber: { type: Number, default: null } });
 const emit = defineEmits(['ready']);
 const viewport = ref(null);
 const loading = ref(true);
 const error = ref(false);
 const pageCount = ref(0);
+const displayedPages = computed(() => props.pageNumber ? (pageCount.value ? [Math.max(1, Math.min(props.pageNumber, pageCount.value))] : []) : Array.from({ length: pageCount.value }, (_, i) => i + 1));
 const canvases = new Map();
 let documentTask = null;
 let pdfDocument = null;
@@ -71,10 +72,10 @@ async function loadDocument() {
 
 async function renderPages(version = ++renderVersion, onPage = () => {}) {
     if (!pdfDocument || !viewport.value) return;
-    const availableWidth = Math.max(280, Math.min(viewport.value.clientWidth - 20, 1000));
+    const availableWidth = Math.max(props.pageNumber ? 120 : 280, Math.min(viewport.value.clientWidth - 20, 1000));
     const outputScale = Math.min(window.devicePixelRatio || 1, 1.5);
 
-    for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber++) {
+    for (const pageNumber of displayedPages.value) {
         if (version !== renderVersion) return;
         onPage(pageNumber);
         const page = await pdfDocument.getPage(pageNumber);
@@ -151,6 +152,7 @@ onBeforeUnmount(() => {
 .pdf-document-viewer { background: var(--app-panel); height: 100%; overflow: auto; overscroll-behavior: contain; width: 100%; }
 .pdf-pages { align-items: center; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.65rem; }
 .pdf-pages canvas { background: #fff; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3); display: block; max-width: 100%; }
+.single-page .pdf-pages canvas { width: 100% !important; height: auto !important; }
 .pdf-viewer-state { align-items: center; color: #dbeafe; display: flex; font-size: 0.85rem; font-weight: 700; height: 100%; justify-content: center; padding: 2rem; text-align: center; }
 .pdf-viewer-state.is-error { color: #fecaca; }
 </style>

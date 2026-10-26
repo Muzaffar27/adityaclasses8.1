@@ -214,7 +214,9 @@ function formatTime(seconds) {
 onMounted(fetchDashboard)
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../../sass/page';
+
 .study-days-card { display: flex; align-items: center; gap: 1.5rem; padding: 1.2rem; border-radius: 16px; background: var(--app-glass); border: 1px solid var(--app-border); color: var(--app-text); }
 .study-day-total { display: flex; flex-direction: column; min-width: 150px; }
 .study-day-total strong { font-size: 2rem; color: #a5b4fc; }
@@ -237,17 +239,12 @@ onMounted(fetchDashboard)
 .activity-empty svg { width: 18px; height: 18px; }
 @media (max-width: 480px) { .activity-row { flex-wrap: wrap; gap: 0.5rem; } .activity-copy { flex-basis: calc(100% - 50px); } .activity-row time { margin-left: 44px; } .activity-arrow { margin-left: auto; } }
 .dashboard-surface {
-    --glass: var(--app-glass);
+    @include page.learning-page;
     --glass-hover: var(--app-glass-hover);
-    --glass-border: var(--app-border);
-    --muted: var(--app-muted);
     background: transparent;
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    color: #fff;
-    margin: 0 auto 2rem;
-    width: 100%;
     min-height: calc(100vh - 130px);
     overflow: visible;
     padding: 0;
@@ -266,15 +263,12 @@ onMounted(fetchDashboard)
 }
 
 .dashboard-header {
+    @include page.page-header;
     align-items: center;
-    background: var(--app-header);
-    border-radius: 20px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
     display: flex;
     justify-content: space-between;
     min-height: 150px;
     overflow: hidden;
-    padding: clamp(1.25rem, 3vw, 2.25rem);
     position: relative;
 }
 
@@ -301,10 +295,7 @@ onMounted(fetchDashboard)
 }
 
 .dashboard-header h1 {
-    font-size: clamp(1.65rem, 4vw, 2.4rem);
-    font-weight: 800;
-    letter-spacing: -0.035em;
-    margin: 0;
+    @include page.page-title;
 }
 
 .dashboard-header p:not(.overline) {

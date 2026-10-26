@@ -190,6 +190,7 @@ import { storeToRefs } from 'pinia';
 import { showAlert } from '../../composables/dialog';
 import LessonPdfManager from './LessonPdfManager.vue';
 import { normalizeVimeoUrl } from '../../utils/vimeo';
+import { uniqueSorted } from '../../utils/lessonTopics';
 import { ClipboardDocumentCheckIcon, VideoCameraIcon } from '@heroicons/vue/24/outline';
 
 const router = useRouter();
@@ -478,14 +479,6 @@ function filterSuggestions(options, searchText) {
     if (!needle) return options;
 
     return options.filter(option => option.toLowerCase().includes(needle));
-}
-
-function uniqueSorted(values) {
-    return [...new Set(
-        values
-            .map(value => String(value || '').trim())
-            .filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 }
 
 </script>

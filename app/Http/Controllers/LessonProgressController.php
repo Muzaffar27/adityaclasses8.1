@@ -141,10 +141,7 @@ class LessonProgressController extends Controller
         $hasAccess = LessonAccess::where('user_id', $request->user()->id)
             ->where('subject_id', $lesson->subject_id)
             ->where('grade_id', $lesson->grade_id)
-            ->where('status', 'accepted')
-            ->where(function ($query) {
-                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
+            ->active()
             ->exists();
 
         abort_unless($hasAccess, 403);

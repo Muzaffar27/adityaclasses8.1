@@ -104,80 +104,23 @@ async function submit() {
 }
 </script>
 
-<style scoped>
-.login-wrapper {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: transparent;
-}
+<style scoped src="./auth.css"></style>
 
+<style scoped>
 .login-card {
-    width: 100%;
     max-width: 420px;
-    background: var(--app-glass);
-    border: 1px solid var(--app-border);
-    border-radius: 18px;
-    padding: 28px;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
-    backdrop-filter: blur(18px);
 }
 
 .auth-brand {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     margin-bottom: 24px;
-    text-align: center;
 }
 
 .auth-brand img {
-    width: 82px;
-    height: 82px;
-    object-fit: contain;
-    transform: scale(1.8);
-    transform-origin: center;
-    filter: drop-shadow(0 10px 22px rgba(99, 102, 241, 0.45));
     margin-bottom: 2px;
 }
 
-.login-title {
-    color: #fff;
-    font-size: 1.35rem;
-    font-weight: 800;
-    margin: 0;
-}
-
-.auth-subtitle {
-    color: rgba(203, 213, 225, 0.8);
-    font-size: 0.78rem;
-    margin: 2px 0 0;
-}
-
-.field label,
 .remember {
     color: rgba(203, 213, 225, 0.88);
-}
-
-.input-field {
-    background: var(--app-input);
-    border: 1px solid var(--app-border);
-    color: #fff;
-}
-
-.login-btn {
-    background: var(--app-primary-gradient);
-    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
-}
-
-.register-link {
-    text-align: center;
-}
-
-.register-link a {
-    color: #a5b4fc;
 }
 
 .password-help {
@@ -187,7 +130,4 @@ async function submit() {
     text-align: right;
 }
 
-.eye-icon {
-    color: rgba(203, 213, 225, 0.8);
-}
 </style>

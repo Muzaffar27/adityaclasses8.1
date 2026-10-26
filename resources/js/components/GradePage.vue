@@ -83,23 +83,12 @@ function getColor(id) {
 
 </script>
 
-<style scoped>
-.grade-name {
-    font-weight: 700;
-    font-size: 1.1rem;
-    line-height: 1.2;
-    margin-bottom: 4px;
-    color: #f9f9f9;
-}
+<style scoped src="./common/catalog.css"></style>
 
+<style scoped>
 .icon-circle {
     width: 50px;
     height: 50px;
-    margin: 0 auto;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     font-size: 24px;
 }
 </style>

@@ -138,6 +138,19 @@ class UserController extends Controller
             ]);
         }
 
+        if ($user->role === 'student') {
+            $restrictedErrors = [];
+            foreach (['role', 'subject_id', 'subject_ids', 'lesson_access', 'guardian_report_consent',
+                'guardian_report_consent_at', 'must_change_password', 'password'] as $field) {
+                if (array_key_exists($field, $request->all())) {
+                    $restrictedErrors[$field] = ['This field cannot be changed through your personal information.'];
+                }
+            }
+            if ($restrictedErrors) {
+                throw ValidationException::withMessages($restrictedErrors);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
@@ -206,8 +219,8 @@ class UserController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'current_password' => 'required',
-            'password' => 'required|min:8|confirmed',
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         // Check current password

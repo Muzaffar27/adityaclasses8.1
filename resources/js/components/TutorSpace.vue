@@ -1,10 +1,10 @@
 <template>
-    <Layout title="Tutor Control Panel">
+    <Layout :title="currentView.name === 'questions' ? '' : 'Tutor Control Panel'">
 
         <div class="admin-layout">
 
             <!-- SIDEBAR -->
-            <div class="admin-sidebar">
+            <div class="admin-sidebar" :class="{ 'has-preview-toggle': currentView.name === 'questions' }">
 
                 <p class="sidebar-title">Tools</p>
 
@@ -26,12 +26,19 @@
 
                 </div>
 
+                <button v-if="currentView.name === 'questions'" type="button" class="preview-toggle" :class="{ 'is-open': questionPreviewOpen }"
+                    :aria-label="questionPreviewOpen ? 'Close question preview' : 'Show question preview'" :title="questionPreviewOpen ? 'Back to editing' : 'Preview question'"
+                    :aria-expanded="questionPreviewOpen" aria-controls="question-preview-door" @click="questionPreviewOpen = !questionPreviewOpen">
+                    <ChevronRightIcon />
+                </button>
+
             </div>
 
             <!-- WORKSPACE (IMPORTANT PART) -->
             <div class="admin-content">
 
-                <component :is="activeToolComponent" v-bind="currentView.props" @navigate="handleNavigation" />
+                <component :is="activeToolComponent" v-bind="currentView.name === 'questions' ? { ...currentView.props, previewOpen: questionPreviewOpen } : currentView.props"
+                    @update:preview-open="questionPreviewOpen = $event" @navigate="handleNavigation" />
             </div>
 
         </div>
@@ -39,11 +46,11 @@
     </Layout>
 </template>
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, defineAsyncComponent } from "vue";
+import { ChevronRightIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
 import Layout from './common/Layout.vue';
 
 /* tools */
-import LessonTool from "./tools/LessonTool.vue";
 import LessonList from "./Lesson/LessonList.vue";
 import LessonAll from "./Lesson/LessonAll.vue";
 import AccessRequestPage from "./AccessRequestPage.vue";
@@ -57,12 +64,17 @@ import HomeFooterEditor from "./HomeFooterEditor.vue";
 import WhatsAppTest from "./WhatsAppTest.vue";
 import WhatsAppIcon from "./common/WhatsAppIcon.vue";
 
+const QuestionBuilderPreview = defineAsyncComponent(() => import('./tutor/QuestionBuilderPreview.vue'));
+const QuestionReviewPanel = defineAsyncComponent(() => import('./tutor/QuestionReviewPanel.vue'));
+
 const tools = [
     { key: "announcement", label: "Announcement", icon: "\u{1F4E2}", desc: "Site notice" },
     { key: "access", label: "Request Access", icon: "\u{1F465}", desc: "Approvals" },
     { key: "students", label: "Students", icon: "\u{1F393}", desc: "List" },
     { key: "whatsapp", label: "WhatsApp", iconComponent: WhatsAppIcon, desc: "Report preview" },
     { key: "lessons", label: "Lessons", icon: "\u{1F4DA}", desc: "Create & Edit" },
+    { key: "questions", label: "Questions", iconComponent: ClipboardDocumentListIcon, desc: "Form preview" },
+    { key: "questionReview", label: "Review questions", iconComponent: ClipboardDocumentListIcon, desc: "Verify extractions" },
     { key: "package", label: "Package", icon: "\u{1F4C2}", desc: "Create" },
     { key: "packageList", label: "Package List", icon: "\u{1F4E6}", desc: "List" },
     { key: "homeImages", label: "Home Images", icon: "\u{1F5BC}\uFE0F", desc: "Manage" },
@@ -75,9 +87,12 @@ const currentView = ref({
     name: "announcement",
     props: {}
 });
+const questionPreviewOpen = ref(false);
 
 /* component map */
 const toolMap = {
+    questionReview: QuestionReviewPanel,
+    questions: QuestionBuilderPreview,
     lessons: LessonAll,
     lessonList: LessonList,
     access: AccessRequestPage,
@@ -98,6 +113,7 @@ const activeToolComponent = computed(() => {
 
 /* sidebar click */
 function openView(name) {
+    questionPreviewOpen.value = false;
     currentView.value = {
         name,
         props: name === "students" ? { embedded: true } : {}
@@ -106,6 +122,7 @@ function openView(name) {
 
 /* 🔥 universal navigation handler */
 function handleNavigation(event) {
+    questionPreviewOpen.value = false;
     // event = { name: 'lessonList', props: {...} }
 
     currentView.value = {
@@ -214,7 +231,17 @@ function handleNavigation(event) {
     padding: 0 !important;
 }
 
+.admin-sidebar.has-preview-toggle { position: sticky; top: 105px; }
+.preview-toggle { align-items: center; background: linear-gradient(160deg, #818cf8, #4f46e5); border: 1px solid rgba(199,210,254,.5); border-radius: 999px; box-shadow: 0 3px 15px rgba(79,70,229,.35); color: white; cursor: pointer; display: flex; height: 52px; justify-content: center; padding: 0; position: absolute; right: -14px; top: 50%; transform: translateY(-50%); transition: box-shadow .18s ease, background .18s ease; width: 28px; z-index: 10; }
+.preview-toggle svg { height: 18px; transition: transform .2s ease; width: 18px; }
+.preview-toggle.is-open svg { transform: rotate(180deg); }
+.preview-toggle:hover { box-shadow: 0 3px 20px rgba(129,140,248,.6); }
+.preview-toggle:focus-visible { outline: 2px solid #c7d2fe; outline-offset: 3px; }
+
 @media (max-width: 768px) {
+
+    .admin-sidebar.has-preview-toggle { position: relative; top: auto; }
+    .preview-toggle { height: 44px; right: 4px; width: 26px; }
     .admin-layout {
         flex-direction: column;
     }

@@ -193,6 +193,8 @@ import api from '../../api';
 import LessonEditForm from './LessonEditForm.vue';
 import { PlusIcon } from '@heroicons/vue/24/outline';
 import { Pagination } from '../../composables/pagination';
+import { compareTopics } from '../../utils/lessonTopics';
+import { useLessonCollection } from '../../composables/lessonCollection';
 
 /* PROPS (from TutorSpace) */
 const props = defineProps({
@@ -204,8 +206,18 @@ const props = defineProps({
 const { grade_id: gradeId, subject_id: subjectId } = toRefs(props);
 
 /* STATE */
-const lessons = ref([]);
-const loading = ref(false);
+const { lessons, loading, loadLessons: fetchLessons } = useLessonCollection(
+    () => api.get('/admin/lessons', {
+        params: { grade_id: gradeId.value, subject_id: subjectId.value },
+    }),
+    {
+        transform: data => [...data].sort((first, second) => compareTopics(first.topic, second.topic)),
+        onLoaded: async () => {
+            currentPage.value = 1;
+            await nextTick();
+        },
+    }
+);
 const openTopics = ref({});
 const editingId = ref(null);
 const creating = ref(false);
@@ -261,54 +273,6 @@ const onCreated = () => {
     creating.value = false;
     fetchLessons();
 };
-function extractTopicNumber(topic) {
-    const match = topic.match(/^(\d+)/);
-    return match ? parseInt(match[1], 10) : null;
-}
-
-async function fetchLessons() {
-    loading.value = true;
-
-    try {
-        const res = await api.get("/admin/lessons", {
-            params: {
-                grade_id: gradeId.value,
-                subject_id: subjectId.value
-            }
-        });
-
-        console.log("Lessons = ", res.data);
-
-        const sorted = [...res.data].sort((a, b) => {
-            const aNum = extractTopicNumber(a.topic);
-            const bNum = extractTopicNumber(b.topic);
-
-            // 1. No-number topics first
-            if (aNum === null && bNum !== null) return -1;
-            if (aNum !== null && bNum === null) return 1;
-
-            // 2. both no numbers → alphabetical
-            if (aNum === null && bNum === null) {
-                return a.topic.localeCompare(b.topic);
-            }
-
-            // 3. both numbered → numeric sort
-            return aNum - bNum;
-        });
-
-        lessons.value = sorted;
-
-        currentPage.value = 1;
-
-        await nextTick();
-
-    } catch (e) {
-        console.error(e);
-    } finally {
-        loading.value = false;
-    }
-}
-
 function createLesson() {
     editingId.value = null;
     creating.value = !creating.value;

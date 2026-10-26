@@ -240,6 +240,8 @@ async function handleLogoutConfirm() {
 
 </script>
 
+<style lang="scss" src="../../sass/_sidebar.scss"></style>
+
 <style scoped>
 /* ── Logout button (matches menu-link look) ───────────────────────────────── */
 .sidebar-logout {

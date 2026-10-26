@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class LessonAccess extends Model
 {
@@ -28,6 +29,22 @@ class LessonAccess extends Model
         'expires_at' => 'datetime',
         'requested_price' => 'decimal:2',
     ];
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'accepted')
+            ->where(function ($query) {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            });
+    }
+
+    public function scopeLatestActiveForUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId)->active()
+            ->whereIn('id', self::query()->selectRaw('MAX(id)')
+                ->where('user_id', $userId)->active()
+                ->groupBy('subject_id', 'grade_id'));
+    }
 
     public function user()
     {

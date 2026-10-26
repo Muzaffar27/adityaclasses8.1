@@ -1,5 +1,6 @@
 <template>
-  <section class="main-layout-wrapper" :class="{ 'learning-background': ['dashboard', 'profile'].includes(route.name) }">
+  <div v-if="embedded" :title="title" :loading="loading"><slot /></div>
+  <section v-else class="main-layout-wrapper" :class="{ 'learning-background': ['dashboard', 'profile'].includes(route.name) }">
     <header class="smooth-header">
       <div class="header-inner">
 
@@ -81,6 +82,7 @@ const logoUrl = '/menu_logo.png';
 const props = defineProps({
   title: String,
   loading: Boolean,
+  embedded: { type: Boolean, default: false },
   showBack: { type: Boolean, default: true }
 });
 
@@ -110,8 +112,6 @@ function goProfile() {
 }
 
 function enterAdmin() {
-  console.log("Tutor space");
-
   router.push({
     name: "tutorSpace"
   });
@@ -410,18 +410,6 @@ function enterAdmin() {
 
   .header-quick-nav {
     gap: 5px;
-  }
-
-  .tutor-space-btn {
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.75rem !important;
-    min-width: 70px;
-    white-space: nowrap;
-    background: #f59e0b !important;
-    border-radius: 40px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    color: #451a03;
-    font-weight: 700;
   }
 
   /* Reduce gap between right side items */

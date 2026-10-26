@@ -22,21 +22,7 @@ class StudentDashboardController extends Controller
         $user->load('studentProfile.grade');
 
         $accesses = LessonAccess::with(['subject:id,name', 'grade:id,name'])
-            ->where('user_id', $user->id)
-            ->where('status', 'accepted')
-            ->where(function ($query) {
-                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
-            ->whereIn('id', function ($query) use ($user) {
-                $query->selectRaw('MAX(id)')
-                    ->from('lesson_access')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'accepted')
-                    ->where(function ($query) {
-                        $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                    })
-                    ->groupBy('subject_id', 'grade_id');
-            })
+            ->latestActiveForUser($user->id)
             ->orderByDesc('updated_at')
             ->get();
 

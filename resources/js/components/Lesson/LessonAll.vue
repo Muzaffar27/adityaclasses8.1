@@ -33,7 +33,7 @@
             <div class="column is-6-mobile is-3-tablet">
                 <label class="label has-text-grey-light is-size-7">Select Subject</label>
                 <div class="select is-fullwidth">
-                    <select v-model="selectedSubjectId" @change="onSubjectChange"
+                    <select v-model="selectedSubjectId"
                         :disabled="!selectedGradeId && availableSubjects.length === 0">
                         <option :value="null">All Subjects</option>
                         <option v-for="subject in availableSubjects" :key="subject.id" :value="subject.id">
@@ -400,6 +400,8 @@ import { useCacheStore } from '@/stores/cache';
 import Loader from '../common/Loader.vue';
 import createModal from '../common/CreateModal.vue';
 import { showAlert, showConfirm } from '../../composables/dialog';
+import { compareTopics, uniqueSorted } from '../../utils/lessonTopics';
+import { useLessonCollection } from '../../composables/lessonCollection';
 /* PROPS */
 const props = defineProps({
     grade_id: [String, Number],
@@ -410,8 +412,14 @@ const props = defineProps({
 const cacheStore = useCacheStore();
 
 /* STATE */
-const allLessons = ref([]);
-const loading = ref(false);
+const { lessons: allLessons, loading, loadLessons: fetchAllLessons } = useLessonCollection(
+    () => api.get('/lessons/all'),
+    {
+        transform: data => data || [],
+        clearOnError: true,
+        onError: error => console.error('Error fetching lessons:', error),
+    }
+);
 const openTopics = ref({});
 const editingId = ref(null);
 const editingTopic = ref(null);
@@ -507,19 +515,7 @@ const groupedTopics = computed(() => {
         grouped[lesson.topic].push(lesson);
     });
 
-    function extractTopicNumber(topic) {
-        const match = topic.match(/^(\d+)/);
-        return match ? parseInt(match[1], 10) : null;
-    }
-
-    const sortedGroups = Object.entries(grouped).sort((a, b) => {
-        const aNum = extractTopicNumber(a[0]);
-        const bNum = extractTopicNumber(b[0]);
-        if (aNum === null && bNum !== null) return -1;
-        if (aNum !== null && bNum === null) return 1;
-        if (aNum === null && bNum === null) return a[0].localeCompare(b[0]);
-        return aNum - bNum;
-    });
+    const sortedGroups = Object.entries(grouped).sort((first, second) => compareTopics(first[0], second[0]));
 
     return sortedGroups.map(([topic, lessons]) => ({
         topic,
@@ -562,14 +558,6 @@ function lessonsForOptionScope(lesson = null) {
         const matchesSubject = !subjectId || item.subject_id == subjectId;
         return matchesGrade && matchesSubject;
     });
-}
-
-function uniqueSorted(values) {
-    return [...new Set(
-        values
-            .map(value => String(value || '').trim())
-            .filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 }
 
 function topicOptionsForLesson(lesson = null) {
@@ -782,26 +770,10 @@ const onCreated = (createdLesson) => {
 };
 
 /* FETCH ALL LESSONS */
-async function fetchAllLessons() {
-    loading.value = true;
-    try {
-        const res = await api.get("/lessons/all");
-        console.log("All Lessons = ", res.data);
-        allLessons.value = res.data || [];
-    } catch (e) {
-        console.error("Error fetching lessons:", e);
-        allLessons.value = [];
-    } finally {
-        loading.value = false;
-    }
-}
-
 /* FILTER HANDLERS */
 function onGradeChange() {
     selectedSubjectId.value = null;
 }
-
-function onSubjectChange() { }
 
 function searchFilters() {
     appliedSearch.value = searchDraft.value.trim();

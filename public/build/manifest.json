@@ -1,6 +1,6 @@
 {
-  "_ArrowRightIcon-Idqu1GCP.js": {
-    "file": "assets/ArrowRightIcon-Idqu1GCP.js",
+  "_ArrowRightIcon-DVA_rRIG.js": {
+    "file": "assets/ArrowRightIcon-DVA_rRIG.js",
     "name": "ArrowRightIcon",
     "imports": [
       "resources/js/app.js"
@@ -17,10 +17,11 @@
     "src": "node_modules/pdfjs-dist/build/pdf.worker.min.mjs"
   },
   "resources/js/app.js": {
-    "file": "assets/app-B8QNw-4X.js",
+    "file": "assets/app-D6is__Mz.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
+    "isDynamicEntry": true,
     "dynamicImports": [
       "node_modules/pdfjs-dist/build/pdf.mjs",
       "resources/js/components/Dashboard.vue",
@@ -29,43 +30,44 @@
       "resources/js/components/Profile.vue",
       "resources/js/components/PackagePage.vue",
       "resources/js/components/PackageBuilder.vue",
-      "resources/js/components/TutorSpace.vue"
+      "resources/js/components/TutorSpace.vue",
+      "resources/js/components/tutor/QuestionReviewPage.vue"
     ],
     "css": [
-      "assets/app-DJHCNqIb.css"
+      "assets/app-Cnok5gnF.css"
     ],
     "assets": [
       "assets/pdf.worker.min-Cpi8b8z3.mjs"
     ]
   },
   "resources/js/components/Dashboard.vue": {
-    "file": "assets/Dashboard-DdHmBExK.js",
+    "file": "assets/Dashboard-2Pf38yKG.js",
     "name": "Dashboard",
     "src": "resources/js/components/Dashboard.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_ArrowRightIcon-Idqu1GCP.js"
+      "_ArrowRightIcon-DVA_rRIG.js"
     ],
     "css": [
-      "assets/Dashboard-EUcXQy03.css"
+      "assets/Dashboard-CxPGZlhm.css"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-Ckj6bxe0.js",
+    "file": "assets/MyCourse-DSI8vv08.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_ArrowRightIcon-Idqu1GCP.js"
+      "_ArrowRightIcon-DVA_rRIG.js"
     ],
     "css": [
       "assets/MyCourse-CvABHYpD.css"
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-ChCb-3yV.js",
+    "file": "assets/PackageBuilder-B3k4Wz_e.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -77,7 +79,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-CsprYWHg.js",
+    "file": "assets/PackagePage-DHhuTkUJ.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -89,7 +91,7 @@
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-BdBkSSPk.js",
+    "file": "assets/Profile-DesUVJAk.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -97,11 +99,11 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/Profile-DNnIe1CB.css"
+      "assets/Profile-BkElQ2NO.css"
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-C7L9qn20.js",
+    "file": "assets/StudentManagement-Ch0JUrIv.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -109,11 +111,11 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/StudentManagement-BTML4fVQ.css"
+      "assets/StudentManagement-CuLDwnAN.css"
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-C2g-61KQ.js",
+    "file": "assets/TutorSpace-Bo7xbWVe.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,
@@ -122,8 +124,49 @@
       "resources/js/components/PackageBuilder.vue",
       "resources/js/components/StudentManagement.vue"
     ],
+    "dynamicImports": [
+      "resources/js/components/tutor/QuestionBuilderPreview.vue",
+      "resources/js/components/tutor/QuestionReviewPanel.vue"
+    ],
     "css": [
-      "assets/TutorSpace-Bq1mvPB-.css"
+      "assets/TutorSpace-G4ClZbA-.css"
+    ]
+  },
+  "resources/js/components/tutor/QuestionBuilderPreview.vue": {
+    "file": "assets/QuestionBuilderPreview-DgIWAjRS.js",
+    "name": "QuestionBuilderPreview",
+    "src": "resources/js/components/tutor/QuestionBuilderPreview.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/QuestionBuilderPreview-DgZRt5id.css"
+    ]
+  },
+  "resources/js/components/tutor/QuestionReviewPage.vue": {
+    "file": "assets/QuestionReviewPage-CZcWhv4Q.js",
+    "name": "QuestionReviewPage",
+    "src": "resources/js/components/tutor/QuestionReviewPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "resources/js/components/tutor/QuestionReviewPanel.vue"
+    ]
+  },
+  "resources/js/components/tutor/QuestionReviewPanel.vue": {
+    "file": "assets/QuestionReviewPanel-0Urmtv3H.js",
+    "name": "QuestionReviewPanel",
+    "src": "resources/js/components/tutor/QuestionReviewPanel.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "dynamicImports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/QuestionReviewPanel-Ch9nsuJj.css"
     ]
   }
 }

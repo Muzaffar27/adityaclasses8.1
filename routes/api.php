@@ -118,6 +118,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/lessons/copy-topic', [LessonController::class, 'copyTopic']);
     Route::post('/admin/lessons/delete-topic', [LessonController::class, 'deleteTopic']);
     Route::post('/admin/lessons/{lesson}/pdf', [LessonController::class, 'uploadPdf']);
+    Route::get('/admin/lessons/{lesson}/question-bank', [\App\Http\Controllers\LessonQuestionBankController::class, 'show']);
+    Route::get('/admin/question-reviews', [\App\Http\Controllers\QuestionReviewController::class, 'index']);
+    Route::put('/admin/question-reviews/{id}', [\App\Http\Controllers\QuestionReviewController::class, 'decide']);
     Route::delete('/admin/lessons/{lesson}/pdf/{type}', [LessonController::class, 'removePdf']);
     Route::get('/lessons/{lesson}/pdf/{type}', [LessonController::class, 'viewPdf']);
     Route::put('/lessons/{lesson}/pdf/{type}/activity', [LessonController::class, 'recordPdfActivity']);

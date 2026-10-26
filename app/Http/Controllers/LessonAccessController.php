@@ -37,11 +37,7 @@ class LessonAccessController extends Controller
                 ]);
 
                 if ((clone $query)
-                    ->where('status', 'accepted')
-                    ->where(function ($query) {
-                        $query->whereNull('expires_at')
-                            ->orWhere('expires_at', '>', now());
-                    })
+                    ->active()
                     ->exists()) {
                     continue;
                 }

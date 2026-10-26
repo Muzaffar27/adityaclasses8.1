@@ -26,7 +26,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import Layout from "./common/Layout.vue";
 
 import { useCacheStore } from "../stores/cache";
@@ -36,22 +36,10 @@ const cacheStore = useCacheStore();
 const { subjects } = storeToRefs(cacheStore);
 
 const router = useRouter();
-const route = useRoute();
-
-const grade = route.params.id;
-
 const loading = ref(false);
 
 function goToGrades(subjectId) {
   router.push({ name: "grade", params: { id: subjectId } });
-}
-
-function goBack() {
-  if (window.history.length > 1) {
-    router.back();
-  } else {
-    router.push("/grades");
-  }
 }
 
 function getColor(id) {
@@ -82,23 +70,12 @@ onMounted(async () => {
 
 </script>
 
-<style scoped>
-.subject-name {
-  font-weight: 700;
-  font-size: 1.1rem;
-  line-height: 1.2;
-  margin-bottom: 4px;
-  color: #f9f9f9;
-}
+<style scoped src="./common/catalog.css"></style>
 
+<style scoped>
 .icon-circle {
   width: 55px;
   height: 55px;
-  margin: 0 auto;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 26px;
 }
 </style>

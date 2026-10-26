@@ -50,6 +50,8 @@
 </template>
 
 <script setup>
+import { useModal } from '../../composables/modal';
+
 const props = defineProps({
     modelValue: Boolean,
 
@@ -95,20 +97,12 @@ const emit = defineEmits([
     "cancel"
 ]);
 
-const close = () => {
-    emit("update:modelValue", false);
-    emit("cancel");
-};
+const { close, handleOverlay } = useModal(props, emit, { emitCancel: true });
 
 const onConfirmClick = () => {
     emit("confirm");
 };
 
-const handleOverlay = () => {
-    if (props.closeOnOverlay && !props.loading) {
-        close();
-    }
-};
 </script>
 
 <style scoped>

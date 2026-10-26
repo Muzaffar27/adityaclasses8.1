@@ -89,6 +89,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: "/question-review",
+        name: "questionReview",
+        component: () => import("../components/tutor/QuestionReviewPage.vue"),
+        meta: { requiresAuth: true, requiresStaff: true },
+    },
+    {
         path: "/subject",
         name: "subject",
         component: SubjectPage,
@@ -133,6 +139,7 @@ router.beforeEach(async (to) => {
     if (to.meta.requiresAuth && !auth.isLoggedIn) {
         return { name: "login" };
     }
+    if (to.meta.requiresStaff && !auth.isTutor && !auth.isAdmin) return { name: 'dashboard' };
 
     // 🚫 Prevent logged-in users from going to login/register
     if (

@@ -341,10 +341,7 @@ class LessonController extends Controller
             'user_id' => $request->user()->id,
             'subject_id' => $lesson->subject_id,
             'grade_id' => $lesson->grade_id,
-            'status' => 'accepted',
-        ])->where(function ($query) {
-            $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-        })->exists();
+        ])->active()->exists();
 
         abort_unless($hasAccess, 403);
     }
@@ -400,24 +397,8 @@ class LessonController extends Controller
     public function myCourses()
     {
         return LessonAccess::with(['subject', 'grade'])
-            ->where('user_id', auth()->id())
-            ->where('status', 'accepted')
-            ->where(function ($query) {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
+            ->latestActiveForUser(auth()->id())
             ->select('lesson_access.*')
-            ->whereIn('id', function ($query) {
-                $query->selectRaw('MAX(id)')
-                    ->from('lesson_access')
-                    ->where('user_id', auth()->id())
-                    ->where('status', 'accepted')
-                    ->where(function ($query) {
-                        $query->whereNull('expires_at')
-                            ->orWhere('expires_at', '>', now());
-                    })
-                    ->groupBy('subject_id', 'grade_id');
-            })
             ->get();
     }
 }

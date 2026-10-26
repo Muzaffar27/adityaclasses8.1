@@ -1,5 +1,5 @@
 <template>
-    <component :is="embedded ? 'div' : Layout" title="Student Administration" :loading="loading">
+    <Layout :embedded="embedded" title="Student Administration" :loading="loading">
 
         <div v-if="embedded && loading">
             <Loader />
@@ -349,7 +349,7 @@
             </div>
         </template>
 
-    </component>
+    </Layout>
 </template>
 
 <script setup>

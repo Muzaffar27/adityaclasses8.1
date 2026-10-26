@@ -444,31 +444,22 @@ async function updatePassword() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../../sass/page';
+
 .profile-page {
-    --glass: var(--app-glass);
-    --glass-border: var(--app-border);
-    --muted: var(--app-muted);
-    color: #fff;
-    margin: 0 auto 2rem;
-    width: 100%;
+    @include page.learning-page;
 }
 
 .profile-header {
-    background: var(--app-header);
+    @include page.page-header;
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
     margin-bottom: 1rem;
-    padding: clamp(1.25rem, 3vw, 2.25rem);
 }
 
 .profile-header h1 {
     color: #fff;
-    font-size: clamp(1.65rem, 4vw, 2.4rem);
-    font-weight: 800;
-    letter-spacing: -0.035em;
-    margin: 0;
+    @include page.page-title;
 }
 
 .profile-header > p:not(.eyebrow) {

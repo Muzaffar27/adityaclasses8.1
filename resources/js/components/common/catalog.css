@@ -1,0 +1,16 @@
+.grade-name,
+.subject-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    color: #f9f9f9;
+}
+
+.icon-circle {
+    margin: 0 auto;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

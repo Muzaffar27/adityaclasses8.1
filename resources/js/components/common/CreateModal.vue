@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { useModal } from '../../composables/modal';
 
 const props = defineProps({
     modelValue: Boolean,
@@ -37,30 +37,8 @@ const props = defineProps({
     formTone: { type: Boolean, default: false }
 });
 
-const modalRoot = ref(null);
-let previousBodyOverflow = '';
-
-watch(
-    () => props.modelValue,
-    async (val) => {
-        if (val) {
-            previousBodyOverflow = document.body.style.overflow;
-            document.body.style.overflow = 'hidden';
-            await nextTick();
-            modalRoot.value?.querySelector('input')?.focus();
-        } else {
-            document.body.style.overflow = previousBodyOverflow;
-        }
-    }
-);
-
 const emit = defineEmits(['update:modelValue']);
-
-const close = () => emit('update:modelValue', false);
-
-onBeforeUnmount(() => {
-    document.body.style.overflow = previousBodyOverflow;
-});
+const { modalRoot, close } = useModal(props, emit, { lockScroll: true });
 </script>
 
 <style scoped>

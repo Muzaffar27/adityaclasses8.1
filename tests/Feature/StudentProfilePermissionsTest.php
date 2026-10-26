@@ -89,6 +89,30 @@ class StudentProfilePermissionsTest extends TestCase
         $this->assertSame($this->student->name, $this->student->fresh()->name);
     }
 
+    public function test_restricted_account_fields_are_rejected_before_any_personal_changes(): void
+    {
+        $this->student->studentProfile()->update(['must_change_password' => true]);
+        $originalPassword = $this->student->password;
+        $restricted = [
+            'role' => 'admin', 'subject_id' => 1, 'subject_ids' => [1], 'lesson_access' => [],
+            'guardian_report_consent' => true, 'guardian_report_consent_at' => '2026-10-04',
+            'must_change_password' => false, 'password' => 'unused-test-password',
+        ];
+        foreach ($restricted as $field => $value) {
+            foreach ([$value, null] as $submittedValue) {
+                $this->putJson('/api/updateUserInfo', $this->personalPayload() + [$field => $submittedValue])
+                    ->assertUnprocessable()->assertJsonValidationErrors($field);
+                $saved = $this->student->fresh();
+                $this->assertSame($this->student->name, $saved->name);
+                $this->assertSame('student', $saved->role);
+                $this->assertSame($originalPassword, $saved->password);
+                $this->assertTrue($saved->studentProfile->must_change_password);
+                $this->assertNull($saved->studentProfile->guardian_report_consent_at);
+                $this->assertSame(0, $saved->lessonAccess()->count());
+            }
+        }
+    }
+
     public function test_profile_read_and_self_update_cannot_target_another_student(): void
     {
         $other = User::factory()->create(['role' => 'student']);
