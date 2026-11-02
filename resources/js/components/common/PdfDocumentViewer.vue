@@ -15,7 +15,7 @@ import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 const pdfWorkerSrc = `${pdfWorkerUrl}?v=20260920-mime`;
 
-const props = defineProps({ url: { type: String, required: true }, pageNumber: { type: Number, default: null } });
+const props = defineProps({ url: { type: String, required: true }, pageNumber: { type: Number, default: null }, focusRect: { type: Object, default: null } });
 const emit = defineEmits(['ready']);
 const viewport = ref(null);
 const loading = ref(true);
@@ -94,6 +94,14 @@ async function renderPages(version = ++renderVersion, onPage = () => {}) {
             viewport: displayViewport,
             transform: outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0],
         }).promise;
+        const rect = props.focusRect;
+        if (props.pageNumber === pageNumber && rect && [rect.x, rect.y, rect.width, rect.height].every(Number.isFinite) && rect.x >= 0 && rect.y >= 0 && rect.width > 0 && rect.height > 0) {
+            const scale = displayScale * outputScale;
+            context.save(); context.strokeStyle = '#f59e0b'; context.lineWidth = 3 * outputScale;
+            context.strokeRect(rect.x * scale, rect.y * scale, Math.min(rect.width, baseViewport.width - rect.x) * scale, Math.min(rect.height, baseViewport.height - rect.y) * scale);
+            context.restore();
+            viewport.value.scrollTop = Math.max(0, rect.y * displayScale - viewport.value.clientHeight / 3);
+        }
     }
 }
 
@@ -140,7 +148,7 @@ function safePath(url) {
     }
 }
 
-watch(() => props.url, loadDocument);
+watch(() => [props.url, props.pageNumber, props.focusRect], loadDocument);
 onMounted(loadDocument);
 onBeforeUnmount(() => {
     renderVersion++;
