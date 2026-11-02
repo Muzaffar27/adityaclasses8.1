@@ -17,8 +17,10 @@ class LessonQuestionBankController extends Controller
         $service->synchronize($lesson);
         return response()->json(['available' => true, 'sources' => LessonQuestionSource::where('lesson_id', $lesson->id)->get()->map(fn ($source) => [
             'slot' => $source->slot, 'status' => $source->status, 'revision' => $source->revision,
-            'question_count' => $source->question_count, 'rejected_count' => $source->rejected_count,
+            'question_count' => $source->question_count, 'rejected_count' => $source->rejected_count, 'skipped_count' => $source->skipped_count,
             'processed_at' => $source->processed_at?->toIso8601String(), 'error' => $source->last_error,
+            'requested_at' => $source->requested_at?->toIso8601String(), 'claimed_at' => $source->claimed_at?->toIso8601String(),
+            'retry_scheduled' => $source->next_attempt_at !== null,
         ])]);
     }
 }

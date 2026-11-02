@@ -163,6 +163,24 @@ class LessonQuestionBankUploadTest extends TestCase
         $this->artisan('question-bank:import', ['file' => 'outside.json'])->assertExitCode(1);
     }
 
+    public function test_worker_claim_limit_and_terminal_failure_bound_the_background_load(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'tutor']));
+        $lesson = $this->lesson(); $this->upload($lesson);
+        $this->upload($lesson, 'question2');
+        $service = app(LessonQuestionBankService::class);
+        $batch = $service->exportWork(str_repeat('a', 64), 1);
+        $this->assertCount(1, $batch['jobs']);
+        $this->assertSame(1, LessonQuestionSource::where('status', 'pending')->count());
+        $source = LessonQuestionSource::findOrFail($batch['jobs'][0]['id']);
+        $source->update(['attempts' => config('question_bank.max_source_attempts')]);
+        $service->complete($batch['jobs'][0] + ['status' => 'failed']);
+        $this->assertNull($source->fresh()->next_attempt_at);
+        $remaining = $service->exportWork(str_repeat('a', 64), 1);
+        $this->assertCount(1, $remaining['jobs']);
+        $this->assertNotSame($source->id, $remaining['jobs'][0]['id']);
+    }
+
     public function test_worker_export_rejects_a_production_environment(): void
     {
         $this->app->instance('env', 'production');

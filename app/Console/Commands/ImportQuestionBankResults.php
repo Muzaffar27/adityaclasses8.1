@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Storage;
 class ImportQuestionBankResults extends Command
 {
     protected $signature = 'question-bank:import {file : Relative private result JSON path}';
-    protected $description = 'Acknowledge local worker results only for the current lesson PDF revision';
+    protected $description = 'Acknowledge private worker results only for the current lesson PDF revision';
 
     public function handle(LessonQuestionBankService $service): int
     {
-        if (!app()->environment(['local', 'testing'])) { $this->error('This worker bridge is local-only.'); return self::FAILURE; }
+        if (!app()->environment(['local', 'testing']) && !config('question_bank.worker_enabled')) { $this->error('The question-bank worker is not enabled.'); return self::FAILURE; }
         $root = realpath(Storage::disk('local')->path('question-bank-worker/results'));
         $file = realpath(Storage::disk('local')->path((string) $this->argument('file')));
         if (!$root || !$file || !str_starts_with($file, $root . DIRECTORY_SEPARATOR) || !str_ends_with($file, '.json')) {

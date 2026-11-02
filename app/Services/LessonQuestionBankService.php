@@ -57,7 +57,7 @@ class LessonQuestionBankService
             ]);
     }
 
-    public function exportWork(string $processor): array
+    public function exportWork(string $processor, int $limit = 100): array
     {
         $this->reconcile();
         // A parser update must invalidate the processed marker as well as a PDF update.
@@ -65,14 +65,15 @@ class LessonQuestionBankService
             ->where(function ($query) use ($processor) { $query->whereNull('processor_version')->orWhere('processor_version', '!=', $processor); })
             ->update(['status' => 'pending', 'question_ids' => null, 'question_count' => 0, 'processed_at' => null, 'updated_at' => now()]);
 
-        return DB::transaction(function () {
+        return DB::transaction(function () use ($limit) {
             $jobs = LessonQuestionSource::where(function ($query) {
                 $query->where(function ($pending) {
                     $pending->where('status', 'pending')
-                        ->orWhere(fn ($retry) => $retry->where('status', 'failed')->where('next_attempt_at', '<=', now()))
+                        ->orWhere(fn ($retry) => $retry->where('status', 'failed')->where('attempts', '<', config('question_bank.max_source_attempts'))->where('next_attempt_at', '<=', now()))
                         ->orWhere(fn ($stale) => $stale->where('status', 'processing')->where('claimed_at', '<', now()->subMinutes(10)));
                 })->orWhere(fn ($removed) => $removed->whereNull('pdf_path')->where('status', 'removed')->whereNull('processed_at'));
-            })->lockForUpdate()->get();
+            })
+                ->orderBy('id')->limit(max(1, min(100, $limit)))->lockForUpdate()->get();
             foreach ($jobs as $source) $source->update(['status' => 'processing', 'claimed_at' => now(), 'attempts' => $source->attempts + 1]);
             $manifest = LessonQuestionSource::whereNotNull('pdf_path')->where('status', '!=', 'removed')->get()->map(fn ($source) => [
                 'lesson_id' => (int) $source->lesson_id, 'grade_id' => (int) $source->grade_id,
@@ -97,7 +98,9 @@ class LessonQuestionBankService
                 return 'removed';
             }
             if (($result['status'] ?? null) === 'failed') {
-                $source->update(['status' => 'failed', 'last_error' => 'Question extraction failed; the local worker will retry.', 'next_attempt_at' => now()->addMinute()]);
+                $retry = $source->attempts < config('question_bank.max_source_attempts');
+                $source->update(['status' => 'failed', 'last_error' => $retry ? 'Question extraction failed; awaiting a background retry.' : 'Question extraction failed after the retry limit. Manual attention is required.',
+                    'next_attempt_at' => $retry ? now()->addMinutes(5 * max(1, $source->attempts)) : null]);
                 return 'failed';
             }
             if (!$lesson) return 'superseded';
