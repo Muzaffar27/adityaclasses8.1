@@ -1,5 +1,5 @@
 <template>
-    <section class="corrections" aria-label="Needs correction">
+    <section class="corrections" :class="{ 'has-source': sourceItem }" aria-label="Needs correction">
         <p v-if="message" ref="notice" tabindex="-1" role="status" class="feedback">{{ message }}</p>
         <p v-if="error" role="alert" class="error">{{ error }} <button @click="load">Retry</button></p>
         <div class="toolbar queue-toolbar"><label>Show<select v-model="status" :disabled="saving" @change="page = 1; load()"><option value="open">Open corrections</option><option value="resolved">Resolved</option><option value="all">All</option></select></label><span class="queue-count">{{ total }} corrections</span><button :disabled="loading || saving" @click="load">Refresh corrections</button></div>
@@ -13,12 +13,10 @@
                 <p v-if="item.reason"><strong>Reported problem:</strong> {{ item.reason }}</p>
                 <ReviewQuestionContent v-if="editing !== item.id"><StructuredQuestion :content="item.content" /><QuestionDiagrams v-if="item.content.diagrams?.length" :question-id="item.replacement_id || item.id" :diagrams="item.content.diagrams" @ready="diagramsReady[item.id] = $event" /></ReviewQuestionContent>
                 <div class="correction-actions">
-                    <button :disabled="saving" @click="openOriginal(item)">Compare original PDF</button>
+                    <button :disabled="saving" :aria-expanded="sourceItem === item.id" aria-controls="correction-original-panel" @click="sourceItem === item.id ? closeSource(true) : openOriginal(item, $event)">{{ sourceItem === item.id ? 'Close original PDF' : 'Compare original PDF' }}</button>
                     <button v-if="editing !== item.id && ['queued', 'needs_manual', 'review_needed'].includes(item.status)" :disabled="saving" @click="startEdit(item)">Edit question</button>
                     <button v-if="item.approval && editing !== item.id" class="approve-correction" :disabled="saving || (item.content.diagrams?.length && !diagramsReady[item.id])" @click="approve(item)">{{ saving ? 'Saving...' : 'Approve correction' }}</button>
                 </div>
-                <p v-if="sourceError && sourceItem === item.id" role="alert">{{ sourceError }} <button @click="openOriginal(item)">Retry PDF</button></p>
-                <div v-if="sourceItem === item.id && sourceUrl" class="source"><a :href="sourceUrl" target="_blank" rel="noopener">Open full PDF to zoom</a><PdfDocumentViewer :url="sourceUrl" :page-number="item.origins[0]?.page" /></div>
                 <p v-if="item.status === 'stale'">The source changed. Review its latest extraction instead.</p>
                 <form v-if="editing === item.id" class="editor" @submit.prevent="save(item, true)">
                     <div class="editor-workspace">
@@ -38,6 +36,13 @@
                 </form>
             </article>
         </template>
+        <aside v-if="sourceItem" id="correction-original-panel" class="source-panel" aria-label="Original PDF" :aria-busy="sourceLoading">
+            <header><h3 ref="sourceHeading" tabindex="-1">Original PDF</h3><button type="button" @click="closeSource(true)">Close</button></header>
+            <p class="source-caption">{{ sourceOrigin?.lesson_title }} · page {{ sourceOrigin?.page }}</p>
+            <p v-if="sourceLoading" role="status">Loading PDF…</p>
+            <p v-if="sourceError" role="alert">{{ sourceError }} <button type="button" @click="loadOriginal">Retry PDF</button></p>
+            <div v-if="sourceUrl" class="source-document"><a :href="sourceUrl" target="_blank" rel="noopener">Open full PDF</a><PdfDocumentViewer :url="sourceUrl" :page-number="sourceOrigin?.page" /></div>
+        </aside>
     </section>
 </template>
 <script setup>
@@ -56,11 +61,19 @@ const loading = ref(false), saving = ref(false), error = ref(''), message = ref(
 const draft = ref({}), format = ref('text');
 const writingInput = ref(null), writingEdited = ref(false);
 const writingSymbols = [{ value: '+', label: 'Insert plus' }, { value: '−', label: 'Insert minus' }, { value: '×', label: 'Insert multiplication sign' }, { value: '÷', label: 'Insert division sign' }, { value: '²', label: 'Insert squared' }, { value: '√', label: 'Insert square root' }];
-const sourceUrl = ref(''), sourceItem = ref(''), sourceError = ref(''); let serial = 0, sourceSerial = 0;
+const sourceUrl = ref(''), sourceItem = ref(''), sourceError = ref(''), sourceLoading = ref(false), sourceOrigin = ref(null), sourceHeading = ref(null);
+let serial = 0, sourceSerial = 0, sourceReturnFocus = null;
 const labels = { queued: 'Manual correction needed', processing: 'Background processing', needs_manual: 'Manual correction needed', review_needed: 'Ready to approve', resolved: 'Resolved and approved', stale: 'Source changed' };
 const outcomes = { unchanged: 'Extraction returned the same content. Correct it manually.', not_recovered: 'Automatic extraction could not recover this question.', changed: 'A different extracted version is available. Check it before approval.', manual_correction: 'A tutor saved a correction. Approval is still required.', source_changed: 'The flagged PDF version is no longer current.' };
 const preview = computed(() => ({ instructions: draft.value.instructions, ...(format.value === 'text' ? { text: draft.value.text } : { math: draft.value.math }) }));
-function closeSource() { sourceSerial++; if (sourceUrl.value) URL.revokeObjectURL(sourceUrl.value); sourceUrl.value = ''; sourceItem.value = ''; sourceError.value = ''; }
+function closeSource(restoreFocus = false) {
+    sourceSerial++; if (sourceUrl.value) URL.revokeObjectURL(sourceUrl.value);
+    sourceUrl.value = ''; sourceItem.value = ''; sourceError.value = ''; sourceLoading.value = false; sourceOrigin.value = null;
+    if (restoreFocus) nextTick(() => { if (sourceReturnFocus?.isConnected) sourceReturnFocus.focus(); });
+}
+function closeSourceOnEscape(event) {
+    if (event.key === 'Escape' && sourceItem.value && !document.querySelector('dialog[open]')) { event.preventDefault(); event.stopPropagation(); closeSource(true); }
+}
 async function load() {
     const request = ++serial; loading.value = true; error.value = ''; editing.value = ''; diagramsReady.value = {}; closeSource();
     try { const { data } = await api.get('/admin/question-corrections', { params: { page: page.value, status: status.value } }); if (request !== serial) return;
@@ -119,15 +132,34 @@ async function approve(item) {
     } catch (e) { error.value = e.response?.data?.message || 'Could not approve the correction. Refresh and try again.'; }
     finally { saving.value = false; emit('busy', false); }
 }
-async function openOriginal(item) {
-    closeSource(); sourceItem.value = item.id; const request = ++sourceSerial, origin = item.origins[0];
+async function openOriginal(item, event) {
+    closeSource(); sourceReturnFocus = event?.currentTarget || document.activeElement;
+    sourceItem.value = item.id; sourceOrigin.value = item.origins[0];
+    const version = sourceSerial;
+    await nextTick(); if (version !== sourceSerial) return;
+    sourceHeading.value?.focus({ preventScroll: true });
+    if (window.matchMedia('(max-width:900px)').matches) {
+        const card = sourceReturnFocus?.closest('.correction');
+        (card?.querySelector('.editor') || card?.querySelector('h3'))?.scrollIntoView({ block: 'start' });
+    }
+    await loadOriginal();
+}
+async function loadOriginal() {
+    if (!sourceOrigin.value) return;
+    const request = ++sourceSerial, origin = sourceOrigin.value;
+    sourceLoading.value = true; sourceError.value = '';
     try { const { data } = await api.get(`/lessons/${origin.lesson_id}/pdf/${origin.slot}`, { responseType: 'blob', timeout: 60000 }); if (request === sourceSerial) sourceUrl.value = URL.createObjectURL(data); }
     catch { if (request === sourceSerial) sourceError.value = 'Could not load the original PDF.'; }
+    finally { if (request === sourceSerial) sourceLoading.value = false; }
 }
-onMounted(load);
-onBeforeUnmount(() => { serial++; closeSource(); });
+onMounted(() => { load(); window.addEventListener('keydown', closeSourceOnEscape); });
+onBeforeUnmount(() => { serial++; closeSource(); window.removeEventListener('keydown', closeSourceOnEscape); });
 </script>
 <style scoped>
+.corrections { --source-width:min(43vw,600px); box-sizing:border-box; }.corrections.has-source { padding-right:calc(var(--source-width) + 24px); }.has-source .editor-workspace { grid-template-columns:minmax(0,1fr); }.has-source .editor-preview { position:static; }
+.has-source .editor { scroll-margin-top:110px; }
+.source-panel { box-sizing:border-box; position:fixed; top:110px; right:16px; bottom:16px; width:var(--source-width); min-width:0; display:flex; flex-direction:column; gap:8px; padding:12px; border:1px solid var(--app-border); border-radius:12px; background:var(--app-panel); box-shadow:0 10px 35px rgba(0,0,0,.3); z-index:40; }.source-panel>header { display:flex; justify-content:space-between; align-items:center; gap:12px; }.source-caption { margin:0; font-size:.8rem; color:var(--app-muted); overflow-wrap:anywhere; }.source-document { min-height:0; min-width:0; flex:1; display:flex; flex-direction:column; gap:8px; }.source-document>a { font-size:.8rem; flex-shrink:0; }.source-document :deep(.pdf-document-viewer) { flex:1; min-height:0; height:100%; }
+@media(max-width:900px) { .corrections.has-source { padding-right:0; padding-bottom:calc(min(50dvh,420px) + 24px); }.source-panel { top:auto; right:12px; bottom:12px; width:calc(100% - 24px); height:min(50dvh,420px); } }
 .writing-modes,.writing-symbols { display:flex; flex-wrap:wrap; gap:6px; }.writing-modes button[aria-pressed=true] { border-color:var(--app-accent); background:rgba(96,165,250,.12); }.writing-symbols { margin-bottom:8px; }.writing-symbols button { min-width:44px; font-size:1.15rem; padding:6px 10px; }
 .corrections,.correction,.editor,.editor-fields,.editor-preview { min-width:0; }
 .correction { border-top:1px solid var(--app-border); padding:18px 0; margin:8px 0; overflow-wrap:anywhere; }.correction-heading h3 { scroll-margin-top:110px; }.correction-heading { display:flex; justify-content:space-between; align-items:center; gap:8px 16px; flex-wrap:wrap; margin-bottom:10px; }h3 { font-size:1rem; margin:0; }.status-badge { font-size:.78rem; padding:5px 9px; border:1px solid var(--app-border); border-radius:6px; color:var(--app-muted); }.outcome { color:var(--app-muted); font-size:.9rem; line-height:1.5; }
@@ -137,5 +169,4 @@ label { display:grid; gap:6px; min-width:0; font-size:.85rem; }button,select,tex
 .feedback,.error { padding:12px; scroll-margin-top:110px; line-height:1.6; }.feedback { background:rgba(34,197,94,.12); }.error { background:rgba(239,68,68,.12); }
 @media(max-width:900px) { .editor-workspace { grid-template-columns:minmax(0,1fr); gap:18px; }.editor-preview { position:static; } }
 @media(max-width:500px) { .queue-toolbar>label { flex:1 1 100%; }.queue-toolbar>button { margin-left:0; }.queue-count { flex:1; }.format-field { max-width:none; }.editor-footer,.editor-footer .correction-actions { width:100%; }.editor-footer .correction-actions>button { flex:1 1 100px; }textarea,select { font-size:16px; } }
-.source :deep(.pdf-document-viewer) { height:60vh; }.source { margin:12px 0; min-width:0; }
 </style>

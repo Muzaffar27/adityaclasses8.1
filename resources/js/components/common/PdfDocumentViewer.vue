@@ -32,11 +32,16 @@ function setCanvas(element, pageNumber) {
     else canvases.delete(pageNumber);
 }
 
+async function disposeDocument(task) {
+    try { await task?.destroy?.(); } catch { /* Closing during worker startup is expected. */ }
+}
+
 async function loadDocument() {
     const version = ++renderVersion;
     let failureStage = 'module-import';
     let renderingPage = null;
-    await documentTask?.destroy?.();
+    await disposeDocument(documentTask);
+    if (version !== renderVersion) return;
     documentTask = null;
     pdfDocument = null;
     loading.value = true;
@@ -46,6 +51,7 @@ async function loadDocument() {
 
     try {
         const pdfjs = await import('pdfjs-dist/build/pdf.mjs');
+        if (version !== renderVersion) return;
         failureStage = 'worker-setup';
         pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
         failureStage = 'document-load';
@@ -152,7 +158,7 @@ watch(() => [props.url, props.pageNumber, props.focusRect], loadDocument);
 onMounted(loadDocument);
 onBeforeUnmount(() => {
     renderVersion++;
-    documentTask?.destroy?.();
+    void disposeDocument(documentTask);
 });
 </script>
 
