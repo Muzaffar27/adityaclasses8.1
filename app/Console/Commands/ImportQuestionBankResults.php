@@ -22,7 +22,8 @@ class ImportQuestionBankResults extends Command
         $payload = json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
         $results = [];
         foreach ($payload['results'] ?? [] as $result) $results[] = ['id' => $result['id'], 'status' => $service->complete($result)];
-        app(\App\Services\QuestionReviewService::class)->synchronize();
+        $current = app(\App\Services\QuestionReviewService::class)->synchronize();
+        app(\App\Services\QuestionCorrectionService::class)->reconcile($current);
         $this->line(json_encode(['results' => $results], JSON_THROW_ON_ERROR));
         return self::SUCCESS;
     }

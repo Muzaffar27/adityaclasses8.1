@@ -120,6 +120,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/lessons/{lesson}/pdf', [LessonController::class, 'uploadPdf']);
     Route::get('/admin/lessons/{lesson}/question-bank', [\App\Http\Controllers\LessonQuestionBankController::class, 'show']);
     Route::get('/admin/question-reviews', [\App\Http\Controllers\QuestionReviewController::class, 'index']);
+    Route::get('/admin/question-corrections', [\App\Http\Controllers\QuestionCorrectionController::class, 'index']);
+    Route::post('/admin/question-reviews/{id}/flag', [\App\Http\Controllers\QuestionCorrectionController::class, 'flag']);
+    Route::put('/admin/question-corrections/{id}', [\App\Http\Controllers\QuestionCorrectionController::class, 'correct']);
+    Route::get('/admin/question-reviews/pdfs', [\App\Http\Controllers\QuestionReviewController::class, 'pdfs']);
+    Route::get('/admin/question-reviews/pdfs/{source}', [\App\Http\Controllers\QuestionReviewController::class, 'pdf'])->whereNumber('source');
+    Route::post('/admin/question-reviews/pdfs/{source}/approve', [\App\Http\Controllers\QuestionReviewController::class, 'approvePdf'])->whereNumber('source');
+    Route::post('/admin/question-reviews/issues/{id}/retry', [\App\Http\Controllers\QuestionReviewController::class, 'retryIssue']);
+    Route::get('/admin/question-reviews/{id}/diagrams/{index}', [\App\Http\Controllers\QuestionReviewController::class, 'diagram']);
     Route::put('/admin/question-reviews/{id}', [\App\Http\Controllers\QuestionReviewController::class, 'decide']);
     Route::delete('/admin/lessons/{lesson}/pdf/{type}', [LessonController::class, 'removePdf']);
     Route::get('/lessons/{lesson}/pdf/{type}', [LessonController::class, 'viewPdf']);
