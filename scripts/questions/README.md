@@ -1,5 +1,53 @@
 # Automatic questions from local lesson PDFs
 
+## Starter bank review — 1 November 2026
+
+Review questions defaults to **five reviewed slots per grade/subject/topic**. Approved questions and flags occupy slots; saved corrections awaiting approval keep their flagged slot. Flags stay unapproved in **Needs correction**, and the starter does not keep replacing them with more candidates. The progress bar still measures the goal of five approved questions per topic. Fix existing flags to finish that goal. Use **More variety** explicitly to access the rest of the pending bank; this is workload selection, not an accuracy score.
+
+PDF approval submits an explicit list of displayed question IDs and validates them against the current source/review snapshot. Questions hidden by Starter bank are not approved by that action. Manual correction and recovered-result links open the full review scope so the requested result remains accessible. No AI or paid processing is involved.
+
+## Saved flags and manual correction - 2 November 2026
+
+Flags persist immediately in **Needs correction**. Tutors edit text or maths, check the preview and choose **Save & approve** in one request. **Save only** retains an unapproved draft for later approval. Original content, flags and earlier versions remain stored. New flags are marked for manual correction; existing queued flags remain editable.
+
+Midnight automation and automatic flag retries have been removed. There is no question-bank scheduler entry, nightly command or correction-only worker mode. Upload extraction and explicit **Retry extraction** actions still use the normal background worker. The production worker CLI remains gated by QUESTION_BANK_WORKER_ENABLED; that setting does not schedule processing.
+
+See [workflow boundaries and operations](../../docs/QUESTION_CORRECTION_RUNBOOK.md).
+
+## Recovery actions and first parser repair — 27 October 2026
+
+Rejected regions and skipped pages now offer **Retry extraction**. It queues the entire bound original PDF for forced local reprocessing, shows progress/results while this panel is open, then offers **Review extracted questions** for that lesson. A retry can return unchanged results; it is not an automatic correction of every unsupported layout. The local watcher must be running. Retry never approves questions or dismisses remaining issues.
+
+The first recovery refinement removes only isolated bottom-right page-number lines matching the PDF page/cover offset and carries exercise context onto pages with increasing labels in matching columns. Changed instructions, reset labels and unknown boundaries remain unresolved. Continuation maths containing English list separators stays rejected until list-expression support exists.
+
+Applied locally: all **415 original questions remain current**, plus **15 recovered candidates** (430 total). Skipped pages fell from 61 to 37. Rejected regions rose from 239 to 307 because previously unprocessed pages now expose additional unsupported regions. Two intermediate HCF candidates were archived, preserving history, after finding that their expression lists were not represented safely. Four user approvals were retained; new candidates remain unapproved.
+
+`POST /api/admin/question-reviews/issues/{id}/retry` requires staff authorization and the current source revision. It rejects duplicate/stale requests and changed source bytes/bindings. Issue identities include the processor version. Progress uses the existing staff lesson-source status endpoint, now including skipped-page counts. `node scripts/questions/verify-extraction-recovery.mjs` checks real disposable PDF copies against the preserved private baseline and asserts the exact recovered Indices page 2 question 10 powers. Original PDFs are unchanged.
+
+Remaining recovery needs additional parser/layout/OCR support or a manual transcription editor. That editor is **not implemented** in this work unit; Retry alone cannot resolve every remaining issue. This is partial extraction recovery, not complete coverage.
+
+## Extraction coverage review — 27 October 2026
+
+Review questions now includes **Rejected regions** and **Skipped pages** tabs, separate from extracted-question approval. Grade/subject/lesson filters apply to both, including lessons that produced no bank questions. Each record shows its source, reason and original PDF page; rejected regions have an orange outline. Raw text is explicitly unverified because mathematical layout can be lost. Skipped-page audit hints identify detected question labels/exercise headings, possible covers, examples/revision text and pages without readable text. Hints never dismiss a page or establish a missing-question total.
+
+Current full local application coverage: **415 active questions, 239 rejected regions, 61 skipped pages across 20 PDF slots**. The 18 copied sample PDFs account for 55 of those skipped pages. The refreshed full-app audit detected question labels on 38 skipped pages, possible covers on 11, exercise headings on 2, example/revision text on 3, no readable text on 4, and 3 otherwise unclassified pages. These are automated observations, not completed human classification. Source SHA-256/binding/status checks exclude stale reports. Read-only coverage records cannot be approved as questions and are not marked resolved by viewing them.
+
+Run `node scripts/questions/audit-extraction-coverage.mjs` after current-worker processing to refresh the private `storage/app/structured/extraction-coverage-audit.md` and `.json` reports. An optional first argument selects another bank root; old banks must be reprocessed to populate region coordinates and audit evidence. The script verifies original source hashes and checks evidence completeness. Worker processing versions now include coverage metadata. Existing question identities/approvals survive this metadata-only rescan.
+
+Recovery/transcription of rejected regions, human classification of skipped pages, OCR and confirmation that every original question is represented remain pending. The UI/report make extraction gaps visible; they do not claim complete PDF coverage.
+
+## Diagram support — 27 October 2026
+
+Digital-PDF diagrams now enter the same extraction/review workflow. The local Pythagoras source produces **16 questions with 17 original figure PNGs**, including continuation pages, shared-diagram subparts, a rectangle and a ladder. Instructions/question prose remain text; original figure labels stay in the images. This preserves figures rather than interpreting or redrawing geometry. General scanned-page OCR and ambiguous layouts remain unsupported.
+
+The bank stores `diagrams: [{ sha256, path, width, height }]` alongside text/structured maths. Images live privately at `structured/diagrams/<sha256>.png`, relative to the bank root. Diagram bytes participate in the canonical question fingerprint; changed figures require review again. Original PDF hashes, lesson/topic/page origins and historical questions/approvals are preserved.
+
+The existing local Poppler `pdftoppm` executable renders detected figure bounds at 144 DPI. It must be available on the worker's PATH; no package/dependency was installed. Missing rendering support, unlocated figures and drawings crossing ambiguous question boundaries are recorded as rejected extraction regions. Image-only scans are not converted into text questions.
+
+The review panel automatically loads authenticated, staff-only image requests through `GET /api/admin/question-reviews/{id}/diagrams/{index}`. Click an image to zoom, or compare against the full original PDF. Yes stays disabled until all figure images decode successfully; failed loads offer Retry. The server also refuses missing/changed image assets and stale PDF sources. These endpoints do not grant student access; actual student delivery remains pending.
+
+Local test-preview snapshots copy their figure PNGs into their own `diagrams/` folder so later extraction does not alter existing previews. Use `node scripts/questions/verify-local-structured.mjs` for real-corpus assertions and `node --test tests/Frontend/DiagramQuestions.test.mjs` for targeted geometry/identity/renderer checks. Human acceptance of every transcription/figure and installed-PWA verification remain pending.
+
 ## One-time extraction review
 
 Tutor Space → **Review questions**, or `http://localhost:8080/question-review`, opens the staff-only review queue. Filter by grade, subject or lesson and compare the extracted text/MathML with its original PDF page. The full PDF link supports browser zoom.
@@ -31,8 +79,8 @@ The hidden local Node worker polls every five seconds, claims database requests 
 - Private application bank: `storage/app/structured/bank.json`.
 - Logs: `storage/logs/question-bank-worker.log` and `question-bank-worker-errors.log`.
 - Staff-only status: `GET /api/admin/lessons/{lesson}/question-bank`.
-- Local sample setup: `docker compose exec -T app php artisan question-bank:attach-local-samples` attaches validated copies to matching empty local lesson slots only. Originals and existing PDFs are preserved.
-- The export/import bridge and sample-attachment command refuse production execution. Worker result imports are limited to the private results directory. They are not public HTTP endpoints.
+- Local sample setup: `docker compose exec -T --user www-data app php artisan question-bank:attach-local-samples` attaches validated copies to matching empty local lesson slots only. Originals and existing PDFs are preserved. Run as the web-server user because the local disk creates private directories/files; running as root makes the copied PDFs unreadable to HTTP requests and hides their questions from review.
+- The sample-attachment command refuses production execution. The export/import bridge allows production only when `QUESTION_BANK_WORKER_ENABLED=true`. Worker result imports are limited to the private results directory. They are not public HTTP endpoints.
 
 The database currently stores processing requests, revisions and question references. Canonical question content remains in the private persistent JSON bank; a full SQL question/assessment model and student completion trigger are not implemented by this upload work unit. Unsupported extraction remains explicitly `processed_with_issues`, not verified question content.
 
@@ -40,7 +88,7 @@ Local integration verification on 19 October 2026: attached the 18 copied PDFs; 
 
 ## Current workflow: text and structured maths
 
-The user replaced the image-question prototype with text-first extraction. The current default generator renders selectable question text and native MathML fractions, powers and roots. It does not copy question images or fall back to image questions.
+The user replaced the image-question prototype with text-first extraction. The current default generator renders selectable question text and native MathML fractions, powers and roots. Supported original diagrams are separate PNG attachments; whole-question raster fallback is not used.
 
 Run from the repository root:
 
@@ -49,7 +97,7 @@ node scripts/questions/extract-structured.mjs
 node scripts/questions/inspect-bank.mjs
 node scripts/questions/verify-local-structured.mjs
 node scripts/questions/verify-bank-cache.mjs
-node --test tests/Frontend/PdfQuestions.test.mjs tests/Frontend/StructuredMaths.test.mjs tests/Frontend/LessonQuestionBank.test.mjs
+node --test tests/Frontend/PdfQuestions.test.mjs tests/Frontend/StructuredMaths.test.mjs tests/Frontend/LessonQuestionBank.test.mjs tests/Frontend/DiagramQuestions.test.mjs
 node scripts/questions/generate-local-test.mjs
 node scripts/questions/serve-local.mjs
 ```
@@ -60,7 +108,7 @@ The generator prints the new test directory. Open `http://127.0.0.1:8091/tests/<
 node scripts/questions/generate-local-test.mjs storage/app/ocr-samples/grade-8-mathematics "10. Percentage|2. Fractions|11. Indices" 12
 ```
 
-`generate-structured-test.mjs` is also directly callable with the same arguments. The earlier image-based test snapshots remain available for comparison; new default previews use only text and structured maths.
+`generate-structured-test.mjs` is also directly callable with the same arguments. The earlier image-based test snapshots remain available for comparison; new default previews use text, structured maths and separate original diagrams where present.
 
 ## Extraction and data
 
@@ -86,9 +134,9 @@ Local run on 19 October 2026: **401 extracted occurrences became 399 unique cand
 
 ## Pending
 
-Diagrams are deliberately excluded until their text, labels and figures can be extracted separately. Image-only/scanned pages still need maths-aware OCR; the receipt OCR service is not used as proof of maths recognition. Complex equations, negative/multitoken exponents and unusual layouts may be rejected. Eligibility depends on the supported pool rather than silently importing unrelated questions.
+Digital-diagram support is implemented for this local subset; broader layout/figure-boundary acceptance remains pending. Image-only/scanned pages still need maths-aware OCR; the receipt OCR service is not used as proof of maths recognition. Complex equations, negative/multitoken exponents and unusual layouts may be rejected. Eligibility depends on the supported pool rather than silently importing unrelated questions.
 
-Still pending: complete transcription validation, scanned-PDF OCR, diagram extraction, a full SQL question/assessment model, per-student three-topic completion batches, duplicate-trigger prevention, student authorization, attempts, marking and installed-PWA verification. The sample-collection CLI can still be run explicitly; existing Laravel lesson uploads are now handled automatically while the local worker runs. This is a local prototype; no deployment or production access is part of this workflow.
+Still pending: complete transcription/diagram validation, scanned-PDF OCR, a full SQL question/assessment model, per-student three-topic completion batches, duplicate-trigger prevention, student authorization, attempts, marking and installed-PWA verification. The sample-collection CLI can still be run explicitly; existing Laravel lesson uploads are now handled automatically while the local worker runs. This is a local prototype; no deployment or production access is part of this workflow.
 
 ## Legacy diagnostic tools
 
