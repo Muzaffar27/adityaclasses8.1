@@ -22,14 +22,22 @@ export function textLines(items, height) {
     return rows.sort((a, b) => a.y - b.y).map(row => ({ ...row, items: row.items.sort((a, b) => a.x - b.x) }));
 }
 
-export function questionRegions(items, width, height) {
+export function withoutPageFooter(items, width, height, pageNumber) {
+    // Only an isolated page-number line at the bottom-right margin, matching this PDF page (or its cover offset).
+    const footers = textLines(items, height).filter(row => row.y > height * .9 && row.items.every(item => item.x > width * .88 && item.height <= 12)
+        && /^\d{1,3}$/.test(joinPdfText(row.items)) && [pageNumber, pageNumber - 1].includes(Number(joinPdfText(row.items))));
+    return items.filter(item => !item.transform || !footers.some(row => Math.abs(height - item.transform[5] - row.y) < 3));
+}
+
+export function questionRegions(items, width, height, continuation = null) {
     const lines = textLines(items, height);
     const pageText = lines.map(row => joinPdfText(row.items)).join('\n');
     // Worked examples/solutions are deliberately excluded, not interpreted as test questions.
     if (/\b(example|solution|worked example)s?\b/i.test(pageText)) return { regions: [], reason: 'worked_examples_or_solutions' };
     if (/revision\s+exercise/i.test(pageText)) return { regions: [], reason: 'mixed_revision_exercise' };
-    const exercise = lines.find(row => /exercise\s*\d*/i.test(row.items.map(item => item.text).join('').replace(/\s+/g, '')));
-    if (!exercise) return { regions: [], reason: 'no_exercise_heading' };
+    const heading = lines.find(row => /exercise\s*\d*/i.test(row.items.map(item => item.text).join('').replace(/\s+/g, '')));
+    if (!heading && !continuation) return { regions: [], reason: 'no_exercise_heading' };
+    const exercise = heading || { y: 0 };
     const markers = [];
     for (const row of lines.filter(row => row.y > exercise.y + 8 && row.y < height - 45)) {
         const explicit = joinPdfText(row.items).match(/^Question\s*(\d{1,2})\s*\./i);
@@ -62,10 +70,21 @@ export function questionRegions(items, width, height) {
     }
     if (columns.length > 2) return { regions: [], reason: 'ambiguous_columns' };
     const firstY = Math.min(...selected.map(marker => marker.y));
+    const ordinal = label => /^\d/.test(label) ? Number(label.match(/^\d+/)[0]) : label.replace(/[()]/g, '').toLowerCase().charCodeAt(0) - 96;
+    const family = selected[0].numeric ? 'number' : 'letter';
+    if (!heading) {
+        if (family !== continuation.family || columns.some(column => {
+            const previous = continuation.columns.find(c => Math.abs(c.x - column.x) < 24);
+            return !previous || Math.min(...column.markers.map(m => ordinal(m.label))) <= previous.last;
+        })) return { regions: [], reason: 'continuation_not_confirmed' };
+        const prefix = lines.filter(row => row.y < firstY - 20).map(row => joinPdfText(row.items)).join(' ');
+        if (/\b(simplify|evaluate|find|solve|calculate|write|express|complete|using|given)\b/i.test(prefix)) return { regions: [], reason: 'new_instructions_without_heading' };
+    }
     const context = { x: 35, y: Math.max(0, exercise.y - 20), width: width - 70, height: firstY - exercise.y - 4 };
     // Match the instruction crop's lower edge; superscripts above the first question belong to its body.
     const contextBottom = context.y + context.height;
-    const contextText = lines.filter(row => row.y >= exercise.y && row.y < contextBottom).map(row => joinPdfText(row.items)).join('\n');
+    const contextText = heading ? lines.filter(row => row.y >= exercise.y && row.y < contextBottom).map(row => joinPdfText(row.items)).join('\n') : continuation.contextText;
+    const nextContinuation = { family, contextText, columns: columns.map(c => ({ x: c.x, last: Math.max(...c.markers.map(m => ordinal(m.label))) })) };
     if (/following\s+(triangle|diagram|figure)|(?:diagram|figure)\s+(?:below|shown)/i.test(contextText)) {
         // Several subparts may refer to one diagram beside/below them. Keep the whole group intact.
         return { regions: [{ label: 'Shared diagram exercise', rect: { x: 35, y: firstY - 24, width: width - 60, height: height - 45 - (firstY - 24) }, context, contextText }], reason: null };
@@ -103,7 +122,7 @@ export function questionRegions(items, width, height) {
             regions.push({ label: marker.label, rect, context, contextText, questionText });
         }
     }
-    return { regions, reason: regions.length ? null : 'invalid_regions' };
+    return { regions, reason: regions.length ? null : 'invalid_regions', continuation: regions.length ? nextContinuation : null, continued: !heading };
 }
 
 export function cleanInstructions(text = '') {

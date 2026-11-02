@@ -9,7 +9,9 @@ const normalise = value => typeof value === 'string' ? value.normalize('NFKC').r
 
 export function questionContent(question) {
     if (Boolean(question.text) === Boolean(question.math)) throw new Error('A bank question needs either text or structured maths.');
-    return { grade_id: question.grade_id, subject_id: question.subject_id, instructions: question.instructions || '', ...(question.text ? { text: question.text } : { math: question.math }) };
+    const diagrams = question.diagrams;
+    if (diagrams && (!Array.isArray(diagrams) || !diagrams.length || diagrams.length > 12 || diagrams.some(d => !/^[a-f0-9]{64}$/.test(d.sha256) || d.path !== `structured/diagrams/${d.sha256}.png` || !Number.isInteger(d.width) || !Number.isInteger(d.height) || d.width < 1 || d.height < 1))) throw new Error('Invalid diagram asset.');
+    return { grade_id: question.grade_id, subject_id: question.subject_id, instructions: question.instructions || '', ...(question.text ? { text: question.text } : { math: question.math }), ...(diagrams ? { diagrams } : {}) };
 }
 
 export function questionFingerprint(question) {
@@ -77,7 +79,7 @@ export function eligibleQuestions(bank, currentKeys = new Set(Object.keys(bank.s
     return result;
 }
 
-export async function processLessonBank({ root, manifest, processorVersion, extract }) {
+export async function processLessonBank({ root, manifest, processorVersion, extract, onlySourceKeys = null }) {
     root = await realpath(root);
     await mkdir(path.join(root, 'structured'), { recursive: true });
     const lockFile = path.join(root, 'structured/bank.lock');
@@ -91,6 +93,7 @@ export async function processLessonBank({ root, manifest, processorVersion, extr
         const bank = await readBank(root);
         const stats = { scanned_pdfs: 0, skipped_unchanged_pdfs: 0, failed_pdfs: 0, added_questions: 0, duplicate_occurrences: 0 };
         for (const source of manifest) {
+            if (onlySourceKeys && !onlySourceKeys.has(sourceKey(source))) continue;
             const key = sourceKey(source), previous = bank.sources[key];
             let current;
             try {
@@ -104,7 +107,7 @@ export async function processLessonBank({ root, manifest, processorVersion, extr
                 bank.sources[key] = { lesson_id: source.lesson_id, grade_id: source.grade_id, subject_id: source.subject_id, topic: source.topic, local_pdf: source.local_pdf, status: 'processing', sha256: current.sha256, binding_hash: binding, processor_version: processorVersion, occurrences: [] };
                 await atomicJson(path.join(root, 'structured/bank.json'), bank);
                 stats.scanned_pdfs++;
-                const extracted = await extract(source, current.bytes, current.sha256);
+                const extracted = await extract(source, current.bytes, current.sha256, { root });
                 const occurrences = [];
                 for (const candidate of extracted.questions) {
                     if (candidate.grade_id !== source.grade_id || candidate.subject_id !== source.subject_id) throw new Error('Extracted question does not match its source course.');

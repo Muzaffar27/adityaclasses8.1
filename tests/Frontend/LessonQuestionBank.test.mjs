@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, mkdir, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { processLessonBank, loadCurrentQuestions, questionFingerprint } from '../../scripts/questions/lesson-question-bank.mjs';
+import { processLessonBank, loadCurrentQuestions, questionFingerprint, sourceKey } from '../../scripts/questions/lesson-question-bank.mjs';
 import { selectTest } from '../../scripts/questions/pdf-question-core.mjs';
 
 async function fixture(t, count = 1) {
@@ -18,6 +18,21 @@ async function fixture(t, count = 1) {
 }
 const candidate = (source, text) => ({ grade_id: source.grade_id, subject_id: source.subject_id, instructions: 'Calculate:', text, page: 1, label: text });
 const result = (source, texts) => ({ questions: texts.map(text => candidate(source, text)), rejected: [], skipped_pages: [] });
+
+test('a bounded worker processes only claimed PDFs and retains other source history', async t => {
+    const f = await fixture(t, 3);
+    await processLessonBank({ ...f, extract: async source => result(source, ['old-' + source.lesson_id]) });
+    const manifest = f.manifest.map(source => ({ ...source, force_reprocess: true }));
+    const calls = [];
+    const run = await processLessonBank({ ...f, manifest, onlySourceKeys: new Set([sourceKey(manifest[1])]),
+        extract: async source => { calls.push(source.lesson_id); return result(source, ['new']); } });
+    assert.deepEqual(calls, [2]);
+    assert.equal(run.stats.scanned_pdfs, 1);
+    const active = Object.values(run.bank.questions).filter(q => q.active).map(q => q.text).sort();
+    assert.deepEqual(active, ['new', 'old-1', 'old-3']);
+    assert.equal(run.bank.sources[sourceKey(manifest[0])].status, 'processed');
+    assert.equal(run.bank.sources[sourceKey(manifest[2])].status, 'processed');
+});
 
 test('an unchanged PDF is not extracted a second time', async t => {
     const f = await fixture(t); let calls = 0;

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 
 const root = path.resolve(process.argv[2] || 'storage/app/ocr-samples/grade-8-mathematics');
 const bank = JSON.parse(await readFile(path.join(root, 'structured/questions.json'), 'utf8'));
@@ -20,5 +21,17 @@ assert.deepEqual([powers[0].base.value, powers[0].exponent.value, powers[1].valu
 assert.equal(question(270, 3, '(n)').math.children.map(n => n.value).join(''), '5×22÷(-2)');
 assert.equal(new Set(bank.questions.map(q => `${q.id}:${q.topic}`)).size, bank.questions.length);
 assert.ok(bank.questions.every(q => !q.image && !q.context_image && Boolean(q.math) !== Boolean(q.text)));
-assert.ok(!bank.questions.some(q => q.topic.includes('Pythagoras')));
-console.log('Real-PDF structured checks passed: mixed fractions, cube-root index, powers, arithmetic label removal, unique IDs, no image questions and diagram exclusion.');
+const diagrams = bank.questions.filter(q => q.topic.includes('Pythagoras'));
+assert.equal(diagrams.length, 16);
+assert.ok(diagrams.every(q => q.diagrams?.length && q.text && q.status === 'structured_unverified'));
+assert.match(diagrams.find(q => q.page === 8 && q.label === '(b)').text, /height 4 m\./);
+assert.match(diagrams.find(q => q.page === 8 && q.label === '(a)').text, /\(i\) Find the length/);
+assert.equal(diagrams.find(q => q.page === 7).diagrams.length, 2);
+for (const question of diagrams) for (const diagram of question.diagrams) {
+    const bytes = await readFile(path.join(root, diagram.path));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), diagram.sha256);
+    assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
+}
+const manifest = JSON.parse((await readFile(path.join(root, 'manifest.json'), 'utf8')).replace(/^\uFEFF/, ''));
+for (const source of manifest) assert.equal(createHash('sha256').update(await readFile(path.join(root, source.local_pdf))).digest('hex'), source.sha256);
+console.log('Real-PDF checks passed: structured maths regressions, 16 diagram questions, grouped figures, complete units, PNG hashes and all original PDF hashes.');
