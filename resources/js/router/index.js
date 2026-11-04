@@ -84,6 +84,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: "/registrations",
+        name: "registrations",
+        component: () => import("../components/tutor/RegistrationPage.vue"),
+        meta: { requiresAuth: true, requiresStaff: true },
+    },
+    {
         path: "/tutorSpace",
         name: "tutorSpace",
         component: () => import("../components/TutorSpace.vue"),
@@ -134,6 +140,8 @@ router.beforeEach(async (to) => {
     if (to.meta.requiresAuth && !auth.isLoggedIn) {
         return { name: "login" };
     }
+
+    if (to.meta.requiresStaff && !auth.isTutor && !auth.isAdmin) return { name: 'home' };
 
     // 🚫 Prevent logged-in users from going to login/register
     if (to.meta.guestOnly && auth.isLoggedIn) {

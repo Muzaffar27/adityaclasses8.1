@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\Route;
 
 //Auth
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/registrations/export', [\App\Http\Controllers\RegistrationManagementController::class, 'export']);
+    Route::get('/admin/registrations', [\App\Http\Controllers\RegistrationManagementController::class, 'index']);
+    Route::get('/admin/registrations/{id}', [\App\Http\Controllers\RegistrationManagementController::class, 'show'])->whereNumber('id');
+    Route::put('/admin/registrations/{id}', [\App\Http\Controllers\RegistrationManagementController::class, 'update'])->whereNumber('id');
+    Route::post('/admin/registrations/{id}/resend-acknowledgement', [\App\Http\Controllers\RegistrationManagementController::class, 'resendAcknowledgement'])
+        ->whereNumber('id')->middleware('throttle:6,1,registration-mail:');
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
 });

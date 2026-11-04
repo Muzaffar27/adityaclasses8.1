@@ -10,7 +10,7 @@
 
                 <div class="sidebar-list">
 
-                    <div v-for="tool in tools" :key="tool.key" class="sidebar-item"
+                    <div v-for="tool in visibleTools" :key="tool.key" class="sidebar-item"
                         :class="{ active: currentView.name === tool.key }" @click="openView(tool.key)">
                         <span class="icon">{{ tool.icon }}</span>
 
@@ -36,8 +36,9 @@
     </Layout>
 </template>
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, defineAsyncComponent } from "vue";
 import Layout from './common/Layout.vue';
+import { useAuthStore } from '../stores/auth';
 
 /* tools */
 import LessonTool from "./tools/LessonTool.vue";
@@ -52,7 +53,9 @@ import HomeImageManager from "./HomeImageManager.vue";
 import HomeDemoEditor from "./HomeDemoEditor.vue";
 import HomeFooterEditor from "./HomeFooterEditor.vue";
 
+const RegistrationPanel = defineAsyncComponent(() => import('./tutor/RegistrationPanel.vue'));
 const tools = [
+    { key: "registrations", label: "Registrations", icon: "\u{1F4CB}", desc: "Pending enrolments" },
     { key: "announcement", label: "Announcement", icon: "\u{1F4E2}", desc: "Site notice" },
     { key: "access", label: "Request Access", icon: "\u{1F465}", desc: "Approvals" },
     { key: "students", label: "Students", icon: "\u{1F393}", desc: "List" },
@@ -64,6 +67,9 @@ const tools = [
     { key: "footerContent", label: "Footer Content", icon: "\u{1F3E0}", desc: "Contact" }
 ];
 
+const auth = useAuthStore();
+const visibleTools = computed(() => tools.filter(tool => tool.key !== 'registrations' || auth.isTutor || auth.isAdmin));
+
 /* 🔥 NEW: central state */
 const currentView = ref({
     name: "announcement",
@@ -72,6 +78,7 @@ const currentView = ref({
 
 /* component map */
 const toolMap = {
+    registrations: RegistrationPanel,
     lessons: LessonAll,
     lessonList: LessonList,
     access: AccessRequestPage,
@@ -188,6 +195,8 @@ function handleNavigation(event) {
 
 /* RIGHT SIDE */
 .admin-content {
+    min-width: 0;
     flex: 1;
 }
+@media(max-width: 900px) { .admin-layout { flex-direction: column; } .admin-sidebar { width: 100%; } }
 </style>
