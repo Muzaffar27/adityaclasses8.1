@@ -1,44 +1,48 @@
 <template>
     <section class="registration-panel" aria-labelledby="registrations-heading">
         <header class="panel-heading">
-            <div><p class="eyebrow">2027 INTAKE</p><h1 id="registrations-heading">Registrations</h1><p>Review submitted details, follow up with families and track enrolment.</p></div>
+            <div><p class="eyebrow">2027 INTAKE</p><h1 id="registrations-heading">Registrations</h1><p>Find a student by name or grade, then open their details.</p></div>
             <div class="header-actions"><button type="button" class="secondary" title="Export registrations matching the current filters" :disabled="exporting || loading || searchPending" @click="exportCsv">{{ exporting ? 'Exporting…' : 'Export CSV' }}</button><button type="button" class="secondary" :disabled="loading" @click="loadList">Refresh list</button></div>
         </header>
 
+        <p v-if="deletionMessage" class="saved-message" role="status">{{ deletionMessage }}</p>
         <div class="counts" aria-label="All registration counts">
-            <button type="button" v-for="key in ['pending', 'new', 'contacted', 'enrolled']" :key="key" :class="{active: filters.status === key}" :aria-pressed="filters.status === key" @click="setStatus(key)"><span>{{ key === 'pending' ? 'Pending · new + contacted' : statusLabel(key) }}</span><strong>{{ counts[key] }}</strong></button>
+            <button type="button" v-for="tab in statusTabs" :key="tab.value" :class="{active: filters.status === tab.value}" :aria-pressed="filters.status === tab.value" @click="setStatus(tab.value)"><span>{{ tab.label }}</span><strong>{{ tab.count }}</strong></button>
         </div>
 
         <form class="filters" @submit.prevent="applyFilters">
-            <div class="search-row"><label class="search-field">Search registrations<input v-model="filters.search" type="search" maxlength="100" placeholder="Student, parent, reference, email or phone" @input="scheduleSearch"></label><button type="submit" class="primary">Search</button><button type="button" class="secondary" @click="clearFilters">Clear filters</button></div>
-            <div class="filter-selects">
-                <label>Registration status<select aria-label="Filter by registration status" v-model="filters.status" @change="applyFilters"><option value="pending">Pending (new + contacted)</option><option value="new">New</option><option value="contacted">Contacted</option><option value="enrolled">Enrolled</option><option value="all">All registrations</option></select></label>
-                <label>Grade<select aria-label="Filter by grade" v-model="filters.grade" @change="applyFilters"><option value="">All grades</option><option v-for="grade in grades" :key="grade">{{ grade }}</option></select></label>
-                <label>Subject<select aria-label="Filter by subject" v-model="filters.subject" @change="applyFilters"><option value="">All subjects</option><option v-for="subject in subjects" :key="subject">{{ subject }}</option></select></label>
-                <label>Payment<select aria-label="Filter by payment status" v-model="filters.payment" @change="applyFilters"><option value="">All payment statuses</option><option value="unverified">Not verified</option><option value="verified">Verified</option></select></label>
-                <label>Email<select aria-label="Filter by email status" v-model="filters.email" @change="applyFilters"><option value="">All email statuses</option><option value="pending">Pending — not sent</option><option value="sent">Sent</option></select></label>
-            </div>
+            <div class="search-row"><label class="search-field">Search registrations<input v-model="filters.search" type="search" maxlength="100" placeholder="Student or parent name, reference, email or phone" @input="scheduleSearch"></label><label class="grade-filter">Grade<span class="select is-fullwidth"><select aria-label="Filter by grade" v-model="filters.grade" @change="applyFilters"><option value="">All grades</option><option v-for="grade in grades" :key="grade">{{ grade }}</option></select></span></label><button type="submit" class="primary">Search</button><button v-if="hasFilters" type="button" class="secondary" @click="clearFilters">Clear filters</button></div>
+            <details class="more-filters"><summary>More filters<span v-if="extraFilterCount"> · {{ extraFilterCount }} active</span></summary><div class="filter-selects">
+                <label>Registration status<span class="select is-fullwidth"><select aria-label="Filter by registration status" v-model="filters.status" @change="applyFilters"><option value="pending">Pending (new + contacted)</option><option value="new">New</option><option value="contacted">Contacted</option><option value="enrolled">Enrolled</option><option value="all">All registrations</option></select></span></label>
+                <label>Payment<span class="select is-fullwidth"><select aria-label="Filter by payment status" v-model="filters.payment" @change="applyFilters"><option value="">All payment statuses</option><option value="unverified">Not verified</option><option value="verified">Verified</option></select></span></label>
+                <label>Email<span class="select is-fullwidth"><select aria-label="Filter by email status" v-model="filters.email" @change="applyFilters"><option value="">All email statuses</option><option value="pending">Pending — not sent</option><option value="sent">Sent</option></select></span></label>
+                <label>Sort by<span class="select is-fullwidth"><select v-model="filters.sort" aria-label="Sort registrations" @change="applyFilters"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="student">Student A–Z</option></select></span></label>
+                <label>Rows per page<span class="select is-fullwidth"><select v-model.number="filters.per_page" aria-label="Rows per page" @change="applyFilters"><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></span></label>
+            </div></details>
         </form>
         <p v-if="exportError" class="error-message" role="alert">{{ exportError }}</p>
 
         <section ref="listPanel" class="inbox-list" aria-label="Registration list" :aria-busy="loading" tabindex="-1">
             <div class="list-toolbar">
                 <p class="list-caption">Showing {{ meta.from || 0 }}–{{ meta.to || 0 }} of {{ meta.total }} registrations</p>
-                <div class="list-preferences">
-                    <label>Sort by<select v-model="filters.sort" aria-label="Sort registrations" @change="applyFilters"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="student">Student A–Z</option></select></label>
-                    <label>Rows per page<select v-model.number="filters.per_page" aria-label="Rows per page" @change="applyFilters"><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label>
-                </div>
+                <div class="header-actions"><button v-if="!selectionMode" type="button" class="secondary" :disabled="loading || !rows.length" @click="selectionMode = true">Select registrations</button><button type="button" class="secondary" :disabled="loading || searchPending || saving || resending || deleteBusy" @click="reviewDeletion('older')">Delete older than one year</button></div>
                 <nav v-if="meta.last_page > 1" class="quick-pages" aria-label="Quick page navigation"><button type="button" class="secondary" :disabled="loading || meta.page <= 1" @click="changePage(meta.page - 1)">Previous</button><span>{{ meta.page }} / {{ meta.last_page }}</span><button type="button" class="secondary" :disabled="loading || meta.page >= meta.last_page" @click="changePage(meta.page + 1)">Next</button></nav>
             </div>
+        <div v-if="selectionMode" class="cleanup-actions selection-toolbar">
+            <label class="selection-label"><input type="checkbox" :checked="allPageSelected" :indeterminate="selectedIds.length > 0 && !allPageSelected" :disabled="loading || !rows.length || deleteBusy" @change="togglePageSelection">Select this page</label>
+            <span class="hint">{{ selectedIds.length }} selected on this page</span>
+            <button type="button" class="danger" :disabled="!selectedIds.length || loading || searchPending || saving || resending || deleteBusy" @click="reviewDeletion('selected', selectedIds)">Delete selected</button>
+            <button type="button" class="secondary" @click="cancelSelection">Cancel selection</button>
+        </div>
             <p v-if="loading" class="state-message" role="status">Loading registrations…</p>
             <div v-else-if="listError" class="state-message" role="alert"><p>{{ listError }}</p><button type="button" class="secondary" @click="loadList">Retry loading</button></div>
             <div v-else-if="!rows.length" class="state-message"><h2>No registrations found</h2><p>Try a different name or clear the filters.</p></div>
             <table v-else class="registrations-table">
                 <caption class="table-caption">Registration overview. Open a student to review all details and follow-up notes.</caption>
-                <thead><tr><th scope="col">Student / parent</th><th scope="col">Classes</th><th scope="col">Status</th><th scope="col">Monthly fee</th><th scope="col">Submitted</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                <thead><tr><th scope="col">Student / parent</th><th scope="col">Grade</th><th scope="col">Status</th><th scope="col">Monthly fee</th><th scope="col">Submitted</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
                 <tbody><tr v-for="row in rows" :key="row.id" :data-registration-id="row.id" :class="{selected: selected?.id === row.id}">
-                    <td class="student-cell"><strong>{{ row.student }}</strong><small class="parent-preview">{{ row.guardian }} · {{ row.email }}</small><span class="reference">{{ row.reference }}</span></td>
-                    <td class="classes-cell"><strong>{{ row.grade }}</strong><span class="subject-preview" :title="row.subjects.join(', ')">{{ row.subjects.join(', ') }}</span></td>
+                    <td class="student-cell"><label class="student-line"><input v-if="selectionMode" v-model="selectedIds" type="checkbox" :value="row.id" :aria-label="`Select registration for ${row.student}`" :disabled="loading || deleteBusy"><strong>{{ row.student }}</strong></label><small class="parent-preview">{{ row.guardian }} · {{ row.email }}</small><span class="reference">{{ row.reference }}</span></td>
+                    <td class="classes-cell"><strong>{{ row.grade }}</strong></td>
                     <td class="progress-cell"><span class="badge" :class="row.registration_status">{{ statusLabel(row.registration_status) }}</span><small>{{ row.payment_status === 'verified' ? 'Payment verified' : 'Payment not verified' }}</small><small :class="{'email-pending': row.email_status === 'pending'}">Email {{ row.email_status }}</small></td>
                     <td class="amount-cell">{{ money(row.monthly_total) }}</td>
                     <td class="submitted-cell"><time>{{ date(row.submitted_at) }}</time></td>
@@ -65,7 +69,7 @@
                 <div v-else-if="detailError" class="state-message" role="alert"><p>{{ detailError }}</p><button type="button" class="secondary" @click="openRegistration(requestedId, true)">Retry details</button></div>
                 <div v-else-if="!selected" class="state-message"><h2>Select a registration</h2><p>Open a submission to see the student's details, timetable, fees and follow-up notes.</p></div>
                 <template v-else>
-                    <header class="detail-heading"><div><p class="eyebrow">REGISTRATION DETAILS</p><h2>{{ selected.student }}</h2><p class="reference">{{ selected.reference }}</p><p>Submitted {{ date(selected.submitted_at) }}</p></div><button type="button" class="secondary" :disabled="saving || resending" @click="openRegistration(selected.id)">Reload details</button></header>
+                    <header class="detail-heading"><div><p class="eyebrow">REGISTRATION DETAILS</p><h2>{{ selected.student }}</h2><p class="reference">{{ selected.reference }}</p><p>Submitted {{ date(selected.submitted_at) }}</p></div><div class="header-actions"><button type="button" class="secondary" :disabled="saving || resending || deleteBusy" @click="openRegistration(selected.id)">Reload details</button><button type="button" class="danger" :disabled="saving || resending || deleteBusy" @click="reviewDeletion('selected', [selected.id])">Delete registration</button></div></header>
 
                     <section class="detail-block"><h3>Student</h3><dl><div><dt>Full name</dt><dd>{{ selected.details.studentName }}</dd></div><div><dt>Grade</dt><dd>{{ selected.details.grade }}</dd></div><div><dt>School</dt><dd>{{ selected.details.school }}</dd></div><div><dt>Student type</dt><dd>{{ selected.details.returning }}</dd></div></dl></section>
                     <section class="detail-block"><h3>Parent / guardian</h3><dl><div><dt>Name</dt><dd>{{ selected.details.guardian }}</dd></div><div><dt>Phone</dt><dd>{{ selected.details.phone }}</dd></div><div><dt>Email</dt><dd>{{ selected.details.email }}</dd></div></dl></section>
@@ -75,7 +79,7 @@
 
                     <form class="follow-up" @submit.prevent="saveRegistration">
                         <h3>Tutor follow-up</h3><p class="hint">Enrolled tracks this registration. Student login and course access are managed separately.</p>
-                        <div class="follow-up-selects"><label>Registration status<select aria-label="Registration status" v-model="draft.registration_status" :disabled="saving || resending"><option value="new">New</option><option value="contacted">Contacted</option><option value="enrolled">Enrolled</option></select></label><label>Payment status<select aria-label="Payment status" v-model="draft.payment_status" :disabled="saving || resending"><option value="unverified">Not verified</option><option value="verified">Verified</option></select></label></div>
+                        <div class="follow-up-selects"><label>Registration status<span class="select is-fullwidth"><select aria-label="Registration status" v-model="draft.registration_status" :disabled="saving || resending"><option value="new">New</option><option value="contacted">Contacted</option><option value="enrolled">Enrolled</option></select></span></label><label>Payment status<span class="select is-fullwidth"><select aria-label="Payment status" v-model="draft.payment_status" :disabled="saving || resending"><option value="unverified">Not verified</option><option value="verified">Verified</option></select></span></label></div>
                         <label v-if="draft.payment_status === 'verified' && selected.payment_status !== 'verified'" class="payment-confirm"><input v-model="confirmPayment" type="checkbox" :disabled="saving || resending" required><span>I have checked the payment and confirm it was received.</span></label>
                         <p v-if="selected.payment_verified_at" class="hint">Payment verified by {{ selected.payment_verified_by || 'staff' }} · {{ date(selected.payment_verified_at) }}</p>
                         <label>Internal notes<textarea v-model="draft.staff_notes" rows="5" maxlength="5000" :disabled="saving || resending" placeholder="Follow-up details, questions or class arrangements"></textarea></label><p class="hint">Visible to tutors/admins only. {{ draft.staff_notes.length }}/5,000 characters.</p>
@@ -86,6 +90,24 @@
                 </template>
             </section>
         </dialog>
+        <dialog ref="deleteDialog" class="delete-dialog" aria-labelledby="delete-title" @cancel.prevent="closeDeletion">
+            <h2 id="delete-title">{{ deletePreview?.count ? `Review ${deletePreview.count} registration${deletePreview.count === 1 ? '' : 's'} for deletion` : 'Review deletion' }}</h2>
+            <p v-if="preparingDelete" role="status">Preparing the deletion review…</p>
+            <template v-else-if="deletePreview">
+                <p><strong>{{ deletePreview.count }} registration{{ deletePreview.count === 1 ? '' : 's' }}</strong> will be permanently deleted, including submitted details and tutor notes. This cannot be undone.</p>
+                <p v-if="deletePreview.mode === 'older'">Submitted before <strong>{{ date(deletePreview.cutoff) }}</strong>. This includes all statuses and payments, regardless of the current list filters.</p>
+                <p v-if="deletePreview.count" class="hint">Check the students below before deleting. {{ deletePreview.count > 25 ? 'Use the pages to see everyone included.' : '' }}</p>
+                <ul class="delete-candidates" :aria-busy="reviewPageLoading"><li v-for="row in deletePreview.registrations" :key="row.reference"><div class="review-student"><strong>{{ row.student }}</strong><span class="badge">{{ row.grade }}</span></div><small>Registered {{ date(row.submitted_at) }}</small><span class="reference">{{ row.reference }}</span><small>{{ statusLabel(row.status) }} · Payment {{ row.payment }}</small></li></ul>
+                <nav v-if="deletePreview.last_page > 1" class="review-pages" aria-label="Deletion review pages"><button type="button" class="secondary" :disabled="reviewPageLoading || deleting || deleteStale || deletePreview.page <= 1" @click="changeReviewPage(deletePreview.page - 1)">Previous</button><label>Review page<span class="select is-fullwidth"><select :value="deletePreview.page" :disabled="reviewPageLoading || deleting || deleteStale" aria-label="Deletion review page" @change="changeReviewPage(Number($event.target.value))"><option v-for="page in deletePreview.last_page" :key="page" :value="page">{{ page }} of {{ deletePreview.last_page }}</option></select></span></label><button type="button" class="secondary" :disabled="reviewPageLoading || deleting || deleteStale || deletePreview.page >= deletePreview.last_page" @click="changeReviewPage(deletePreview.page + 1)">Next</button></nav>
+                <p v-if="reviewPageLoading" class="hint" role="status">Loading review page…</p>
+                <p>Student accounts and course access stay unchanged. Emails already sent cannot be recalled.</p>
+                <p v-if="dirty" class="error-message">Unsaved notes for a deleted registration will also be discarded. Cancel to keep editing.</p>
+                <label v-if="deletePreview.count" for="delete-confirmation">Type DELETE to confirm<input id="delete-confirmation" v-model="deleteConfirmation" autocomplete="off" spellcheck="false" :disabled="deleting || deleteStale || reviewPageLoading"></label>
+                <p v-else>No registrations match. Nothing will be deleted.</p>
+            </template>
+            <p v-if="deleteError" class="error-message" role="alert">{{ deleteError }}</p>
+            <div class="delete-buttons"><button type="button" class="secondary" :disabled="deleting" @click="closeDeletion">Cancel</button><button type="button" class="danger" :disabled="preparingDelete || deleting || reviewPageLoading || deleteStale || !deletePreview?.count || deleteConfirmation !== 'DELETE'" @click="confirmDeletion">{{ deleting ? 'Deleting…' : `Delete ${deletePreview?.count || ''} permanently` }}</button></div>
+        </dialog>
     </section>
 </template>
 
@@ -94,14 +116,29 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import api from '../../api';
 
 const rows = ref([]), counts = ref({ pending: 0, new: 0, contacted: 0, enrolled: 0 });
-const grades = ref([]), subjects = ref([]), meta = ref({page: 1, last_page: 1, total: 0, from: null, to: null});
-const filters = reactive({search: '', status: 'pending', grade: '', subject: '', payment: '', email: '', sort: 'newest', per_page: 25});
+const grades = ref([]), meta = ref({page: 1, last_page: 1, total: 0, from: null, to: null});
+const filters = reactive({search: '', status: 'all', grade: '', payment: '', email: '', sort: 'newest', per_page: 25});
 const loading = ref(false), listError = ref(''), exporting = ref(false), exportError = ref('');
 const selected = ref(null), requestedId = ref(null), detailLoading = ref(false), detailError = ref(''), detailPanel = ref(null);
 const draft = reactive({registration_status: 'new', payment_status: 'unverified', staff_notes: ''});
 const confirmPayment = ref(false), saving = ref(false), saveError = ref(''), savedMessage = ref(''), conflict = ref(false);
 const detailDialog = ref(null), listPanel = ref(null), jumpPage = ref(1), searchPending = ref(false);
 const resending = ref(false), resendMessage = ref('');
+const selectedIds = ref([]), deleteDialog = ref(null), deletePreview = ref(null), deleteConfirmation = ref('');
+const selectionMode = ref(false);
+const statusTabs = computed(() => [
+    {value: 'all', label: 'All registrations', count: counts.value.pending + counts.value.enrolled},
+    {value: 'pending', label: 'Needs follow-up', count: counts.value.pending},
+    {value: 'enrolled', label: 'Enrolled', count: counts.value.enrolled},
+]);
+const extraFilterCount = computed(() => Number(!!filters.payment) + Number(!!filters.email)
+    + Number(['new', 'contacted'].includes(filters.status)) + Number(filters.sort !== 'newest') + Number(filters.per_page !== 25));
+const hasFilters = computed(() => !!filters.search || !!filters.grade || filters.status !== 'all' || extraFilterCount.value > 0);
+const preparingDelete = ref(false), deleting = ref(false), deleteError = ref(''), deleteStale = ref(false), deletionMessage = ref('');
+const reviewPageLoading = ref(false);
+const deleteBusy = computed(() => preparingDelete.value || deleting.value || reviewPageLoading.value);
+const allPageSelected = computed(() => rows.value.length > 0 && rows.value.every(row => selectedIds.value.includes(row.id)));
+let deleteScopeIds = [], deleteSequence = 0, deleteOpener = null;
 const selectedRowIndex = computed(() => rows.value.findIndex(row => row.id === selected.value?.id));
 let listSequence = 0, detailSequence = 0, searchTimer;
 const pageItems = computed(() => {
@@ -129,14 +166,14 @@ async function loadList() {
         const {data} = await api.get('/admin/registrations', {params: {...params(), page: meta.value.page}});
         if (sequence !== listSequence) return;
         if (data.meta.page > data.meta.last_page) {meta.value.page = data.meta.last_page; await loadList(); return;}
-        rows.value = data.data; meta.value = data.meta; jumpPage.value = data.meta.page; counts.value = data.counts; grades.value = data.grades; subjects.value = data.subjects;
+        rows.value = data.data; selectedIds.value = []; meta.value = data.meta; jumpPage.value = data.meta.page; counts.value = data.counts; grades.value = data.grades;
     } catch (error) { if (sequence === listSequence) listError.value = message(error, 'Registrations could not be loaded. Please retry.'); }
     finally { if (sequence === listSequence) loading.value = false; }
 }
 function applyFilters() { clearTimeout(searchTimer); searchPending.value = false; meta.value.page = 1; loadList(); }
 function scheduleSearch() { clearTimeout(searchTimer); searchPending.value = true; searchTimer = setTimeout(applyFilters, 350); }
 function setStatus(status) { filters.status = status; applyFilters(); }
-function clearFilters() { Object.assign(filters, {search: '', status: 'pending', grade: '', subject: '', payment: '', email: ''}); applyFilters(); }
+function clearFilters() { Object.assign(filters, {search: '', status: 'all', grade: '', payment: '', email: '', sort: 'newest', per_page: 25}); applyFilters(); }
 async function changePage(page) {
     const number = Number(page);
     if (!Number.isInteger(number) || number < 1 || number > meta.value.last_page || loading.value) return;
@@ -144,7 +181,7 @@ async function changePage(page) {
     if (listPanel.value?.getBoundingClientRect().top < 0) listPanel.value.scrollIntoView({block: 'start'});
 }
 async function closeDetails() {
-    if (saving.value || resending.value) return;
+    if (saving.value || resending.value || deleteBusy.value) return;
     if (dirty.value && !window.confirm('Discard your unsaved follow-up edits?')) return;
     detailSequence++; detailLoading.value = false;
     if (selected.value) setSelected(selected.value);
@@ -214,9 +251,63 @@ async function exportCsv() {
     } catch (error) { exportError.value = 'The export could not be downloaded. Please retry.'; }
     finally { exporting.value = false; }
 }
+function togglePageSelection() { selectedIds.value = allPageSelected.value ? [] : rows.value.map(row => row.id); }
+function cancelSelection() { selectedIds.value = []; selectionMode.value = false; }
+async function reviewDeletion(mode, ids = []) {
+    if (deleteBusy.value || saving.value || resending.value || loading.value || searchPending.value) return;
+    deleteOpener = document.activeElement;
+    const sequence = ++deleteSequence;
+    deleteScopeIds = [...ids]; deletePreview.value = null; deleteConfirmation.value = ''; deleteError.value = ''; deleteStale.value = false;
+    preparingDelete.value = true;
+    deleteDialog.value.showModal();
+    try {
+        const {data} = await api.post('/admin/registrations/deletion-preview', {mode, ...(mode === 'selected' ? {ids: deleteScopeIds} : {})});
+        if (sequence !== deleteSequence) return;
+        deletePreview.value = data;
+    } catch (error) { if (sequence === deleteSequence) deleteError.value = message(error, error.response?.data?.message || 'The deletion review could not be loaded. Cancel and try again.'); }
+    finally { if (sequence === deleteSequence) preparingDelete.value = false; }
+}
+function closeDeletion() {
+    if (deleting.value) return;
+    deleteSequence++; preparingDelete.value = false; reviewPageLoading.value = false; deleteDialog.value?.close();
+    deleteOpener?.focus?.({preventScroll: true});
+}
+async function changeReviewPage(page) {
+    if (!deletePreview.value?.token || reviewPageLoading.value || deleting.value || deleteStale.value) return;
+    const sequence = ++deleteSequence;
+    reviewPageLoading.value = true; deleteError.value = ''; deleteConfirmation.value = '';
+    try {
+        const {data} = await api.post('/admin/registrations/deletion-review', {token: deletePreview.value.token, page});
+        if (sequence !== deleteSequence) return;
+        Object.assign(deletePreview.value, data);
+        await nextTick(); deleteDialog.value.querySelector('.delete-candidates')?.scrollTo(0, 0);
+    } catch (error) {
+        if (sequence !== deleteSequence) return;
+        deleteStale.value = true;
+        deleteError.value = error.response?.status === 409 ? error.response.data.message
+            : message(error, 'The review page could not be loaded. Cancel and review the registrations again.');
+    } finally { if (sequence === deleteSequence) reviewPageLoading.value = false; }
+}
+async function confirmDeletion() {
+    if (deleting.value || reviewPageLoading.value || deleteStale.value || !deletePreview.value?.token || deleteConfirmation.value !== 'DELETE') return;
+    deleting.value = true; deleteError.value = '';
+    try {
+        const {data} = await api.delete('/admin/registrations', {data: {token: deletePreview.value.token, confirmation: deleteConfirmation.value}});
+        const removesOpen = selected.value && (deletePreview.value.mode === 'selected' ? deleteScopeIds.includes(selected.value.id)
+            : new Date(selected.value.submitted_at) < new Date(deletePreview.value.cutoff));
+        if (removesOpen) {detailSequence++; detailDialog.value?.close(); selected.value = null; detailLoading.value = false;}
+        deleteDialog.value.close(); cancelSelection(); deletionMessage.value = data.message;
+        await loadList();
+        await nextTick(); listPanel.value?.focus({preventScroll: true});
+    } catch (error) {
+        deleteStale.value = true;
+        deleteError.value = error.response?.status === 409 ? error.response.data.message
+            : message(error, 'Deletion could not be confirmed. Cancel and refresh the list before reviewing again.');
+    } finally { deleting.value = false; }
+}
 watch(() => draft.payment_status, () => {confirmPayment.value = false;});
 onMounted(loadList);
-onBeforeUnmount(() => {clearTimeout(searchTimer); listSequence++; detailSequence++; detailDialog.value?.close();});
+onBeforeUnmount(() => {clearTimeout(searchTimer); listSequence++; detailSequence++; deleteSequence++; detailDialog.value?.close(); deleteDialog.value?.close();});
 </script>
 
 <style scoped>
@@ -231,8 +322,23 @@ button:disabled {opacity:.5; cursor:default;}
 .primary,.secondary {border-radius:9px; padding:10px 14px; font-size:12px; font-weight:600; min-height:40px;}
 .primary {border:1px solid #6366f1; background:linear-gradient(135deg,#6366f1,#4f46e5); color:white;}
 .secondary {border:1px solid #334155; background:#172136; color:#c7d2fe;}
+.danger {border:1px solid #9f3450; border-radius:9px; padding:10px 14px; min-height:40px; background:#421c2a; color:#fecdd3; font-size:12px; font-weight:600;}
+.cleanup-actions {display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px;}
+.selection-label,.student-line {display:flex; align-items:center; gap:9px; line-height:1.5;}
+.selection-label {font-size:12px; color:#cbd5e1;}.student-line {font-size:13px; color:#f8fafc; font-weight:600;}
+.selection-label input,.student-line input {flex:0 0 auto;}
+.select {display:block; width:100%; height:auto; margin-top:6px; --bulma-arrow-color:var(--app-accent,#a5b4fc);}
+.select select {box-sizing:border-box; margin-top:0; width:100%; max-width:100%; height:auto; min-height:42px; line-height:20px; padding-right:2.8em;}
+.select:not(.is-multiple):not(.is-loading)::after {border-color:var(--app-accent,#a5b4fc);}
+.delete-dialog {width:min(540px,calc(100vw - 28px)); max-width:calc(100vw - 28px); max-height:calc(100dvh - 28px); margin:auto; padding:24px; border:1px solid #713348; border-radius:14px; background:#141e30; color:#e2e8f0; overflow-y:auto; font-size:13px; line-height:1.7;}
+.delete-dialog::backdrop {background:rgba(2,6,23,.8);}.delete-dialog h2 {font-size:20px; font-weight:600; color:#fff; margin:0 0 14px;}
+.delete-dialog p {margin:10px 0;}.delete-buttons {display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:20px;}
+.delete-candidates {max-height:230px; overflow:auto; list-style:none; padding:0; margin:14px 0; border-block:1px solid #334155;}
+.delete-candidates li {padding:10px 0;}.delete-candidates strong,.delete-candidates small,.delete-candidates .reference {display:block; margin:0; overflow-wrap:anywhere;}
+.delete-candidates small {color:#94a3b8;}
+:global(html:has(.delete-dialog[open])),:global(body:has(.delete-dialog[open])) {overflow:hidden;}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible {outline:2px solid #a5b4fc; outline-offset:3px;}
-.counts {display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:20px;}
+.counts {display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:20px;}
 .counts > div {background:rgba(99,102,241,.08); border:1px solid #334155; border-radius:12px; padding:15px;}
 .counts span {display:block; font-size:11px; color:#94a3b8;}
 .counts strong {display:block; font-size:27px; color:#c7d2fe; margin-top:5px;}
@@ -241,6 +347,13 @@ label {display:block; font-size:11px; color:#a8b4c7;}
 input:not([type=checkbox]),select,textarea {display:block; width:100%; min-width:0; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:10px; margin-top:6px; font:inherit; font-size:13px;}
 .search-row {display:flex; align-items:flex-end; gap:10px; margin-bottom:14px;}
 .search-field {flex:1; min-width:0;}
+.grade-filter {width:190px; min-width:145px;}
+.more-filters > summary {cursor:pointer; color:#a5b4fc; font-size:12px; width:fit-content;}
+.more-filters[open] .filter-selects {margin-top:16px;}
+.selection-toolbar {padding:12px; background:#1b2439; border:1px solid #334155; border-radius:10px;}
+.review-student {display:flex; justify-content:space-between; align-items:center; gap:10px;}
+.review-student .badge {flex-shrink:0;}.review-pages {display:flex; align-items:flex-end; justify-content:space-between; gap:10px;}
+.review-pages label {flex:1; max-width:140px;}
 .filter-selects {display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px;}
 .inbox-grid {display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.15fr); gap:20px; align-items:start;}
 .inbox-list,.registration-detail {min-width:0;}
@@ -286,7 +399,8 @@ dt {color:#94a3b8;} dd {margin:0; overflow-wrap:anywhere;}
 .save-actions {display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:16px;}
 @media(max-width:1200px) {.inbox-grid {grid-template-columns:1fr;} .registration-list {max-height:650px;} .filter-selects {grid-template-columns:1fr 1fr;}}
 @media(max-width:600px) {
- .panel-heading {flex-direction:column; gap:12px;}.counts {grid-template-columns:1fr 1fr; gap:8px;}.counts > div {padding:12px;}
+ .panel-heading {flex-direction:column; gap:12px;}.counts {grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;}.counts > div {padding:12px;}
+ .grade-filter {width:100%;}.counts span {font-size:10px;}.counts strong {font-size:23px;}
  .filters,.registration-detail {padding:15px;}.filter-selects,.follow-up-selects {grid-template-columns:1fr;}
  input:not([type=checkbox]),select,textarea {font-size:16px;}.detail-heading {flex-direction:column;}.card-bottom {align-items:flex-start;}
  dl > div {grid-template-columns:1fr; gap:0;}.search-row {flex-wrap:wrap;}.search-field {flex-basis:100%;}.registration-card {padding:14px;}
@@ -341,6 +455,7 @@ dt {color:#94a3b8;} dd {margin:0; overflow-wrap:anywhere;}
 .visually-hidden {position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;}
 @media(max-width:900px) {
  .registrations-table,.registrations-table tbody {display:block; background:none;}
+ .table-caption {display:block; width:100%;}
  .registrations-table thead {display:none;}
  .registrations-table tbody tr {display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:14px; border:1px solid #334155; border-radius:12px; margin-bottom:10px; background:#141e30;}
  .registrations-table td {display:block; padding:0; border:0;}

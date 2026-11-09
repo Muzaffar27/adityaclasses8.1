@@ -7,11 +7,112 @@ use App\Services\RegistrationAcknowledgementService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class RegistrationManagementController extends Controller
 {
+    private function deletionQuery(array $scope): Builder
+    {
+        $query = CourseRegistration::query();
+        return $scope['mode'] === 'selected' ? $query->whereKey($scope['ids'])
+            : $query->where('created_at', '<', $scope['cutoff'])->where('id', '<=', $scope['max_id']);
+    }
+
+    private function deletionFingerprint($registrations): string
+    {
+        return hash('sha256', $registrations->map(fn ($registration) =>
+            hash('sha256', json_encode($registration->getAttributes(), JSON_THROW_ON_ERROR)))->implode(''));
+    }
+
+    private function deletionTicket(Request $request, string $token): array
+    {
+        try {
+            $ticket = json_decode(Crypt::decryptString($token), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\Throwable $exception) {
+            abort(422, 'The deletion confirmation is invalid. Review the registrations again.');
+        }
+        abort_unless(($ticket['staff_id'] ?? null) === $request->user()->id, 403);
+        abort_if(($ticket['expires'] ?? 0) <= now()->timestamp, 409,
+            'This confirmation expired. Review the registrations again.');
+        return $ticket;
+    }
+
+    private function deletionReviewPage($registrations, int $page): array
+    {
+        $last = max(1, (int) ceil($registrations->count() / 25));
+        abort_if($page > $last, 422, 'Invalid review page.');
+        return [
+            'registrations' => $registrations->slice(($page - 1) * 25, 25)->map(fn ($row) => [
+                'student' => $row->details['studentName'], 'grade' => $row->details['grade'],
+                'reference' => $row->reference, 'submitted_at' => $row->created_at->toIso8601String(),
+                'status' => $row->registration_status, 'payment' => $row->payment_status,
+            ])->values(),
+            'page' => $page, 'last_page' => $last,
+        ];
+    }
+
+    public function deletionReview(Request $request)
+    {
+        $this->authorizeStaff($request);
+        $data = $request->validate(['token' => ['required', 'string', 'max:20000'],
+            'page' => ['required', 'integer', 'min:1']]);
+        $ticket = $this->deletionTicket($request, $data['token']);
+        $registrations = $this->deletionQuery($ticket['scope'])->orderBy('id')->get();
+        abort_if($registrations->count() !== $ticket['count']
+            || ! hash_equals($ticket['fingerprint'], $this->deletionFingerprint($registrations)), 409,
+            'These registrations changed since your review. Nothing was deleted. Review them again.');
+        return response()->json($this->deletionReviewPage($registrations, $data['page']))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function previewDeletion(Request $request)
+    {
+        $this->authorizeStaff($request);
+        $data = $request->validate([
+            'mode' => ['required', Rule::in(['selected', 'older'])],
+            'ids' => ['required_if:mode,selected', 'prohibited_unless:mode,selected', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['integer', 'min:1', 'distinct'],
+        ]);
+        $scope = $data['mode'] === 'selected' ? ['mode' => 'selected', 'ids' => $data['ids']]
+            : ['mode' => 'older', 'cutoff' => now()->subYearNoOverflow()->toDateTimeString(),
+                'max_id' => CourseRegistration::max('id') ?? 0];
+        $registrations = $this->deletionQuery($scope)->orderBy('id')->get();
+        abort_if($scope['mode'] === 'selected' && $registrations->count() !== count($scope['ids']), 409,
+            'Some selected registrations no longer exist. Refresh the list and review again.');
+        $ticket = ['scope' => $scope, 'staff_id' => $request->user()->id, 'expires' => now()->addMinutes(10)->timestamp,
+            'count' => $registrations->count(), 'fingerprint' => $this->deletionFingerprint($registrations)];
+        return response()->json([
+            'count' => $registrations->count(), 'mode' => $scope['mode'],
+            'cutoff' => isset($scope['cutoff']) ? \Illuminate\Support\Carbon::parse($scope['cutoff'])->toIso8601String() : null,
+            ...$this->deletionReviewPage($registrations, 1),
+            'token' => $registrations->isEmpty() ? null : Crypt::encryptString(json_encode($ticket, JSON_THROW_ON_ERROR)),
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function deleteRegistrations(Request $request)
+    {
+        $this->authorizeStaff($request);
+        $data = $request->validate(['token' => ['required', 'string', 'max:20000'],
+            'confirmation' => ['required', Rule::in(['DELETE'])]]);
+        $ticket = $this->deletionTicket($request, $data['token']);
+        $deleted = DB::transaction(function () use ($ticket) {
+            $registrations = $this->deletionQuery($ticket['scope'])->orderBy('id')->lockForUpdate()->get();
+            abort_if($registrations->isEmpty() || $registrations->count() !== $ticket['count']
+                || ! hash_equals($ticket['fingerprint'], $this->deletionFingerprint($registrations)), 409,
+                'These registrations changed since your review. Nothing was deleted. Review them again.');
+            // Delete exactly the reviewed IDs, never a newly matched registration or a user account.
+            $deleted = 0;
+            foreach (array_chunk($registrations->modelKeys(), 500) as $ids) {
+                $deleted += CourseRegistration::whereKey($ids)->delete();
+            }
+            return $deleted;
+        });
+        return response()->json(['deleted' => $deleted, 'message' => $deleted.' registration(s) permanently deleted.'])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
     private function authorizeStaff(Request $request): void
     {
         abort_unless(in_array($request->user()?->role, ['tutor', 'admin'], true), 403);

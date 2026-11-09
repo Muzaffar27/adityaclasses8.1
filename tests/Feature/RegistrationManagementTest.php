@@ -231,6 +231,152 @@ class RegistrationManagementTest extends TestCase
         $this->assertSame(1, CourseRegistration::count());
     }
 
+    public function test_deletion_endpoints_deny_guests_and_students(): void
+    {
+        $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'older'])->assertUnauthorized();
+        $this->postJson('/api/admin/registrations/deletion-review', [])->assertUnauthorized();
+        $this->deleteJson('/api/admin/registrations', [])->assertUnauthorized();
+        Sanctum::actingAs(User::factory()->create(['role' => 'student']));
+        $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'older'])->assertForbidden();
+        $this->postJson('/api/admin/registrations/deletion-review', [])->assertForbidden();
+        $this->deleteJson('/api/admin/registrations', [])->assertForbidden();
+    }
+
+    public function test_staff_delete_only_reviewed_registrations_with_exact_confirmation_and_no_user_or_email_effects(): void
+    {
+        Mail::fake();
+        Sanctum::actingAs($this->tutor);
+        $first = $this->registration(['studentName' => 'Remove this student']);
+        $second = $this->registration();
+        $keep = $this->registration();
+        $users = User::count();
+        $preview = $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'selected', 'ids' => [$first->id, $second->id]])
+            ->assertOk()->assertJsonPath('count', 2)->assertJsonPath('registrations.0.reference', $first->reference);
+        $token = $preview->json('token');
+        $this->assertStringContainsString('no-store', $preview->headers->get('Cache-Control'));
+        $this->deleteJson('/api/admin/registrations', ['token' => $token, 'confirmation' => 'delete'])->assertUnprocessable();
+        $this->assertSame(3, CourseRegistration::count());
+        $this->deleteJson('/api/admin/registrations', ['token' => $token, 'confirmation' => 'DELETE', 'ids' => [$keep->id]])
+            ->assertOk()->assertJsonPath('deleted', 2);
+        $this->assertSame([$keep->id], CourseRegistration::pluck('id')->all());
+        $this->assertSame($users, User::count());
+        Mail::assertNothingSent();
+        $this->deleteJson('/api/admin/registrations', ['token' => $token, 'confirmation' => 'DELETE'])->assertConflict();
+        $this->assertSame(1, CourseRegistration::count());
+    }
+
+    public function test_single_delete_and_admin_access_use_the_same_review_and_confirmation(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+        $row = $this->registration();
+        $preview = $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'selected', 'ids' => [$row->id]])
+            ->assertOk()->assertJsonPath('count', 1)->assertJsonPath('registrations.0.student', $row->details['studentName']);
+        $this->deleteJson('/api/admin/registrations', ['token' => $preview->json('token'), 'confirmation' => 'DELETE'])
+            ->assertOk()->assertJsonPath('deleted', 1);
+        $this->assertSame(0, CourseRegistration::count());
+    }
+
+    public function test_changed_or_missing_registrations_abort_the_entire_deletion(): void
+    {
+        Sanctum::actingAs($this->tutor);
+        $first = $this->registration();
+        $second = $this->registration();
+        $preview = $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'selected', 'ids' => [$first->id, $second->id]])->assertOk();
+        $second->forceFill(['staff_notes' => 'New note from another tutor'])->save();
+        $this->postJson('/api/admin/registrations/deletion-review', ['token' => $preview->json('token'), 'page' => 1])->assertConflict();
+        $this->deleteJson('/api/admin/registrations', ['token' => $preview->json('token'), 'confirmation' => 'DELETE'])->assertConflict();
+        $this->assertSame(2, CourseRegistration::count());
+        $preview = $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'selected', 'ids' => [$first->id, $second->id]])->assertOk();
+        $second->delete();
+        $this->deleteJson('/api/admin/registrations', ['token' => $preview->json('token'), 'confirmation' => 'DELETE'])->assertConflict();
+        $this->assertNotNull($first->fresh());
+    }
+
+    public function test_deletion_ticket_is_staff_bound_expires_and_rejects_tampering(): void
+    {
+        Sanctum::actingAs($this->tutor);
+        $row = $this->registration();
+        $token = $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'selected', 'ids' => [$row->id]])->assertOk()->json('token');
+        $this->deleteJson('/api/admin/registrations', ['token' => $token.'corrupt', 'confirmation' => 'DELETE'])->assertUnprocessable();
+        Sanctum::actingAs(User::factory()->create(['role' => 'tutor']));
+        $this->postJson('/api/admin/registrations/deletion-review', ['token' => $token, 'page' => 1])->assertForbidden();
+        $this->deleteJson('/api/admin/registrations', ['token' => $token, 'confirmation' => 'DELETE'])->assertForbidden();
+        Sanctum::actingAs($this->tutor);
+        $this->travel(11)->minutes();
+        $this->postJson('/api/admin/registrations/deletion-review', ['token' => $token, 'page' => 1])->assertConflict();
+        $this->deleteJson('/api/admin/registrations', ['token' => $token, 'confirmation' => 'DELETE'])->assertConflict();
+        $this->travelBack();
+        $this->assertNotNull($row->fresh());
+    }
+
+    public function test_older_cleanup_uses_strict_one_year_cutoff_all_statuses_and_excludes_newly_inserted_rows(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-09 12:00:00', 'UTC'));
+        Sanctum::actingAs($this->tutor);
+        $old = $this->registration([], ['created_at' => now()->subYear()->subSecond(), 'registration_status' => 'enrolled', 'payment_status' => 'verified']);
+        $boundary = $this->registration([], ['created_at' => now()->subYear()]);
+        $recent = $this->registration();
+        $preview = $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'older', 'status' => 'pending'])
+            ->assertOk()->assertJsonPath('count', 1)->assertJsonPath('registrations.0.reference', $old->reference);
+        $late = $this->registration([], ['created_at' => now()->subYears(2)]);
+        $this->deleteJson('/api/admin/registrations', ['token' => $preview->json('token'), 'confirmation' => 'DELETE'])
+            ->assertOk()->assertJsonPath('deleted', 1);
+        $this->assertSame([$boundary->id, $recent->id, $late->id], CourseRegistration::orderBy('id')->pluck('id')->all());
+        $this->travelBack();
+    }
+
+    public function test_hundreds_of_registrations_can_be_deleted_without_loading_all_rows_in_the_browser(): void
+    {
+        Sanctum::actingAs($this->tutor);
+        Mail::fake();
+        $oldIds = [];
+        for ($i = 1; $i <= 650; $i++) {
+            $oldIds[] = $this->registration(['studentName' => 'Old registration '.$i],
+                ['created_at' => now()->subYears(2)])->id;
+        }
+        for ($i = 1; $i <= 25; $i++) $this->registration(['studentName' => 'Recent registration '.$i]);
+        $this->getJson('/api/admin/registrations?per_page=100&sort=oldest')
+            ->assertOk()->assertJsonCount(100, 'data')->assertJsonPath('meta.total', 675)->assertJsonPath('meta.last_page', 7);
+        $selected = $this->postJson('/api/admin/registrations/deletion-preview',
+            ['mode' => 'selected', 'ids' => array_slice($oldIds, 0, 100)])
+            ->assertOk()->assertJsonPath('count', 100)->assertJsonCount(25, 'registrations')->assertJsonPath('last_page', 4);
+        $this->postJson('/api/admin/registrations/deletion-review', ['token' => $selected->json('token'), 'page' => 4])
+            ->assertOk()->assertJsonCount(25, 'registrations')->assertJsonPath('registrations.24.student', 'Old registration 100');
+        $this->postJson('/api/admin/registrations/deletion-review', ['token' => $selected->json('token'), 'page' => 5])->assertUnprocessable();
+        $this->deleteJson('/api/admin/registrations', ['token' => $selected->json('token'), 'confirmation' => 'DELETE'])
+            ->assertOk()->assertJsonPath('deleted', 100);
+        $older = $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'older'])
+            ->assertOk()->assertJsonPath('count', 550)->assertJsonCount(25, 'registrations')->assertJsonPath('last_page', 22);
+        $reviewed = [];
+        for ($page = 1; $page <= 22; $page++) {
+            $review = $this->postJson('/api/admin/registrations/deletion-review', ['token' => $older->json('token'), 'page' => $page])
+                ->assertOk()->assertJsonCount(25, 'registrations')->assertJsonPath('page', $page);
+            $reviewed = array_merge($reviewed, array_column($review->json('registrations'), 'reference'));
+        }
+        $this->assertCount(550, array_unique($reviewed));
+        // More than 500 old records exercises multiple DELETE batches in the transaction.
+        $this->deleteJson('/api/admin/registrations', ['token' => $older->json('token'), 'confirmation' => 'DELETE'])
+            ->assertOk()->assertJsonPath('deleted', 550);
+        $this->assertSame(25, CourseRegistration::count());
+        $this->assertSame(0, CourseRegistration::whereIn('id', $oldIds)->count());
+        $this->assertSame(1, User::count());
+        Mail::assertNothingSent();
+    }
+
+    public function test_deletion_preview_validates_scope_and_cannot_produce_an_empty_delete_all(): void
+    {
+        Sanctum::actingAs($this->tutor);
+        $row = $this->registration();
+        foreach ([['mode' => 'all'], ['mode' => 'selected', 'ids' => []], ['mode' => 'selected', 'ids' => [$row->id, $row->id]],
+            ['mode' => 'selected', 'ids' => range(1, 101)], ['mode' => 'older', 'ids' => [$row->id]]] as $payload) {
+            $this->postJson('/api/admin/registrations/deletion-preview', $payload)->assertUnprocessable();
+        }
+        $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'selected', 'ids' => [$row->id + 100]])->assertConflict();
+        $this->postJson('/api/admin/registrations/deletion-preview', ['mode' => 'older'])->assertOk()->assertJsonPath('count', 0)->assertJsonPath('token', null);
+        $this->deleteJson('/api/admin/registrations', ['confirmation' => 'DELETE'])->assertUnprocessable();
+        $this->assertSame(1, CourseRegistration::count());
+    }
+
     public function test_disabled_email_cannot_send_from_staff_retry(): void
     {
         config(['registration.mail_enabled' => false]);

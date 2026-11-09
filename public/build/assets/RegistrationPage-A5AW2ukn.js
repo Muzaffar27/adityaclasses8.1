@@ -1,1 +1,0 @@
-import{d as t,w as a,L as e,o,h as r}from"./app-BlUjYqcJ.js";import s from"./RegistrationPanel-CmbRpeZy.js";const p={__name:"RegistrationPage",setup(n){return(c,_)=>(o(),t(e,null,{default:a(()=>[r(s)]),_:1}))}};export{p as default};
