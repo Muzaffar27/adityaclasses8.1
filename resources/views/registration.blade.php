@@ -7,6 +7,21 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="Begin your learning journey with Aditya Classes. Student admissions for 2027.">
   <title>Student admissions 2027 · Aditya Classes</title>
+  <link rel="canonical" href="{{ route('registration') }}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Aditya Classes">
+  <meta property="og:title" content="2027 Registration Now Open | Aditya Classes">
+  <meta property="og:description" content="Register for Grades 7–13. Choose your subjects and view class schedules at Aditya Classes.">
+  <meta property="og:url" content="{{ route('registration') }}">
+  <meta property="og:image" content="{{ asset('registration-poc/registration-share-2027-20261109.jpg') }}">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Aditya Classes — 2027 registration now open for Grades 7–13">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="2027 Registration Now Open | Aditya Classes">
+  <meta name="twitter:description" content="Register for Grades 7–13. Choose your subjects and view class schedules at Aditya Classes.">
+  <meta name="twitter:image" content="{{ asset('registration-poc/registration-share-2027-20261109.jpg') }}">
   <link rel="icon" href="{{ asset('logo.png') }}">
   <link rel="stylesheet" href="{{ asset('registration-poc/styles.css') }}?v=registration-mail-off-20261104">
   <script type="application/json" id="registration-catalogue">@json(config('registration.catalogue'))</script>
