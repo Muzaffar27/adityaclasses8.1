@@ -1,4 +1,4 @@
-const CACHE_VERSION = "aditya-classes-v9-20260920";
+const CACHE_VERSION = "aditya-classes-v10-20261110";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -109,7 +109,9 @@ async function staleWhileRevalidate(request) {
     const cache = await caches.open(RUNTIME_CACHE);
     const cachedResponse = await cache.match(request);
 
-    const fetchPromise = fetch(request)
+    // Chrome can send cache-only requests when restoring/inspecting a page.
+    // A cold HTTP cache must not prevent the worker from fetching it online.
+    const fetchPromise = fetch(request, request.cache === "only-if-cached" ? { cache: "no-store" } : undefined)
         .then((networkResponse) => {
             if (networkResponse.ok) {
                 cache.put(request, networkResponse.clone());

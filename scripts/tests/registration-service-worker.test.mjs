@@ -62,3 +62,36 @@ test('other API offline behavior remains unchanged', async () => {
     listeners.get('fetch')({request: {method: 'GET', mode: 'cors', url: 'https://example.test/api/student/dashboard'}, respondWith: promise => {response = promise;}});
     assert.deepEqual(await response, {privateCachedRecord: true});
 });
+
+test('cold cache-only resume requests can reach the network instead of ERR_CACHE_MISS', async () => {
+    const cached = [];
+    const expected = {ok: true, clone() {return this;}};
+    const request = {method: 'GET', mode: 'same-origin', cache: 'only-if-cached',
+        url: 'https://example.test/lessons/1/1?resume=387&video=lesson'};
+    const listeners = worker({
+        caches: {open: async () => ({match: async () => undefined, put: (key, value) => {cached.push([key, value]);}})},
+        fetch: async (actual, options) => {
+            assert.equal(actual, request);
+            if (options?.cache !== 'no-store') throw new Error('net::ERR_CACHE_MISS');
+            return expected;
+        },
+    });
+    let response;
+    listeners.get('fetch')({request, respondWith: promise => {response = promise;}});
+    assert.equal(await response, expected);
+    assert.deepEqual(cached, [[request, expected]]);
+});
+
+test('ordinary asset requests preserve their browser cache policy and offline fallback', async () => {
+    const expected = {cachedAsset: true};
+    const request = {method: 'GET', mode: 'cors', cache: 'reload', url: 'https://example.test/build/assets/app.js'};
+    let fetched;
+    const listeners = worker({
+        caches: {open: async () => ({match: async () => expected})},
+        fetch: async (actual, options) => {assert.equal(actual, request); assert.equal(options, undefined); fetched = true; throw new Error('offline');},
+    });
+    let response;
+    listeners.get('fetch')({request, respondWith: promise => {response = promise;}});
+    assert.equal(await response, expected);
+    assert.equal(fetched, true);
+});
