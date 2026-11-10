@@ -25,6 +25,33 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 
 Route::post('/client-error', function (Request $request) {
+    if ($request->input('type') === 'local-playback-diagnostic') {
+        abort_unless(app()->environment('local') && in_array($request->getHost(), ['localhost', '127.0.0.1', '[::1]'], true), 404);
+        $input = $request->validate([
+            'run_id' => 'required|uuid', 'tab_id' => 'required|uuid', 'lesson_id' => 'required|integer|min:1',
+            'video_type' => 'required|in:lesson,answer', 'events' => 'required|array|max:20',
+            'events.*.stage' => 'required|string|max:60', 'events.*.at' => 'required|date',
+            'events.*.httpStatus' => 'sometimes|integer|between:0,599',
+            'events.*.seconds' => 'sometimes|numeric', 'events.*.duration' => 'sometimes|numeric',
+            'events.*.completed' => 'sometimes|boolean', 'events.*.playbackSeen' => 'sometimes|boolean',
+            'events.*.readySeen' => 'sometimes|boolean', 'events.*.online' => 'sometimes|boolean',
+            'events.*.controlled' => 'sometimes|boolean', 'events.*.method' => 'sometimes|string|max:250',
+            'events.*.name' => 'sometimes|string|max:250', 'events.*.message' => 'sometimes|string|max:250',
+            'events.*.value' => 'sometimes', 'events.*.visibility' => 'sometimes|string|max:30',
+            'events.*.navigationType' => 'sometimes|string|max:30',
+        ]);
+        $keys = array_flip(['stage', 'at', 'httpStatus', 'seconds', 'duration', 'completed', 'playbackSeen', 'readySeen', 'method', 'name', 'message', 'value', 'visibility', 'online', 'controlled', 'navigationType']);
+        $input['events'] = array_map(function ($event) use ($keys) {
+            $event = array_intersect_key($event, $keys);
+            foreach ($event as $key => $value) {
+                $event[$key] = is_string($value) ? substr(preg_replace('~https?://\S+~', '[url]', $value), 0, 250)
+                    : ((is_numeric($value) || is_bool($value)) ? $value : null);
+            }
+            return $event;
+        }, $input['events']);
+        Log::build(['driver' => 'single', 'path' => storage_path('logs/playback-debug.log')])->info('local-playback', $input);
+        return response()->json(['logged' => true]);
+    }
     $payload = $request->all();
     $cacheNames = array_slice(array_map(
         fn ($name) => substr((string) $name, 0, 120),
