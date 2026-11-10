@@ -105,6 +105,7 @@
                                                             <p class="mt-2">Buffering...</p>
                                                         </div>
                                                     </div>
+                                                    <LessonCompletionCheckbox v-if="hasAccess && (videoMode === 'answer' ? lesson.answer_vimeo_url : lesson.vimeo_url)" :lesson="lesson" :video-type="videoMode" @completed="applyLessonProgress(lesson.id, $event)" />
                                                     <LessonPdfResources :lesson="lesson"
                                                         :showing-answer-video="videoMode === 'answer'"
                                                         @play-answer-video="playAnswerVideo(lesson)"
@@ -160,6 +161,10 @@
 
                                                     <LessonProgressStatus v-if="hasAccess && lesson.vimeo_url" :progress="lesson.progress" />
 
+                                                    <LessonCompletionCheckbox v-if="hasAccess && lesson.vimeo_url" :lesson="lesson" video-type="lesson" @completed="applyLessonProgress(lesson.id, $event)" />
+
+                                                    <LessonCompletionCheckbox v-if="hasAccess && lesson.answer_vimeo_url" :lesson="lesson" video-type="answer" @completed="applyLessonProgress(lesson.id, $event)" />
+
                                                     <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
                                                         <button v-if="lesson.vimeo_url" type="button" class="lesson-play-action"
                                                             @click="openLesson(lesson)">
@@ -207,6 +212,7 @@
                                             <p class="mt-2">Buffering...</p>
                                         </div>
                                     </div>
+                                    <LessonCompletionCheckbox v-if="hasAccess && (videoMode === 'answer' ? lesson.answer_vimeo_url : lesson.vimeo_url)" :lesson="lesson" :video-type="videoMode" @completed="applyLessonProgress(lesson.id, $event)" />
                                     <LessonPdfResources :lesson="lesson"
                                         :showing-answer-video="videoMode === 'answer'"
                                         @play-answer-video="playAnswerVideo(lesson)"
@@ -260,6 +266,10 @@
 
                                     <LessonProgressStatus v-if="hasAccess && lesson.vimeo_url" :progress="lesson.progress" />
 
+                                    <LessonCompletionCheckbox v-if="hasAccess && lesson.vimeo_url" :lesson="lesson" video-type="lesson" @completed="applyLessonProgress(lesson.id, $event)" />
+
+                                    <LessonCompletionCheckbox v-if="hasAccess && lesson.answer_vimeo_url" :lesson="lesson" video-type="answer" @completed="applyLessonProgress(lesson.id, $event)" />
+
                                     <div v-if="hasAccess" class="lesson-card-actions" @click.stop>
                                         <button v-if="lesson.vimeo_url" type="button" class="lesson-play-action"
                                             @click="openLesson(lesson)">
@@ -291,6 +301,7 @@ import { useRoute } from "vue-router";
 import Layout from "./common/Layout.vue";
 import LessonPdfResources from "./LessonPdfResources.vue";
 import LessonProgressStatus from "./Lesson/LessonProgressStatus.vue";
+import LessonCompletionCheckbox from "./Lesson/LessonCompletionCheckbox.vue";
 import { showAlert } from '../composables/dialog';
 import { getVimeoPlayerUrl } from "../utils/vimeo";
 import { PlayIcon, LockClosedIcon, ChevronRightIcon, CheckCircleIcon, XMarkIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
@@ -507,13 +518,16 @@ async function handleVimeoMessage(event) {
     if (!message || typeof message !== 'object') return;
 
     if (message.event === 'ready' || message.method === 'ping') {
+        isVideoLoading.value = false;
         ['play', 'timeupdate', 'pause', 'ended'].forEach((eventName) => {
             postToVimeo({ method: 'addEventListener', value: eventName });
         });
 
         if (!resumeApplied) {
             resumeApplied = true;
+            const frame = activeVimeoFrame;
             const resumeSeconds = await progressLoadPromise;
+            if (frame !== activeVimeoFrame) return;
 
             if (resumeSeconds >= 5) {
                 postToVimeo({ method: 'setCurrentTime', value: resumeSeconds });
@@ -526,7 +540,9 @@ async function handleVimeoMessage(event) {
         latestPlayback = { seconds: Number(message.data?.seconds) || latestPlayback.seconds, duration: Number(message.data?.duration) || latestPlayback.duration };
         void saveCurrentProgress(true);
     }
-    if (message.event === 'timeupdate') handlePlaybackUpdate(message.data || {});
+    if (message.event === 'timeupdate') {
+        handlePlaybackUpdate(message.data || {});
+    }
     if (message.event === 'pause') handlePlaybackPause(message.data || latestPlayback);
     if (message.event === 'ended') handlePlaybackEnded(message.data || latestPlayback);
 }

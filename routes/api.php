@@ -114,6 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/whatsapp/test', [WhatsAppController::class, 'sendTest']);
     Route::get('/student/dashboard', [StudentDashboardController::class, 'show']);
     Route::get('/lesson-progress/{lesson}', [LessonProgressController::class, 'show']);
+    Route::put('/lesson-progress/{lesson}/completion', [LessonProgressController::class, 'complete']);
     Route::put('/lesson-progress/{lesson}', [LessonProgressController::class, 'update']);
 });
 
