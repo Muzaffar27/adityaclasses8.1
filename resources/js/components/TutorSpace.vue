@@ -10,7 +10,7 @@
 
                 <div class="sidebar-list">
 
-                    <div v-for="tool in tools" :key="tool.key" class="sidebar-item"
+                    <div v-for="tool in visibleTools" :key="tool.key" class="sidebar-item"
                         :class="{ active: currentView.name === tool.key }" @click="openView(tool.key)">
                         <span class="icon">
                             <component :is="tool.iconComponent" v-if="tool.iconComponent" />
@@ -48,6 +48,7 @@
 <script setup>
 import { ref, computed, defineAsyncComponent } from "vue";
 import { ChevronRightIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
+import { useAuthStore } from '../stores/auth';
 import Layout from './common/Layout.vue';
 
 /* tools */
@@ -67,7 +68,11 @@ import WhatsAppIcon from "./common/WhatsAppIcon.vue";
 const QuestionBuilderPreview = defineAsyncComponent(() => import('./tutor/QuestionBuilderPreview.vue'));
 const QuestionReviewPanel = defineAsyncComponent(() => import('./tutor/QuestionReviewPanel.vue'));
 
+const RegistrationPanel = defineAsyncComponent(() => import('./tutor/RegistrationPanel.vue'));
+const auth = useAuthStore();
+const visibleTools = computed(() => tools.filter(tool => tool.key !== 'registrations' || auth.isTutor || auth.isAdmin));
 const tools = [
+    { key: 'registrations', label: 'Registrations', iconComponent: ClipboardDocumentListIcon, desc: 'Pending enrolments' },
     { key: "announcement", label: "Announcement", icon: "\u{1F4E2}", desc: "Site notice" },
     { key: "access", label: "Request Access", icon: "\u{1F465}", desc: "Approvals" },
     { key: "students", label: "Students", icon: "\u{1F393}", desc: "List" },
@@ -91,6 +96,7 @@ const questionPreviewOpen = ref(false);
 
 /* component map */
 const toolMap = {
+    registrations: RegistrationPanel,
     questionReview: QuestionReviewPanel,
     questions: QuestionBuilderPreview,
     lessons: LessonAll,

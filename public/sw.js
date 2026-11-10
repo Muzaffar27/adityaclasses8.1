@@ -34,6 +34,13 @@ self.addEventListener("activate", (event) => {
                         .map((cacheName) => caches.delete(cacheName))
                 )
             )
+            .then(async () => {
+                const cache = await caches.open(RUNTIME_CACHE);
+                const requests = await cache.keys();
+                await Promise.all(requests
+                    .filter((request) => /^\/api\/admin\/registrations(?:\/|$)/.test(new URL(request.url).pathname))
+                    .map((request) => cache.delete(request)));
+            })
             .then(() => self.clients.claim())
     );
 });
@@ -52,6 +59,13 @@ self.addEventListener("fetch", (event) => {
     }
 
     const url = new URL(request.url);
+
+    // Registration records and CSV exports contain private staff-only data.
+    // Never fall back to a cached response, including after a user signs out.
+    if (url.origin === self.location.origin && /^\/api\/admin\/registrations(?:\/|$)/.test(url.pathname)) {
+        event.respondWith(fetch(request, { cache: "no-store" }));
+        return;
+    }
 
     if (request.mode === "navigate") {
         event.respondWith(networkFirst(request, "/"));

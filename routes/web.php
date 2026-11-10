@@ -94,6 +94,12 @@ Route::get('/admin/check-db', function () {
 //     return "Successfully imported $count lessons!";
 // });
 
+// Standalone course registration; no student login is created.
+Route::view('/registration', 'registration')
+    ->name('registration');
+Route::post('/registration', [\App\Http\Controllers\CourseRegistrationController::class, 'store'])
+    ->middleware('throttle:6,1')->name('registration.store');
+
 Route::get('/{any}', function () {
     return response()
         ->view('welcome')
