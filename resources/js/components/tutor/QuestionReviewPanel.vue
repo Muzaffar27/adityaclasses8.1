@@ -1,6 +1,6 @@
 <template>
     <section class="review-panel" aria-labelledby="review-title">
-        <header class="review-header"><h2 id="review-title">Review questions</h2><button type="button" :disabled="loading || saving" @click="refresh">Refresh</button></header>
+        <header class="review-header"><h2 id="review-title">Question Review</h2><button type="button" :disabled="loading || saving" @click="refresh">Refresh</button></header>
         <QuestionReviewSaveStatus @review="reviewFailedSave" />
         <div v-if="message" class="feedback" role="status">{{ message }}</div>
         <div v-if="error" class="error" role="alert">{{ error }} <button type="button" @click="load()">Retry</button></div>
@@ -97,6 +97,7 @@ import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, r
 import api from '../../api';
 import QuestionReviewSaveStatus from './QuestionReviewSaveStatus.vue';
 import { useQuestionReviewSaves } from '../../composables/questionReviewSaves';
+const emit = defineEmits(['review-counts']);
 const reviewSaves = useQuestionReviewSaves();
 let saveRefresh;
 watch(reviewSaves.result, () => { clearTimeout(saveRefresh); saveRefresh = setTimeout(() => { if (!reviewSaves.pending.value.length) load(true, true); }, 300); });
@@ -156,6 +157,7 @@ async function load(silent = false, correctionChanged = false) {
     try {
         const { data } = await api.get('/admin/question-reviews', { params: { grade_id: grade.value || undefined, subject_id: subject.value || undefined, lesson_id: lesson.value || undefined, status: status.value === 'corrections' ? 'pending' : status.value, page: page.value, review_scope: reviewScope.value, topic: topic.value || undefined } });
         if (serial !== loadSerial) return;
+        emit('review-counts', data.notification_counts);
         reviewSelection.value = data.selection || null; items.value = data.data; counts.value = data.counts; grades.value = data.grades; subjects.value = data.subjects; lessons.value = data.lessons;
         total.value = data.total; lastPage.value = data.last_page;
         index.value = silent ? Math.max(0, items.value.findIndex(q => q.id === previousId)) : 0;

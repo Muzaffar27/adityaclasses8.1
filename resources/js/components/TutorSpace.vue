@@ -1,275 +1,150 @@
 <template>
-    <Layout :title="currentView.name === 'questions' ? '' : 'Tutor Control Panel'">
-
+    <Layout title="Tutor Space">
         <div class="admin-layout">
-
-            <!-- SIDEBAR -->
-            <div class="admin-sidebar" :class="{ 'has-preview-toggle': currentView.name === 'questions' }">
-
-                <p class="sidebar-title">Tools</p>
-
-                <div class="sidebar-list">
-
-                    <div v-for="tool in visibleTools" :key="tool.key" class="sidebar-item"
-                        :class="{ active: currentView.name === tool.key }" @click="openView(tool.key)">
-                        <span class="icon">
-                            <component :is="tool.iconComponent" v-if="tool.iconComponent" />
-                            <template v-else>{{ tool.icon }}</template>
-                        </span>
-
-                        <div class="text">
-                            <p class="name">{{ tool.label }}</p>
-                            <p class="desc">{{ tool.desc }}</p>
-                        </div>
-
-                    </div>
-
+            <nav class="admin-sidebar" aria-label="Tutor tools">
+                <p class="sidebar-title">Tutor tools</p>
+                <div class="mobile-navigation">
+                    <label for="tutor-section">Section</label>
+                    <select id="tutor-section" :value="activeSection" @change="openSection(sections.find(section => section.key === $event.target.value))">
+                        <option v-for="section in sections" :key="section.key" :value="section.key">{{ section.label }}</option>
+                    </select>
+                    <button type="button" class="mobile-review" @click="openView('questionReview')">Question Review <ReviewCount :count="reviewCount" :loading="countsLoading" :error="countsError" /></button>
                 </div>
-
-                <button v-if="currentView.name === 'questions'" type="button" class="preview-toggle" :class="{ 'is-open': questionPreviewOpen }"
-                    :aria-label="questionPreviewOpen ? 'Close question preview' : 'Show question preview'" :title="questionPreviewOpen ? 'Back to editing' : 'Preview question'"
-                    :aria-expanded="questionPreviewOpen" aria-controls="question-preview-door" @click="questionPreviewOpen = !questionPreviewOpen">
-                    <ChevronRightIcon />
-                </button>
-
-            </div>
-
-            <!-- WORKSPACE (IMPORTANT PART) -->
-            <div class="admin-content">
-
-                <component :is="activeToolComponent" v-bind="currentView.name === 'questions' ? { ...currentView.props, previewOpen: questionPreviewOpen } : currentView.props"
-                    @update:preview-open="questionPreviewOpen = $event" @navigate="handleNavigation" />
-            </div>
-
+                <div v-for="section in sections" :key="section.key" class="tool-section">
+                    <button type="button" class="section-button" :class="{ active: activeSection === section.key }"
+                        :aria-expanded="section.tools ? activeSection === section.key : undefined"
+                        :aria-controls="section.tools ? `tools-${section.key}` : undefined"
+                        :aria-current="!section.tools && activeSection === section.key ? 'page' : undefined"
+                        @click="openSection(section)">
+                        <component :is="section.icon" class="tool-icon" aria-hidden="true" />
+                        <span class="tool-label">{{ section.label }}</span>
+                        <ReviewCount v-if="section.key === 'academics' && activeSection !== 'academics'" :count="reviewCount" :loading="countsLoading" :error="countsError" />
+                        <ChevronDownIcon v-if="section.tools" class="chevron" :class="{ expanded: activeSection === section.key }" aria-hidden="true" />
+                    </button>
+                    <div v-if="section.tools && activeSection === section.key" :id="`tools-${section.key}`" class="section-tools">
+                        <button v-for="tool in section.tools" :key="tool.key" type="button" class="tool-button"
+                            :class="{ active: selectedTool === tool.key }" :aria-current="selectedTool === tool.key ? 'page' : undefined" @click="openView(tool.key)">
+                            <span class="tool-label">{{ tool.label }}</span>
+                            <ReviewCount v-if="tool.key === 'questionReview'" :count="reviewCount" :loading="countsLoading" :error="countsError" />
+                        </button>
+                    </div>
+                </div>
+                <div v-if="countsError" class="count-error" role="status">Review count unavailable. <button type="button" @click="loadReviewCount">Retry</button></div>
+            </nav>
+            <main class="admin-content">
+                <component :is="activeToolComponent" v-bind="currentView.props" @navigate="handleNavigation" @review-counts="updateReviewCount" />
+            </main>
         </div>
-
     </Layout>
 </template>
 <script setup>
-import { ref, computed, defineAsyncComponent } from "vue";
-import { ChevronRightIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
-import { useAuthStore } from '../stores/auth';
+import { ref, computed, defineAsyncComponent, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ChevronDownIcon, AcademicCapIcon, UsersIcon, MegaphoneIcon, GlobeAltIcon } from '@heroicons/vue/24/outline';
 import Layout from './common/Layout.vue';
+import ReviewCount from './tutor/ReviewCount.vue';
+import { useAuthStore } from '../stores/auth';
+import api from '../api';
+import { useQuestionReviewSaves } from '../composables/questionReviewSaves';
+import LessonList from './Lesson/LessonList.vue';
+import LessonAll from './Lesson/LessonAll.vue';
+import AccessRequestPage from './AccessRequestPage.vue';
+import PackageBuilder from './PackageBuilder.vue';
+import Announcement from './Announcement.vue';
+import PackageList from './PackageList.vue';
+import StudentManagement from './StudentManagement.vue';
+import HomeImageManager from './HomeImageManager.vue';
+import HomeDemoEditor from './HomeDemoEditor.vue';
+import HomeFooterEditor from './HomeFooterEditor.vue';
+import WhatsAppTest from './WhatsAppTest.vue';
 
-/* tools */
-import LessonList from "./Lesson/LessonList.vue";
-import LessonAll from "./Lesson/LessonAll.vue";
-import AccessRequestPage from "./AccessRequestPage.vue";
-import PackageBuilder from "./PackageBuilder.vue";
-import Announcement from "./Announcement.vue";
-import PackageList from "./PackageList.vue";
-import StudentManagement from "./StudentManagement.vue";
-import HomeImageManager from "./HomeImageManager.vue";
-import HomeDemoEditor from "./HomeDemoEditor.vue";
-import HomeFooterEditor from "./HomeFooterEditor.vue";
-import WhatsAppTest from "./WhatsAppTest.vue";
-import WhatsAppIcon from "./common/WhatsAppIcon.vue";
-
-const QuestionBuilderPreview = defineAsyncComponent(() => import('./tutor/QuestionBuilderPreview.vue'));
 const QuestionReviewPanel = defineAsyncComponent(() => import('./tutor/QuestionReviewPanel.vue'));
-
 const RegistrationPanel = defineAsyncComponent(() => import('./tutor/RegistrationPanel.vue'));
 const auth = useAuthStore();
-const visibleTools = computed(() => tools.filter(tool => tool.key !== 'registrations' || auth.isTutor || auth.isAdmin));
-const tools = [
-    { key: 'registrations', label: 'Registrations', iconComponent: ClipboardDocumentListIcon, desc: 'Pending enrolments' },
-    { key: "announcement", label: "Announcement", icon: "\u{1F4E2}", desc: "Site notice" },
-    { key: "access", label: "Request Access", icon: "\u{1F465}", desc: "Approvals" },
-    { key: "students", label: "Students", icon: "\u{1F393}", desc: "List" },
-    { key: "whatsapp", label: "WhatsApp", iconComponent: WhatsAppIcon, desc: "Report preview" },
-    { key: "lessons", label: "Lessons", icon: "\u{1F4DA}", desc: "Create & Edit" },
-    { key: "questions", label: "Questions", iconComponent: ClipboardDocumentListIcon, desc: "Form preview" },
-    { key: "questionReview", label: "Review questions", iconComponent: ClipboardDocumentListIcon, desc: "Verify extractions" },
-    { key: "package", label: "Package", icon: "\u{1F4C2}", desc: "Create" },
-    { key: "packageList", label: "Package List", icon: "\u{1F4E6}", desc: "List" },
-    { key: "homeImages", label: "Home Images", icon: "\u{1F5BC}\uFE0F", desc: "Manage" },
-    { key: "demoVideos", label: "Demo Videos", icon: "\u{1F3AC}", desc: "Samples" },
-    { key: "footerContent", label: "Footer Content", icon: "\u{1F3E0}", desc: "Contact" }
-];
-
-/* 🔥 NEW: central state */
-const currentView = ref({
-    name: "announcement",
-    props: {}
-});
-const questionPreviewOpen = ref(false);
-
-/* component map */
-const toolMap = {
-    registrations: RegistrationPanel,
-    questionReview: QuestionReviewPanel,
-    questions: QuestionBuilderPreview,
-    lessons: LessonAll,
-    lessonList: LessonList,
-    access: AccessRequestPage,
-    students: StudentManagement,
-    whatsapp: WhatsAppTest,
-    package: PackageBuilder,
-    packageList: PackageList,
-    demoVideos: HomeDemoEditor,
-    footerContent: HomeFooterEditor,
-    homeImages: HomeImageManager,
-    announcement: Announcement
-};
-
-/* active component */
-const activeToolComponent = computed(() => {
-    return toolMap[currentView.value.name];
-});
-
-/* sidebar click */
+const sections = computed(() => [
+    { key: 'students', label: 'Students', icon: UsersIcon, tools: [...((auth.isTutor || auth.isAdmin) ? [{ key: 'registrations', label: 'Registrations' }] : []), { key: 'students', label: 'Student list' }, { key: 'access', label: 'Access requests' }] },
+    { key: 'academics', label: 'Academics', icon: AcademicCapIcon, tools: [{ key: 'lessons', label: 'Lessons' }, { key: 'packageList', label: 'Packages' }, { key: 'questionReview', label: 'Question Review' }] },
+    { key: 'communication', label: 'Communication', icon: MegaphoneIcon, tools: [{ key: 'announcement', label: 'Announcements' }, { key: 'whatsapp', label: 'WhatsApp' }] },
+    { key: 'website', label: 'Website Content', icon: GlobeAltIcon, tools: [{ key: 'homeImages', label: 'Home images' }, { key: 'demoVideos', label: 'Demo videos' }, { key: 'footerContent', label: 'Footer content' }] }
+]);
+const currentView = ref({ name: auth.isTutor || auth.isAdmin ? 'registrations' : 'announcement', props: {} });
+const selectedTool = computed(() => ({ package: 'packageList', lessonList: 'lessons' })[currentView.value.name] || currentView.value.name);
+const activeSection = computed(() => sections.value.find(section => section.tools?.some(tool => tool.key === selectedTool.value))?.key);
+const toolMap = { registrations: RegistrationPanel, questionReview: QuestionReviewPanel, lessons: LessonAll, lessonList: LessonList, access: AccessRequestPage, students: StudentManagement, whatsapp: WhatsAppTest, package: PackageBuilder, packageList: PackageList, demoVideos: HomeDemoEditor, footerContent: HomeFooterEditor, homeImages: HomeImageManager, announcement: Announcement };
+const activeToolComponent = computed(() => toolMap[currentView.value.name]);
+function openSection(section) {
+    if (activeSection.value !== section.key) openView(section.tools?.[0].key || section.key);
+}
 function openView(name) {
-    questionPreviewOpen.value = false;
-    currentView.value = {
-        name,
-        props: name === "students" ? { embedded: true } : {}
-    };
+    if (name === currentView.value.name) return;
+    if (currentView.value.name === 'questionReview') loadReviewCount();
+    currentView.value = { name, props: name === 'students' ? { embedded: true } : {} };
 }
-
-/* 🔥 universal navigation handler */
 function handleNavigation(event) {
-    questionPreviewOpen.value = false;
-    // event = { name: 'lessonList', props: {...} }
-
-    currentView.value = {
-        name: event.name,
-        props: event.props || {}
-    };
+    if (!toolMap[event.name]) return;
+    currentView.value = { name: event.name, props: event.props || {} };
 }
+const reviewCount = ref(null), countsLoading = ref(false), countsError = ref(false);
+let countSerial = 0, disposed = false, lastCountAt = 0, countRefresh;
+function updateReviewCount(counts) {
+    if (!counts) { loadReviewCount(); return; }
+    countSerial++;
+    reviewCount.value = counts;
+    countsError.value = false;
+    countsLoading.value = false;
+    lastCountAt = Date.now();
+}
+async function loadReviewCount() {
+    if (!auth.isTutor && !auth.isAdmin) return;
+    const serial = ++countSerial;
+    countsLoading.value = true;
+    try {
+        const { data } = await api.get('/admin/question-reviews', { params: { status: 'pending', review_scope: 'all' } });
+        if (disposed || serial !== countSerial) return;
+        reviewCount.value = data.notification_counts;
+        countsError.value = false;
+        lastCountAt = Date.now();
+    } catch {
+        if (!disposed && serial === countSerial) { reviewCount.value = null; countsError.value = true; }
+    } finally { if (!disposed && serial === countSerial) countsLoading.value = false; }
+}
+const reviewSaves = useQuestionReviewSaves();
+watch(reviewSaves.result, () => { clearTimeout(countRefresh); countRefresh = setTimeout(loadReviewCount, 350); });
+function refreshOnFocus() { if (Date.now() - lastCountAt > 60000) loadReviewCount(); }
+onMounted(() => { loadReviewCount(); window.addEventListener('focus', refreshOnFocus); });
+onBeforeUnmount(() => { disposed = true; clearTimeout(countRefresh); window.removeEventListener('focus', refreshOnFocus); });
 </script>
-
-
 <style scoped>
-.admin-layout {
-    display: flex;
-    gap: 16px;
-}
-
-/* LEFT SIDEBAR */
-.admin-sidebar {
-    width: 240px;
-    flex-shrink: 0;
-    align-self: flex-start;
-    background: var(--app-glass);
-    border: 1px solid var(--app-border);
-    border-radius: var(--app-radius);
-    padding: 14px;
-    backdrop-filter: blur(16px);
-}
-
-.sidebar-title {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--app-accent);
-    margin-bottom: 10px;
-}
-
-.sidebar-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.sidebar-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    padding: 10px;
-    border-radius: 12px;
-
-    cursor: pointer;
-    transition: 0.2s ease;
-
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid transparent;
-}
-
-.sidebar-item:hover {
-    background: rgba(99, 102, 241, 0.08);
-    border-color: rgba(99, 102, 241, 0.2);
-    transform: translateX(2px);
-}
-
-.sidebar-item.active {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.4);
-}
-
-.icon {
-    align-items: center;
-    display: inline-flex;
-    font-size: 18px;
-    justify-content: center;
-}
-
-.icon svg {
-    color: #86efac;
-    height: 18px;
-    width: 18px;
-}
-
-.text .name {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #fff;
-    margin: 0;
-}
-
-.text .desc {
-    font-size: 0.65rem;
-    color: #94a3b8;
-    margin: 0;
-    line-height: 1.1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* RIGHT SIDE */
-.admin-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.admin-content :deep(.package-container) {
-    padding: 0 !important;
-}
-
-.admin-sidebar.has-preview-toggle { position: sticky; top: 105px; }
-.preview-toggle { align-items: center; background: linear-gradient(160deg, #818cf8, #4f46e5); border: 1px solid rgba(199,210,254,.5); border-radius: 999px; box-shadow: 0 3px 15px rgba(79,70,229,.35); color: white; cursor: pointer; display: flex; height: 52px; justify-content: center; padding: 0; position: absolute; right: -14px; top: 50%; transform: translateY(-50%); transition: box-shadow .18s ease, background .18s ease; width: 28px; z-index: 10; }
-.preview-toggle svg { height: 18px; transition: transform .2s ease; width: 18px; }
-.preview-toggle.is-open svg { transform: rotate(180deg); }
-.preview-toggle:hover { box-shadow: 0 3px 20px rgba(129,140,248,.6); }
-.preview-toggle:focus-visible { outline: 2px solid #c7d2fe; outline-offset: 3px; }
-
-@media (max-width: 768px) {
-
-    .admin-sidebar.has-preview-toggle { position: relative; top: auto; }
-    .preview-toggle { height: 44px; right: 4px; width: 26px; }
-    .admin-layout {
-        flex-direction: column;
-    }
-
-    .admin-sidebar {
-        box-sizing: border-box;
-        width: 100%;
-    }
-
-    .sidebar-list {
-        flex-direction: row;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        scrollbar-width: thin;
-    }
-
-    .sidebar-item {
-        flex: 0 0 138px;
-    }
-
-    .sidebar-item:hover {
-        transform: translateY(-1px);
-    }
+.admin-layout { display:flex; align-items:flex-start; gap:20px; }
+.admin-sidebar { box-sizing:border-box; width:240px; flex-shrink:0; padding:12px; border:1px solid var(--app-border); border-radius:var(--app-radius); background:var(--app-glass); }
+.sidebar-title { margin:4px 10px 12px; font-size:.7rem; text-transform:uppercase; letter-spacing:.12em; color:var(--app-muted); }
+.tool-section + .tool-section { margin-top:5px; }
+.section-button,.tool-button { display:flex; align-items:center; gap:9px; width:100%; min-height:44px; padding:10px; border:1px solid transparent; border-radius:10px; background:transparent; color:var(--app-text,#fff); text-align:left; font:inherit; font-size:.82rem; cursor:pointer; }
+.section-button { font-weight:600; }
+.section-button.active { background:rgba(99,102,241,.12); }
+.tool-button.active { background:rgba(99,102,241,.2); border-color:rgba(129,140,248,.4); color:#c7d2fe; }
+.section-button:hover,.tool-button:hover { background:rgba(99,102,241,.12); }
+button:focus-visible { outline:2px solid #a5b4fc; outline-offset:2px; }
+.tool-icon { width:19px; height:19px; flex-shrink:0; color:#a5b4fc; }
+.tool-label { flex:1; min-width:0; overflow-wrap:anywhere; }
+.chevron { width:14px; height:14px; flex-shrink:0; transform:rotate(-90deg); }
+.chevron.expanded { transform:none; }
+.section-tools { margin:5px 0 8px 18px; padding-left:8px; border-left:1px solid var(--app-border); }
+.tool-button { font-size:.78rem; }
+.mobile-navigation { display:none; }
+.admin-content { flex:1; min-width:0; width:100%; }
+.count-error { margin:12px 6px 2px; font-size:.72rem; color:var(--app-muted); }
+.count-error button { margin-left:5px; background:transparent; border:0; color:#c7d2fe; text-decoration:underline; cursor:pointer; }
+.admin-content :deep(.package-container) { padding:0 !important; }
+@media(max-width:768px) {
+    .admin-layout { flex-direction:column; gap:14px; }
+    .admin-sidebar { width:100%; }
+    .section-button { display:none; }
+    .mobile-navigation { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .mobile-navigation label { font-size:.75rem; color:var(--app-muted); }
+    .mobile-navigation select { box-sizing:border-box; flex:1; min-width:0; min-height:44px; max-width:100%; padding:8px; border:1px solid var(--app-border); border-radius:8px; background:var(--app-panel,#172033); color:var(--app-text,#fff); font:inherit; font-size:.85rem; }
+    .mobile-review { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; min-height:44px; border:0; border-radius:8px; padding:8px; color:var(--app-text,#fff); background:rgba(99,102,241,.1); font:inherit; font-size:.8rem; cursor:pointer; }
+    .section-tools { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0 0; padding:0; border:0; }
+    .tool-button { width:auto; flex:1 1 auto; }
+    .tool-section + .tool-section { margin:0; }
 }
 </style>

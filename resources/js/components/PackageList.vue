@@ -9,6 +9,7 @@
             </div>
 
             <div class="field mb-0">
+                <button type="button" class="button is-primary is-small mb-2" @click="creating = !creating">{{ creating ? 'Cancel creation' : 'Create package' }}</button>
                 <label class="label is-small has-text-grey-light">Sort by</label>
                 <div class="select is-small">
                     <select v-model="sortBy">
@@ -22,6 +23,8 @@
                 </div>
             </div>
         </div>
+
+        <PackageBuilder v-if="creating" @saved="onCreated" @cancel="creating = false" />
 
         <div v-if="loading">
             <Loader />
@@ -83,6 +86,8 @@ import Loader from "./common/Loader.vue";
 import PackageBuilder from "./PackageBuilder.vue";
 import { showAlert, showConfirm } from "../composables/dialog";
 
+const creating = ref(false);
+async function onCreated() { creating.value = false; await fetchPackages(); }
 const packages = ref([]);
 const loading = ref(false);
 const deletingId = ref(null);
