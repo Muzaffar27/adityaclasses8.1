@@ -1,11 +1,7 @@
 <template>
     <Layout title="Store">
         <div class="store-page">
-            <div class="store-intro">
-                <p class="eyebrow">LEARN AT YOUR PACE</p>
-                <h1>Find your learning package</h1>
-                <p>Choose your subjects and access period. Your price updates as you choose.</p>
-            </div>
+            <p class="store-description">Choose your subjects and a term for each. Prices include the applicable discounts.</p>
 
             <div v-if="loading" class="store-state" role="status"><Loader /><p>Loading your packages...</p></div>
             <div v-else-if="loadError" class="store-state" role="alert">
@@ -35,31 +31,13 @@
                         <header class="package-heading">
                             <span class="grade-badge">{{ getGradeName(selectedPackage.grade_id) }}</span>
                             <h2>{{ selectedPackage.name }}</h2>
-                            <p>All subjects are selected to start. Keep the ones you need.</p>
                         </header>
 
-                        <details class="store-card shared-periods">
-                            <summary>Use the same period for all subjects <span>Optional</span></summary>
-                            <p class="section-help">Apply a period to all subjects, or choose a different period for each subject below.</p>
-                            <div class="term-options">
-                                <button v-for="term in durationOptions" :key="term.months" type="button" :disabled="buttonLoad"
-                                    class="term-option" :class="{ active: allItemsUseDuration(term.months) }"
-                                    :aria-pressed="allItemsUseDuration(term.months)" @click="applyDurationToAll(term.months)">
-                                    <span class="term-name">{{ term.label.split(' (')[0] }}</span>
-                                    <span class="term-months">{{ term.months }} months access</span>
-                                    <span v-if="termPrice(selectedPackage, term).discount" class="discount-badge">{{ termPrice(selectedPackage, term).discount }}% off</span>
-                                    <span class="term-price">{{ money(termPrice(selectedPackage, term).final) }}</span>
-                                    <del v-if="termPrice(selectedPackage, term).discount">{{ money(termPrice(selectedPackage, term).original) }}</del>
-                                    <span class="term-note">Full package price</span>
-                                </button>
-                            </div>
-                        </details>
-
                         <section class="store-card" aria-labelledby="subjects-heading">
-                            <div class="section-heading"><span class="step-number">1</span><h3 id="subjects-heading">Subjects and access</h3>
+                            <div class="section-heading"><h3 id="subjects-heading">Subjects and access</h3>
                                 <button type="button" class="text-button" :disabled="buttonLoad" @click="selectAllSubjects">Select all</button>
                             </div>
-                            <p class="section-help">Choose each subject and its access period. You can mix different terms.</p>
+
                             <div class="subject-items">
                                 <div v-for="item in selectedPackage.items || []" :key="item.id" class="subject-item" :class="{ selected: selectedItemIds.includes(item.id) }">
                                     <label class="subject-toggle">
@@ -72,13 +50,11 @@
                                             :class="{ active: durationForItem(item) === term.months }"
                                             :aria-pressed="durationForItem(item) === term.months"
                                             @click="itemDurations[item.id] = term.months">
-                                            <span>{{ term.label.split(' (')[0] }}</span>
-                                            <small>{{ term.months }} months</small>
+                                            <span class="term-label">{{ term.label.split(' (')[0] }} <small>{{ term.months }}mo</small></span>
                                             <strong>{{ money(priceForItemTerm(item, term)) }}</strong>
                                             <span v-if="termPrice(selectedPackage, term).discount" class="discount-badge">{{ termPrice(selectedPackage, term).discount }}% off</span>
                                         </button>
                                     </div>
-                                    <div class="subject-price"><small>Subject total</small><strong>{{ money(priceForDuration(item)) }}</strong><small>{{ durationForItem(item) }} months access</small></div>
                                 </div>
                             </div>
                             <p v-if="!selectedPackage.items?.length" class="section-help">No subjects are available in this package yet.</p>
@@ -86,20 +62,20 @@
                     </div>
 
                     <aside class="order-summary store-card" aria-labelledby="summary-heading">
-                        <p class="eyebrow">YOUR SELECTION</p><h3 id="summary-heading">At a glance</h3>
-                        <p class="summary-package">{{ selectedPackage.name }}</p>
+                        <h3 id="summary-heading">Your selection</h3>
                         <div v-if="selectedItemIds.length" class="summary-items">
                             <div v-for="item in selectedItems" :key="item.id"><span>{{ item.subject?.name || 'Subject' }}<small>{{ durationForItem(item) }} months access</small></span><strong>{{ money(priceForDuration(item)) }}</strong></div>
                         </div>
                         <p v-else class="selection-hint">Select at least one subject to see your total.</p>
+                        <div class="checkout-actions">
                         <div class="summary-total" aria-live="polite" aria-atomic="true">
                             <span>{{ selectedItemIds.length ? 'Your total' : 'No subjects selected' }}</span>
                             <strong v-if="selectedItemIds.length">{{ money(dynamicTotal) }}</strong>
                         </div>
-                        <p v-if="hasSelectedDiscount" class="discount-note">Applicable term discounts are included above.</p>
                         <button class="button is-primary request-button" :disabled="buttonLoad || !selectedItemIds.length" @click="submitRequest">
                             {{ buttonLoad ? 'Sending request...' : 'Request access' }}
                         </button>
+                        </div>
                         <p class="approval-note">Access starts after tutor approval.</p>
                     </aside>
                 </div>
@@ -131,7 +107,6 @@ const allPackagesForGrade = ref([])
 const selectedPackage = ref(null)
 const selectedSubjectId = ref(null)
 const selectedItemIds = ref([])
-const selectedDurationMonths = ref(3)
 const itemDurations = ref({})
 const excludedSubjects = ['mechanics', 'statistics 1', 'statistics 2']
 const durationOptions = packageTerms
@@ -210,22 +185,9 @@ const dynamicTotal = computed(() => {
 
 const termPricesByDuration = computed(() => Object.fromEntries(durationOptions.map(term =>
     [term.months, itemTermPrices(selectedPackage.value || {}, term)])))
-const hasSelectedDiscount = computed(() => selectedItems.value.some(item => {
-    const term = durationOptions.find(term => term.months === durationForItem(item))
-    return termPrice(selectedPackage.value, term).discount > 0
-}))
-function durationForItem(item) { return itemDurations.value[item.id] || selectedDurationMonths.value }
+function durationForItem(item) { return itemDurations.value[item.id] || 3 }
 function priceForItemTerm(item, term) { return termPricesByDuration.value[term.months]?.[item.id] || 0 }
 function priceForDuration(item) { return termPricesByDuration.value[durationForItem(item)]?.[item.id] || 0 }
-function allItemsUseDuration(months) {
-    return (selectedPackage.value?.items || []).length > 0
-        && selectedPackage.value.items.every(item => durationForItem(item) === months)
-}
-function applyDurationToAll(months) {
-    selectedDurationMonths.value = months
-    itemDurations.value = Object.fromEntries((selectedPackage.value?.items || []).map(item => [item.id, months]))
-}
-
 // select subject
 function selectSubject(subjectId) {
     selectedSubjectId.value = subjectId
@@ -240,7 +202,7 @@ function selectSubject(subjectId) {
 // select package
 function selectPackage(pkg) {
     selectedPackage.value = pkg
-    applyDurationToAll(3)
+    itemDurations.value = {}
     selectedItemIds.value = (pkg.items || []).map(item => item.id)
 }
 function getGradeName(id) {
@@ -323,84 +285,65 @@ watch(gradeId, fetchAllPackagesForGrade)
 
 
 <style scoped>
-.store-page { max-width: 1160px; margin: 0 auto; color: #f1f5f9; padding-bottom: env(safe-area-inset-bottom, 0px); }
-.store-intro { margin-bottom: 24px; }
-.eyebrow { color: #a5b4fc; font-size: .68rem; font-weight: 700; letter-spacing: .12em; margin-bottom: 8px; }
-.store-intro h1 { color: #fff; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
-.store-intro > p:last-child, .package-heading p, .section-help { color: #a8b2c3; font-size: .85rem; line-height: 1.6; }
-.subject-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-.subject-choices button, .package-choices button { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.13); color: #cbd5e1; border-radius: 10px; padding: 10px 16px; cursor: pointer; min-height: 44px; font: inherit; font-size: .85rem; }
-.subject-choices button.active, .package-choices button.active { background: rgba(79,70,229,.23); border-color: #818cf8; color: #fff; }
-.package-choices { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; margin-bottom: 24px; }
-.package-choices button { text-align: left; display: grid; gap: 6px; }
-.package-choices span { color: #a8b2c3; font-size: .75rem; }
-.store-grid { display: grid; grid-template-columns: minmax(0,1fr) 310px; gap: 22px; align-items: start; }
+.store-page { max-width: 960px; margin: 0 auto; color: #f1f5f9; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.store-description { color: #a8b2c3; font-size: .8rem; margin-bottom: 16px; line-height: 1.5; }
+.subject-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.subject-choices button, .package-choices button { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.12); color: #cbd5e1; border-radius: 8px; padding: 8px 12px; cursor: pointer; min-height: 44px; font: inherit; font-size: .8rem; }
+.subject-choices button.active, .package-choices button.active { background: rgba(79,70,229,.2); border-color: #818cf8; color: #fff; }
+.package-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.package-choices button { text-align: left; display: grid; gap: 3px; }
+.package-choices span { color: #a8b2c3; font-size: .7rem; }
+.store-grid { display: flex; flex-direction: column; gap: 14px; }
 .package-content { min-width: 0; }
-.package-heading { margin-bottom: 20px; }
-.grade-badge { display: inline-block; color: #c7d2fe; background: rgba(79,70,229,.16); border-radius: 6px; font-size: .7rem; padding: 4px 8px; margin-bottom: 10px; }
-.package-heading h2 { color: #fff; font-size: 1.35rem; font-weight: 700; margin-bottom: 8px; overflow-wrap: anywhere; }
-.store-card { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.11); border-radius: 16px; padding: 22px; margin-bottom: 20px; }
-.section-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-.section-heading h3, .order-summary h3 { color: #fff; font-size: 1rem; font-weight: 600; }
-.step-number { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; color: #c7d2fe; background: rgba(79,70,229,.25); border-radius: 8px; font-size: .75rem; }
-.shared-periods summary { cursor: pointer; color: #e2e8f0; font-size: .85rem; font-weight: 600; min-height: 24px; }
-.shared-periods summary span { color: #a8b2c3; font-size: .7rem; font-weight: 400; margin-left: 6px; }
-.shared-periods[open] summary { margin-bottom: 16px; }
-.term-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
-.term-option { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; text-align: left; padding: 16px 12px; border-radius: 12px; color: #cbd5e1; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.13); cursor: pointer; }
-.term-option.active { background: rgba(79,70,229,.16); border-color: #818cf8; box-shadow: inset 0 0 0 1px #818cf8; }
-.term-name { color: #fff; font-size: .9rem; font-weight: 700; }
-.term-months, .term-note, .term-option del { color: #a8b2c3; font-size: .7rem; }
-.term-price { color: #fff; font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
-.discount-badge { display: inline-block; align-self: flex-start; color: #6ee7b7; background: rgba(16,185,129,.1); padding: 3px 6px; border-radius: 5px; font-size: .65rem; font-weight: 700; }
-.text-button { background: none; border: none; color: #a5b4fc; font: inherit; font-size: .75rem; margin-left: auto; cursor: pointer; min-height: 44px; padding: 4px; }
-.section-help { margin-bottom: 14px; }
-.subject-items { display: grid; gap: 10px; }
-.subject-item { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 14px; }
-.subject-item.selected { background: rgba(79,70,229,.07); border-color: rgba(129,140,248,.45); }
-.subject-toggle { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; min-height: 44px; }
-.subject-toggle input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #4f46e5; cursor: pointer; }
-.subject-toggle strong { color: #f1f5f9; font-size: .85rem; overflow-wrap: anywhere; }
-.subject-toggle small, .subject-price small { display: block; color: #a8b2c3; font-size: .7rem; margin-top: 4px; }
-.subject-price { text-align: right; font-size: .85rem; }
-.item-term-options { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
-.item-term-options button { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; background: rgba(255,255,255,.02); color: #cbd5e1; cursor: pointer; padding: 10px 6px; min-height: 84px; font-size: .72rem; min-width: 0; }
-.item-term-options button.active { border-color: #818cf8; background: rgba(79,70,229,.22); color: #fff; }
-.item-term-options small { color: #a8b2c3; font-size: .65rem; }
-.item-term-options strong { font-size: .8rem; overflow-wrap: anywhere; }
-.item-term-options .discount-badge { align-self: center; font-size: .6rem; }
-.order-summary { position: sticky; top: 100px; margin: 0; }
-.summary-package { color: #a8b2c3; font-size: .8rem; margin-top: 8px; overflow-wrap: anywhere; }
-.summary-items { display: grid; gap: 16px; margin: 24px 0; }
-.summary-items > div { display: flex; justify-content: space-between; gap: 12px; font-size: .8rem; }
-.summary-items small { color: #a8b2c3; display: block; font-size: .7rem; margin-top: 4px; }
-.summary-items strong { color: #f1f5f9; white-space: nowrap; }
-.summary-total { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,.12); padding-top: 18px; font-size: .85rem; }
-.summary-total strong { color: #a5b4fc; font-size: 1.3rem; font-weight: 700; }
-.discount-note { color: #6ee7b7; font-size: .72rem; margin-top: 8px; }
-.request-button { min-height: 46px; margin-top: 20px; width: 100%; border-radius: 10px; color: #fff; font-weight: 600; font-size: .85rem; }
-.approval-note { color: #a8b2c3; text-align: center; font-size: .7rem; margin-top: 10px; }
-.selection-hint { color: #a8b2c3; font-size: .85rem; margin: 20px 0; }
-.store-state { padding: 40px 16px; text-align: center; color: #a8b2c3; }
+.package-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 14px; }
+.grade-badge { color: #c7d2fe; background: rgba(79,70,229,.14); border-radius: 5px; font-size: .65rem; padding: 3px 7px; }
+.package-heading h2 { color: #fff; font-size: 1.05rem; font-weight: 600; overflow-wrap: anywhere; }
+.store-card { background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 14px 16px; }
+.section-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.section-heading h3, .order-summary h3 { color: #e2e8f0; font-size: .85rem; font-weight: 600; }
+.text-button { background: none; border: none; color: #a5b4fc; font: inherit; font-size: .72rem; margin-left: auto; cursor: pointer; min-height: 44px; padding: 4px; }
+.subject-items { display: grid; }
+.subject-item { display: grid; grid-template-columns: minmax(140px,1fr) minmax(0,1.8fr); align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid rgba(255,255,255,.07); }
+.subject-toggle { display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; min-height: 44px; }
+.subject-toggle input { width: 18px; height: 18px; flex-shrink: 0; accent-color: #4f46e5; cursor: pointer; }
+.subject-toggle strong { color: #f1f5f9; font-size: .8rem; overflow-wrap: anywhere; }
+.subject-toggle small { display: block; color: #94a3b8; font-size: .65rem; margin-top: 3px; }
+.item-term-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.item-term-options button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: transparent; color: #a8b2c3; cursor: pointer; padding: 7px 5px; min-height: 64px; font-size: .68rem; min-width: 0; }
+.item-term-options button.active { border-color: #818cf8; background: rgba(79,70,229,.18); color: #e0e7ff; }
+.term-label { white-space: nowrap; }
+.term-label small { color: #94a3b8; margin-left: 3px; font-size: .6rem; }
+.item-term-options strong { color: #e2e8f0; font-size: .78rem; overflow-wrap: anywhere; }
+.discount-badge { color: #6ee7b7; font-size: .6rem; line-height: 1.2; }
+.order-summary { position: static; width: 100%; }
+.summary-items { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 12px 0; }
+.summary-items > div { display: flex; align-items: center; gap: 12px; font-size: .75rem; }
+.summary-items small { color: #94a3b8; display: block; font-size: .65rem; margin-top: 2px; }
+.summary-items strong { color: #e2e8f0; white-space: nowrap; font-size: .75rem; }
+.checkout-actions { display: flex; align-items: center; gap: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
+.summary-total { display: flex; flex: 1; align-items: center; gap: 14px; font-size: .78rem; }
+.summary-total strong { color: #a5b4fc; font-size: 1.2rem; font-weight: 700; }
+.request-button { min-height: 44px; min-width: 180px; border-radius: 8px; color: #fff; font-weight: 600; font-size: .8rem; }
+.approval-note { color: #94a3b8; font-size: .65rem; margin-top: 8px; }
+.selection-hint, .section-help { color: #a8b2c3; font-size: .8rem; margin: 12px 0; }
+.store-state { padding: 32px 12px; text-align: center; color: #a8b2c3; }
 .store-state h2 { color: #fff; font-weight: 600; margin-bottom: 10px; }
-.store-state button { margin-top: 18px; }
-button:focus-visible, input:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 4px; }
-button:disabled { cursor: default; opacity: .5; }
-@media (max-width: 900px) {
-    .store-grid { grid-template-columns: minmax(0,1fr); gap: 0; }
-    .order-summary { position: static; }
+.store-state button { margin-top: 16px; }
+button:focus-visible, input:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 3px; }
+button:disabled { cursor: default; opacity: .45; }
+@media (max-width: 600px) {
+    .store-card { padding: 10px 12px; }
+    .subject-item { grid-template-columns: minmax(0,1fr); gap: 6px; padding: 10px 0; }
+    .subject-toggle { min-height: 34px; }
+    .item-term-options button { min-height: 62px; }
+    .checkout-actions { flex-wrap: wrap; gap: 12px; }
+    .summary-total { flex-basis: 100%; justify-content: space-between; }
+    .request-button { width: 100%; }
+    .summary-items { display: grid; gap: 8px; }
+    .summary-items > div { justify-content: space-between; }
 }
-@media (max-width: 480px) {
-    .store-card { padding: 16px; border-radius: 12px; }
-    .term-options { grid-template-columns: 1fr; }
-    .term-option { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; padding: 14px; }
-    .term-name, .term-months, .term-note { grid-column: 1; }
-    .term-price { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
-    .discount-badge, .term-option del { grid-column: 2; }
-    .subject-item { padding: 10px; gap: 12px 8px; }
-    .item-term-options { gap: 5px; }
+@media (max-width: 360px) {
+    .term-label small { display: block; margin-left: 0; }
     .item-term-options strong { font-size: .7rem; }
-    .subject-toggle { gap: 9px; }
-    .summary-total strong { font-size: 1.2rem; }
 }
 </style>

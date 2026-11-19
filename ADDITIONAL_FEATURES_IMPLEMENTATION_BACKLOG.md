@@ -37,3 +37,13 @@ Agent log:
 - Validation: targeted isolated SQLite suite passed 9 tests / 58 assertions; existing frontend pricing tests passed 3 tests; production build and git diff --check passed. Playwright confirmed automatic opening, default subject selection, per-subject 3/12-month mix, correct combined total and real preview HTTP200 submission; apply-to-all periods, all deselected/disabled request, package/subject switching, empty results, package load failure/retry and request failure/retry. Desktop/mobile screenshots inspected at 1440/768/390/320px with no horizontal overflow and zero page exceptions. Multi-package/empty/error cases used browser fixtures; normal mixed-term submission used the isolated local preview backend.
 - Remaining verification: tutor/student acceptance and installed-PWA/device checks; responsive browser checks do not prove installed-PWA behaviour. Existing service-worker registration warning occurs when service workers are blocked by the test harness. Production and normal development checkout remain unchanged.
 - Release: separate follow-up commit on hotfix/package-pricing-20261119; release after de1ba3c, with that commit's additive migration through /admin/migrate. No extra migration in this follow-up. No push or deploy.
+
+
+### Compact student store revision - 19 November 2026
+
+Status: Done locally
+
+- User requested a less bulky layout: removed the optional shared-period control entirely; retained independent subject terms, prices and discounts. Removed duplicate hero/subject-total headings and reduced card spacing. Your selection is always below the subject list in normal flow on desktop and mobile.
+- Files: PackagePage.vue and generated build assets. No backend, migration, dependency or other-feature changes.
+- Validation: frontend production build, three existing pricing calculation tests and git diff --check passed. Playwright verified removal of the shared-period option; mixed 3/12-month total Rs 1,937.50 and HTTP200 submission with individual durations; deselect-all disables requests; summary is below subjects at 1440/768/390/320px, with no horizontal overflow or page exceptions. Desktop/mobile screenshots inspected.
+- Remaining verification: user visual acceptance and installed-PWA/device check. No push, deployment or production writes. This revision supersedes the optional apply-to-all UI in the previous entry; backend pricing is unchanged.
