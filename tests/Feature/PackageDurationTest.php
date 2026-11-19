@@ -202,4 +202,24 @@ class PackageDurationTest extends TestCase
         }
     }
 
+    public function test_one_request_can_mix_subject_durations_and_prices(): void
+    {
+        [$package, $math] = $this->package();
+        $physics = $package->items()->create([
+            'subject_id' => Subject::create(['name' => 'Physics'])->id,
+            'grade_id' => $package->grade_id, 'price' => 3500, 'type' => 'subject',
+        ]);
+        Sanctum::actingAs(User::factory()->create());
+        $this->postJson('/api/lesson-access/request', [
+            ['package_id' => $package->id, 'package_item_id' => $math->id, 'duration_months' => 3, 'requested_price' => 1],
+            ['package_id' => $package->id, 'package_item_id' => $physics->id, 'duration_months' => 12, 'requested_price' => 1],
+        ])->assertOk();
+        $requests = LessonAccess::orderBy('subject_id')->get();
+        $this->assertCount(2, $requests);
+        $this->assertEquals(3, $requests[0]->duration_months);
+        $this->assertSame('1750.00', $requests[0]->requested_price);
+        $this->assertEquals(12, $requests[1]->duration_months);
+        $this->assertSame('4387.50', $requests[1]->requested_price);
+    }
+
 }

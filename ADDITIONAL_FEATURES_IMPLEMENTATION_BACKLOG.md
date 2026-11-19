@@ -19,3 +19,21 @@ Agent log:
 - Remaining verification: real MySQL migration and tutor acceptance, installed PWA update, and production smoke checks. No push, deployment or production write performed.
 - Release boundary: this single commit only, based on live ecd395f. Ship source and its generated assets together. Production migration must use the approved /admin/migrate process, never the older destructive duration migration or a rollback. Legacy cached store submissions are rejected with a reload instruction so old client-supplied prices cannot bypass server pricing. Existing pending/accepted nine-month records retain their dates and duration.
 - Blocker: none for local completion; deployment needs separate authorization.
+
+
+### Student store selection redesign - 19 November 2026
+
+Status: Done locally
+
+User-directed continuation of the isolated pricing hotfix; depends on de1ba3c. Scope is the student store only.
+
+- [x] Open the first available subject/package automatically and select its subjects by default so the initial total reflects the package.
+- [x] Show 1-, 2- and 3-term prices and discounts on every subject, with independent term choices and a combined itemised total. Keep an optional apply-to-all period selector.
+- [x] Preserve dark/indigo colours, desktop navigation, touch-friendly choices and safe-area padding. No new dependencies, migrations or backend production-code changes.
+- [x] Explicit loading, unavailable/retry, no-packages and no-subjects-selected states; no false Rs 0.00 for an empty selection. Preserve the reviewed selection after submitting and during request errors.
+
+Agent log:
+- Files: resources/js/components/PackagePage.vue, tests/Feature/PackageDurationTest.php, this log and generated build assets. New mixed-subject request regression verifies independent durations and server-calculated prices in one submission.
+- Validation: targeted isolated SQLite suite passed 9 tests / 58 assertions; existing frontend pricing tests passed 3 tests; production build and git diff --check passed. Playwright confirmed automatic opening, default subject selection, per-subject 3/12-month mix, correct combined total and real preview HTTP200 submission; apply-to-all periods, all deselected/disabled request, package/subject switching, empty results, package load failure/retry and request failure/retry. Desktop/mobile screenshots inspected at 1440/768/390/320px with no horizontal overflow and zero page exceptions. Multi-package/empty/error cases used browser fixtures; normal mixed-term submission used the isolated local preview backend.
+- Remaining verification: tutor/student acceptance and installed-PWA/device checks; responsive browser checks do not prove installed-PWA behaviour. Existing service-worker registration warning occurs when service workers are blocked by the test harness. Production and normal development checkout remain unchanged.
+- Release: separate follow-up commit on hotfix/package-pricing-20261119; release after de1ba3c, with that commit's additive migration through /admin/migrate. No extra migration in this follow-up. No push or deploy.

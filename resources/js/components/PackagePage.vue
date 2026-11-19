@@ -1,160 +1,112 @@
 <template>
     <Layout title="Store">
-
-        <div v-if="loading">
-            <Loader />
-        </div>
-
-        <div v-else class="store-page container is-fluid px-5">
-            <h1 class="title is-5 has-text-white mb-3">
-                Select your subject
-            </h1>
-            <!-- SUBJECT TABS -->
-            <div class="tabs is-toggle">
-                <ul>
-                    <li class="mt-1 ml-3" v-for="sub in availableSubjects" :key="sub.id"
-                        :class="{ 'is-active': selectedSubjectId === sub.id }" @click="selectSubject(sub.id)">
-                        <a>{{ sub.name }}</a>
-                    </li>
-                </ul>
+        <div class="store-page">
+            <div class="store-intro">
+                <p class="eyebrow">LEARN AT YOUR PACE</p>
+                <h1>Find your learning package</h1>
+                <p>Choose your subjects and access period. Your price updates as you choose.</p>
             </div>
 
-            <!-- HEADER -->
-            <div class="admin-header is-flex is-justify-content-space-between is-align-items-center mb-3 mt-5">
-                <div>
-                    <h1 class="title is-5 has-text-white mb-1 mt-2 is-flex is-align-items-center">
-                        Package
-                    </h1>
-
-                    <p class="has-text-grey is-size-7">
-                        Select a subject, then a package
-                    </p>
-                </div>
+            <div v-if="loading" class="store-state" role="status"><Loader /><p>Loading your packages...</p></div>
+            <div v-else-if="loadError" class="store-state" role="alert">
+                <h2>Packages could not be loaded</h2><p>{{ loadError }}</p>
+                <button class="button is-primary" @click="fetchAllPackagesForGrade">Try again</button>
             </div>
-
-            <!-- ❌ NO SUBJECT SELECTED -->
-            <div v-if="!selectedSubjectId" class="empty-state">
-                👆 Choose a subject above to begin
+            <div v-else-if="!availableSubjects.length" class="store-state">
+                <h2>No packages available yet</h2><p>Please check back soon for this grade.</p>
             </div>
-
-            <!-- ✅ SUBJECT SELECTED -->
             <template v-else>
+                <nav class="subject-choices" aria-label="Choose a subject">
+                    <button v-for="subject in availableSubjects" :key="subject.id" type="button"
+                        :aria-pressed="selectedSubjectId === subject.id" :class="{ active: selectedSubjectId === subject.id }"
+                        :disabled="buttonLoad" @click="selectSubject(subject.id)">{{ subject.name }}</button>
+                </nav>
 
-                <!-- DESKTOP PACKAGE TABS -->
-                <div class="tabs is-toggle is-centered is-hidden-mobile mb-3">
-                    <ul>
-                        <li v-for="pkg in packages" :key="pkg.id"
-                            :class="{ 'is-active': selectedPackage?.id === pkg.id }" @click="selectPackage(pkg)">
-                            <a>{{ pkg.name }}</a>
-                        </li>
-                    </ul>
-                </div>
+                <section class="package-choices" aria-label="Choose a package" v-if="packages.length > 1">
+                    <button v-for="pkg in packages" :key="pkg.id" type="button" :disabled="buttonLoad"
+                        :aria-pressed="selectedPackage?.id === pkg.id" :class="{ active: selectedPackage?.id === pkg.id }"
+                        @click="selectPackage(pkg)">
+                        <strong>{{ pkg.name }}</strong><span>{{ pkg.items?.length || 0 }} subjects included</span>
+                    </button>
+                </section>
 
-                <!-- MOBILE PACKAGE SELECT -->
-                <div class="field is-hidden-tablet mb-3">
-                    <div class="control">
-                        <div class="select is-fullwidth">
-                            <select v-model="selectedPackageId" @change="syncMobileSelect">
-                                <option disabled value="">Select package</option>
-                                <option v-for="pkg in packages" :key="pkg.id" :value="pkg.id">
-                                    {{ pkg.name }}
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+                <div v-if="selectedPackage" class="store-grid">
+                    <div class="package-content">
+                        <header class="package-heading">
+                            <span class="grade-badge">{{ getGradeName(selectedPackage.grade_id) }}</span>
+                            <h2>{{ selectedPackage.name }}</h2>
+                            <p>All subjects are selected to start. Keep the ones you need.</p>
+                        </header>
 
-                <!-- ❌ NO PACKAGES -->
-                <div v-if="!loading && !packages.length" class="empty-state">
-                    No packages available for this subject.
-                </div>
-
-                <!-- ❌ PACKAGE NOT SELECTED -->
-                <div v-else-if="!loading && !selectedPackage" class="empty-state">
-                    Select a package to preview its content.
-                </div>
-
-                <!-- ✅ TABLE -->
-                <!-- ✅ TABLE -->
-                <div v-else class="table-wrapper">
-
-                    <!-- ✅ TABLE -->
-                    <table class="table is-fullwidth is-hoverable">
-                        <thead>
-                            <tr>
-                                <th width="40px"></th>
-                                <th>Included Item</th>
-                                <th class="has-text-right">Price</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            <tr v-for="item in selectedPackage.items || []" :key="item.id">
-                                <td>
-                                    <label class="custom-checkbox">
-                                        <input type="checkbox" :value="item.id" v-model="selectedItemIds">
-                                        <span class="checkmark"></span>
-                                    </label>
-                                </td>
-
-                                <td class="has-text-white">
-                                    <div class="is-flex is-flex-direction-column">
-                                        <span>{{ item.subject?.name || 'Unknown Subject' }}</span>
-                                        <span class="has-text-grey is-size-7" style="font-size: 0.65rem; opacity: 0.8;">
-                                            {{ getGradeName(item.grade_id) }}
-                                        </span>
-                                    </div>
-                                </td>
-
-                                <td class="has-text-right has-text-grey-light">
-                                    Rs {{ priceForDuration(item).toFixed(2) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- CHECKOUT -->
-                <div v-if="selectedPackage" class="checkout-bar glass-card">
-                    <div class="is-flex is-align-items-center is-justify-content-space-between is-flex-wrap-wrap">
-
-                        <div>
-                            <p class="is-size-7 has-text-grey">
-                                Selected ({{ selectedItemIds.length }} items)
-                            </p>
-                            <div class="duration-options mb-2">
-                                <button v-for="option in durationOptions" :key="option.months" type="button"
-                                    class="button is-small duration-btn"
-                                    :class="{ 'is-primary': selectedDurationMonths === option.months }"
-                                    @click="selectedDurationMonths = option.months">
-                                    {{ option.label }}
+                        <details class="store-card shared-periods">
+                            <summary>Use the same period for all subjects <span>Optional</span></summary>
+                            <p class="section-help">Apply a period to all subjects, or choose a different period for each subject below.</p>
+                            <div class="term-options">
+                                <button v-for="term in durationOptions" :key="term.months" type="button" :disabled="buttonLoad"
+                                    class="term-option" :class="{ active: allItemsUseDuration(term.months) }"
+                                    :aria-pressed="allItemsUseDuration(term.months)" @click="applyDurationToAll(term.months)">
+                                    <span class="term-name">{{ term.label.split(' (')[0] }}</span>
+                                    <span class="term-months">{{ term.months }} months access</span>
+                                    <span v-if="termPrice(selectedPackage, term).discount" class="discount-badge">{{ termPrice(selectedPackage, term).discount }}% off</span>
+                                    <span class="term-price">{{ money(termPrice(selectedPackage, term).final) }}</span>
+                                    <del v-if="termPrice(selectedPackage, term).discount">{{ money(termPrice(selectedPackage, term).original) }}</del>
+                                    <span class="term-note">Full package price</span>
                                 </button>
                             </div>
-                            <p v-if="currentTermPrice.discount" class="has-text-grey-light is-size-7">
-                                {{ currentTermPrice.discount }}% discount applied. Full package:
-                                <del>Rs {{ currentTermPrice.original.toFixed(2) }}</del>
-                                Rs {{ currentTermPrice.final.toFixed(2) }}
-                            </p>
-                            <p class="is-size-5 has-text-primary has-text-weight-bold">
-                                Rs {{ dynamicTotal.toFixed(2) }}
-                            </p>
-                        </div>
+                        </details>
 
-                        <button class="button is-primary action-btn has-text-white" :disabled="buttonLoad"
-                            @click="submitRequest">
-                            <span v-if="buttonLoad">Loading...</span>
-                            <span v-else>Request Access</span>
-                        </button>
-
+                        <section class="store-card" aria-labelledby="subjects-heading">
+                            <div class="section-heading"><span class="step-number">1</span><h3 id="subjects-heading">Subjects and access</h3>
+                                <button type="button" class="text-button" :disabled="buttonLoad" @click="selectAllSubjects">Select all</button>
+                            </div>
+                            <p class="section-help">Choose each subject and its access period. You can mix different terms.</p>
+                            <div class="subject-items">
+                                <div v-for="item in selectedPackage.items || []" :key="item.id" class="subject-item" :class="{ selected: selectedItemIds.includes(item.id) }">
+                                    <label class="subject-toggle">
+                                        <input type="checkbox" :value="item.id" v-model="selectedItemIds" :disabled="buttonLoad" />
+                                        <span><strong>{{ item.subject?.name || 'Subject' }}</strong><small>{{ getGradeName(item.grade_id) }}</small></span>
+                                    </label>
+                                    <div class="item-term-options" role="group" :aria-label="'Access period for ' + (item.subject?.name || 'subject')">
+                                        <button v-for="term in durationOptions" :key="term.months" type="button"
+                                            :disabled="buttonLoad || !selectedItemIds.includes(item.id)"
+                                            :class="{ active: durationForItem(item) === term.months }"
+                                            :aria-pressed="durationForItem(item) === term.months"
+                                            @click="itemDurations[item.id] = term.months">
+                                            <span>{{ term.label.split(' (')[0] }}</span>
+                                            <small>{{ term.months }} months</small>
+                                            <strong>{{ money(priceForItemTerm(item, term)) }}</strong>
+                                            <span v-if="termPrice(selectedPackage, term).discount" class="discount-badge">{{ termPrice(selectedPackage, term).discount }}% off</span>
+                                        </button>
+                                    </div>
+                                    <div class="subject-price"><small>Subject total</small><strong>{{ money(priceForDuration(item)) }}</strong><small>{{ durationForItem(item) }} months access</small></div>
+                                </div>
+                            </div>
+                            <p v-if="!selectedPackage.items?.length" class="section-help">No subjects are available in this package yet.</p>
+                        </section>
                     </div>
-                </div>
 
+                    <aside class="order-summary store-card" aria-labelledby="summary-heading">
+                        <p class="eyebrow">YOUR SELECTION</p><h3 id="summary-heading">At a glance</h3>
+                        <p class="summary-package">{{ selectedPackage.name }}</p>
+                        <div v-if="selectedItemIds.length" class="summary-items">
+                            <div v-for="item in selectedItems" :key="item.id"><span>{{ item.subject?.name || 'Subject' }}<small>{{ durationForItem(item) }} months access</small></span><strong>{{ money(priceForDuration(item)) }}</strong></div>
+                        </div>
+                        <p v-else class="selection-hint">Select at least one subject to see your total.</p>
+                        <div class="summary-total" aria-live="polite" aria-atomic="true">
+                            <span>{{ selectedItemIds.length ? 'Your total' : 'No subjects selected' }}</span>
+                            <strong v-if="selectedItemIds.length">{{ money(dynamicTotal) }}</strong>
+                        </div>
+                        <p v-if="hasSelectedDiscount" class="discount-note">Applicable term discounts are included above.</p>
+                        <button class="button is-primary request-button" :disabled="buttonLoad || !selectedItemIds.length" @click="submitRequest">
+                            {{ buttonLoad ? 'Sending request...' : 'Request access' }}
+                        </button>
+                        <p class="approval-note">Access starts after tutor approval.</p>
+                    </aside>
+                </div>
             </template>
         </div>
-
     </Layout>
 </template>
-
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -172,21 +124,22 @@ const cacheStore = useCacheStore()
 const { subjects, grades } = storeToRefs(cacheStore)
 
 // state
-const loading = ref(false)
+const loading = ref(true)
+const loadError = ref('')
 const buttonLoad = ref(false)
 const allPackagesForGrade = ref([])
 const selectedPackage = ref(null)
-const selectedPackageId = ref(null)
 const selectedSubjectId = ref(null)
 const selectedItemIds = ref([])
 const selectedDurationMonths = ref(3)
+const itemDurations = ref({})
 const excludedSubjects = ['mechanics', 'statistics 1', 'statistics 2']
 const durationOptions = packageTerms
 
 
 // route
 const route = useRoute()
-const gradeId = route.params.id
+const gradeId = computed(() => route.params.id)
 
 const availableSubjects = computed(() => {
     if (!subjects.value) return []
@@ -239,6 +192,14 @@ const packages = computed(() => {
 })
 
 
+const selectedItems = computed(() => (selectedPackage.value?.items || []).filter(item => selectedItemIds.value.includes(item.id)))
+
+function money(value) {
+    return Number(value) === 0 ? 'Free' : 'Rs ' + Number(value).toLocaleString('en-MU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function selectAllSubjects() { selectedItemIds.value = (selectedPackage.value?.items || []).map(item => item.id) }
+
 const dynamicTotal = computed(() => {
     if (!selectedPackage.value || !selectedPackage.value.items) return 0;
 
@@ -247,14 +208,22 @@ const dynamicTotal = computed(() => {
         .reduce((sum, item) => sum + priceForDuration(item), 0);
 });
 
-const selectedDurationOption = computed(() => {
-    return durationOptions.find(option => option.months === selectedDurationMonths.value) || durationOptions[0]
-})
-
-const currentTermPrice = computed(() => termPrice(selectedPackage.value || {}, selectedDurationOption.value))
-const currentItemPrices = computed(() => itemTermPrices(selectedPackage.value || {}, selectedDurationOption.value))
-function priceForDuration(item) {
-    return currentItemPrices.value[item.id] || 0
+const termPricesByDuration = computed(() => Object.fromEntries(durationOptions.map(term =>
+    [term.months, itemTermPrices(selectedPackage.value || {}, term)])))
+const hasSelectedDiscount = computed(() => selectedItems.value.some(item => {
+    const term = durationOptions.find(term => term.months === durationForItem(item))
+    return termPrice(selectedPackage.value, term).discount > 0
+}))
+function durationForItem(item) { return itemDurations.value[item.id] || selectedDurationMonths.value }
+function priceForItemTerm(item, term) { return termPricesByDuration.value[term.months]?.[item.id] || 0 }
+function priceForDuration(item) { return termPricesByDuration.value[durationForItem(item)]?.[item.id] || 0 }
+function allItemsUseDuration(months) {
+    return (selectedPackage.value?.items || []).length > 0
+        && selectedPackage.value.items.every(item => durationForItem(item) === months)
+}
+function applyDurationToAll(months) {
+    selectedDurationMonths.value = months
+    itemDurations.value = Object.fromEntries((selectedPackage.value?.items || []).map(item => [item.id, months]))
 }
 
 // select subject
@@ -271,34 +240,36 @@ function selectSubject(subjectId) {
 // select package
 function selectPackage(pkg) {
     selectedPackage.value = pkg
-    selectedPackageId.value = pkg.id
+    applyDurationToAll(3)
+    selectedItemIds.value = (pkg.items || []).map(item => item.id)
 }
 function getGradeName(id) {
     if (!id) return '';
     return grades.value.find(g => g.id === id)?.name || `Grade ${id}`;
 }
 
-// mobile sync
-function syncMobileSelect() {
-    const found = packages.value.find(
-        p => p.id === Number(selectedPackageId.value)
-    )
-    if (found) selectedPackage.value = found
-}
-
+let loadSequence = 0
 async function fetchAllPackagesForGrade() {
-    if (!gradeId) return
+    if (!gradeId.value) return
+    const sequence = ++loadSequence
     loading.value = true
+    loadError.value = ''
     try {
+        await cacheStore.fetchAllMetadata()
+        if (!cacheStore.subjectsLoaded || !cacheStore.gradesLoaded) throw new Error('Metadata unavailable')
         const res = await api.get('/packages', {
-            params: { grade_id: gradeId }
+            params: { grade_id: gradeId.value }
         })
+        if (sequence !== loadSequence) return
         allPackagesForGrade.value = res.data || []
+        if (availableSubjects.value.length) selectSubject(availableSubjects.value[0].id)
+        else { selectedSubjectId.value = null; selectedPackage.value = null; selectedItemIds.value = [] }
     } catch (err) {
-        console.error('Failed to fetch packages for grade:', err)
+        if (sequence !== loadSequence) return
+        loadError.value = 'We could not load the packages. Please try again.'
         allPackagesForGrade.value = []
     } finally {
-        loading.value = false
+        if (sequence === loadSequence) loading.value = false
     }
 }
 
@@ -320,14 +291,13 @@ async function submitRequest() {
         package_item_id: item.id,
         subject_id: item.subject_id || item.subject?.id,
         grade_id: item.grade_id,
-        duration_months: selectedDurationMonths.value,
+        duration_months: durationForItem(item),
         requested_price: priceForDuration(item),
     }))
     buttonLoad.value = true
     try {
         const req = await api.post('/lesson-access/request', payload)
         if (req.data.message) {
-            selectedItemIds.value = []
             await showAlert({
                 title: "Request Sent",
                 message: "Your access request has been sent.",
@@ -345,281 +315,92 @@ async function submitRequest() {
 }
 
 // init
-onMounted(async () => {
-    await cacheStore.fetchAllMetadata()
-    await fetchAllPackagesForGrade()
-})
+onMounted(fetchAllPackagesForGrade)
 
-watch(selectedSubjectId, () => {
-    if (packages.value.length) {
-        selectPackage(packages.value[0])
-    } else {
-        selectedPackage.value = null
-    }
-    selectedItemIds.value = []
-})
-
-watch(selectedPackage, () => {
-    selectedItemIds.value = []
-})
+watch(gradeId, fetchAllPackagesForGrade)
 
 </script>
 
 
 <style scoped>
-.store-page {
-    max-width: 1100px;
-    margin: 0 auto;
+.store-page { max-width: 1160px; margin: 0 auto; color: #f1f5f9; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.store-intro { margin-bottom: 24px; }
+.eyebrow { color: #a5b4fc; font-size: .68rem; font-weight: 700; letter-spacing: .12em; margin-bottom: 8px; }
+.store-intro h1 { color: #fff; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
+.store-intro > p:last-child, .package-heading p, .section-help { color: #a8b2c3; font-size: .85rem; line-height: 1.6; }
+.subject-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.subject-choices button, .package-choices button { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.13); color: #cbd5e1; border-radius: 10px; padding: 10px 16px; cursor: pointer; min-height: 44px; font: inherit; font-size: .85rem; }
+.subject-choices button.active, .package-choices button.active { background: rgba(79,70,229,.23); border-color: #818cf8; color: #fff; }
+.package-choices { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; margin-bottom: 24px; }
+.package-choices button { text-align: left; display: grid; gap: 6px; }
+.package-choices span { color: #a8b2c3; font-size: .75rem; }
+.store-grid { display: grid; grid-template-columns: minmax(0,1fr) 310px; gap: 22px; align-items: start; }
+.package-content { min-width: 0; }
+.package-heading { margin-bottom: 20px; }
+.grade-badge { display: inline-block; color: #c7d2fe; background: rgba(79,70,229,.16); border-radius: 6px; font-size: .7rem; padding: 4px 8px; margin-bottom: 10px; }
+.package-heading h2 { color: #fff; font-size: 1.35rem; font-weight: 700; margin-bottom: 8px; overflow-wrap: anywhere; }
+.store-card { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.11); border-radius: 16px; padding: 22px; margin-bottom: 20px; }
+.section-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.section-heading h3, .order-summary h3 { color: #fff; font-size: 1rem; font-weight: 600; }
+.step-number { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; color: #c7d2fe; background: rgba(79,70,229,.25); border-radius: 8px; font-size: .75rem; }
+.shared-periods summary { cursor: pointer; color: #e2e8f0; font-size: .85rem; font-weight: 600; min-height: 24px; }
+.shared-periods summary span { color: #a8b2c3; font-size: .7rem; font-weight: 400; margin-left: 6px; }
+.shared-periods[open] summary { margin-bottom: 16px; }
+.term-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.term-option { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; text-align: left; padding: 16px 12px; border-radius: 12px; color: #cbd5e1; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.13); cursor: pointer; }
+.term-option.active { background: rgba(79,70,229,.16); border-color: #818cf8; box-shadow: inset 0 0 0 1px #818cf8; }
+.term-name { color: #fff; font-size: .9rem; font-weight: 700; }
+.term-months, .term-note, .term-option del { color: #a8b2c3; font-size: .7rem; }
+.term-price { color: #fff; font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
+.discount-badge { display: inline-block; align-self: flex-start; color: #6ee7b7; background: rgba(16,185,129,.1); padding: 3px 6px; border-radius: 5px; font-size: .65rem; font-weight: 700; }
+.text-button { background: none; border: none; color: #a5b4fc; font: inherit; font-size: .75rem; margin-left: auto; cursor: pointer; min-height: 44px; padding: 4px; }
+.section-help { margin-bottom: 14px; }
+.subject-items { display: grid; gap: 10px; }
+.subject-item { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 14px; }
+.subject-item.selected { background: rgba(79,70,229,.07); border-color: rgba(129,140,248,.45); }
+.subject-toggle { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; min-height: 44px; }
+.subject-toggle input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #4f46e5; cursor: pointer; }
+.subject-toggle strong { color: #f1f5f9; font-size: .85rem; overflow-wrap: anywhere; }
+.subject-toggle small, .subject-price small { display: block; color: #a8b2c3; font-size: .7rem; margin-top: 4px; }
+.subject-price { text-align: right; font-size: .85rem; }
+.item-term-options { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.item-term-options button { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; background: rgba(255,255,255,.02); color: #cbd5e1; cursor: pointer; padding: 10px 6px; min-height: 84px; font-size: .72rem; min-width: 0; }
+.item-term-options button.active { border-color: #818cf8; background: rgba(79,70,229,.22); color: #fff; }
+.item-term-options small { color: #a8b2c3; font-size: .65rem; }
+.item-term-options strong { font-size: .8rem; overflow-wrap: anywhere; }
+.item-term-options .discount-badge { align-self: center; font-size: .6rem; }
+.order-summary { position: sticky; top: 100px; margin: 0; }
+.summary-package { color: #a8b2c3; font-size: .8rem; margin-top: 8px; overflow-wrap: anywhere; }
+.summary-items { display: grid; gap: 16px; margin: 24px 0; }
+.summary-items > div { display: flex; justify-content: space-between; gap: 12px; font-size: .8rem; }
+.summary-items small { color: #a8b2c3; display: block; font-size: .7rem; margin-top: 4px; }
+.summary-items strong { color: #f1f5f9; white-space: nowrap; }
+.summary-total { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid rgba(255,255,255,.12); padding-top: 18px; font-size: .85rem; }
+.summary-total strong { color: #a5b4fc; font-size: 1.3rem; font-weight: 700; }
+.discount-note { color: #6ee7b7; font-size: .72rem; margin-top: 8px; }
+.request-button { min-height: 46px; margin-top: 20px; width: 100%; border-radius: 10px; color: #fff; font-weight: 600; font-size: .85rem; }
+.approval-note { color: #a8b2c3; text-align: center; font-size: .7rem; margin-top: 10px; }
+.selection-hint { color: #a8b2c3; font-size: .85rem; margin: 20px 0; }
+.store-state { padding: 40px 16px; text-align: center; color: #a8b2c3; }
+.store-state h2 { color: #fff; font-weight: 600; margin-bottom: 10px; }
+.store-state button { margin-top: 18px; }
+button:focus-visible, input:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 4px; }
+button:disabled { cursor: default; opacity: .5; }
+@media (max-width: 900px) {
+    .store-grid { grid-template-columns: minmax(0,1fr); gap: 0; }
+    .order-summary { position: static; }
 }
-
-/* HEADER tighter */
-.admin-header {
-    margin-bottom: 0.75rem !important;
-}
-
-.admin-header .title {
-    font-size: 1.1rem;
-}
-
-/* TABS more compact */
-.tabs {
-    margin-bottom: 0.75rem !important;
-}
-
-.tabs ul {
-    border-bottom: none;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.tabs ul::-webkit-scrollbar {
-    display: none;
-}
-
-.tabs li a {
-    padding: 6px 10px;
-    font-size: 0.75rem;
-    border-radius: 8px;
-    margin-right: 4px;
-
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #fff;
-    white-space: nowrap;
-}
-
-.tabs li.is-active a {
-    background: #4f46e5;
-    border-color: #4f46e5;
-}
-
-/* MOBILE SELECT tighter */
-.select select {
-    height: 34px;
-    font-size: 0.8rem;
-}
-
-/* TABLE ultra compact */
-.table {
-    font-size: 0.75rem;
-}
-
-.table thead th {
-    font-size: 0.7rem;
-    padding: 6px 8px;
-}
-
-.table td {
-    padding: 6px 8px;
-}
-
-/* reduce row height */
-.table tr {
-    height: 34px;
-}
-
-/* prevent overflow */
-.table-wrapper {
-    max-height: 45vh;
-    overflow-y: auto;
-}
-
-/* EMPTY */
-.empty-state {
-    text-align: center;
-    padding: 20px;
-    font-size: 0.8rem;
-    color: #888;
-}
-
-/* CHECKOUT compact sticky */
-.checkout-bar {
-    position: sticky;
-    bottom: 0;
-
-    margin-top: 8px;
-    padding: 10px 12px;
-    border-radius: 12px;
-
-    backdrop-filter: blur(10px);
-}
-
-.checkout-bar p {
-    margin: 0;
-}
-
-.duration-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 6px;
-}
-
-.duration-btn {
-    border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.04);
-    color: #fff;
-}
-
-.duration-btn.is-primary {
-    background: #4f46e5;
-    border-color: #4f46e5;
-    color: #fff;
-}
-
-.checkout-bar .is-size-4 {
-    font-size: 1.2rem !important;
-}
-
-/* BUTTON tighter */
-.action-btn {
-    height: 34px;
-    font-size: 0.8rem;
-    padding: 0 12px;
-}
-
-/* MOBILE OPTIMIZATION */
-@media (max-width: 768px) {
-
-    .store-page {
-        padding: 0.75rem !important;
-    }
-
-    .admin-header {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 6px;
-    }
-
-    .table-wrapper {
-        max-height: 40vh;
-    }
-
-    .checkout-bar {
-        padding: 8px 10px;
-    }
-
-    .checkout-bar .is-size-4 {
-        font-size: 1rem !important;
-    }
-
-    .action-btn {
-        width: 100%;
-        margin-top: 6px;
-    }
-}
-
-
-/* Style the checkbox to fit the dark theme */
-/* Hide the browser's default checkbox */
-.custom-checkbox {
-    display: block;
-    position: relative;
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    user-select: none;
-    margin: 0 auto;
-}
-
-.custom-checkbox input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
-
-/* Create a custom checkbox (the background) */
-.checkmark {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 18px;
-    width: 18px;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-/* On mouse-over, add a slightly brighter background */
-.custom-checkbox:hover input~.checkmark {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* When the checkbox is checked, add the Indigo background */
-.custom-checkbox input:checked~.checkmark {
-    background-color: #4f46e5;
-    border-color: #4f46e5;
-}
-
-/* Create the checkmark (the white tick) - hidden when not checked */
-.checkmark:after {
-    content: "";
-    position: absolute;
-    display: none;
-}
-
-/* Show the checkmark when checked */
-.custom-checkbox input:checked~.checkmark:after {
-    display: block;
-}
-
-/* Style the checkmark (the tick icon) */
-.custom-checkbox .checkmark:after {
-    left: 6px;
-    top: 2px;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-/* Ensure the table cell for checkbox is centered */
-.table td:first-child {
-    vertical-align: middle;
-    text-align: center;
-}
-
-/* Tighter vertical layout for Subject/Grade combo */
-.table td .is-flex {
-    line-height: 1.2;
-}
-
-.tabs.is-toggle {
-    justify-content: center;
-}
-
-.tabs.is-toggle ul {
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.tabs.is-toggle li {
-    flex: 0 0 auto;
-    /* prevents stretching */
+@media (max-width: 480px) {
+    .store-card { padding: 16px; border-radius: 12px; }
+    .term-options { grid-template-columns: 1fr; }
+    .term-option { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; padding: 14px; }
+    .term-name, .term-months, .term-note { grid-column: 1; }
+    .term-price { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+    .discount-badge, .term-option del { grid-column: 2; }
+    .subject-item { padding: 10px; gap: 12px 8px; }
+    .item-term-options { gap: 5px; }
+    .item-term-options strong { font-size: .7rem; }
+    .subject-toggle { gap: 9px; }
+    .summary-total strong { font-size: 1.2rem; }
 }
 </style>
