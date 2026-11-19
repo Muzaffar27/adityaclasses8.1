@@ -89,6 +89,7 @@ class PackageDurationTest extends TestCase
     private function package(): array
     {
         (require database_path('migrations/2026_11_19_000001_restore_twelve_month_package_price.php'))->up();
+        (require database_path('migrations/2026_11_19_000002_add_subject_term_prices_to_package_items.php'))->up();
         $grade = Grade::create(['name' => 'Grade 10']);
         $subject = Subject::create(['name' => 'Mathematics']);
         $package = Package::create([
@@ -220,6 +221,89 @@ class PackageDurationTest extends TestCase
         $this->assertSame('1750.00', $requests[0]->requested_price);
         $this->assertEquals(12, $requests[1]->duration_months);
         $this->assertSame('4387.50', $requests[1]->requested_price);
+    }
+
+    public function test_subject_prices_and_discounts_save_independently_and_add_up(): void
+    {
+        [$package] = $this->package();
+        $physics = Subject::create(['name' => 'Physics']);
+        $payload = $this->payload($package);
+        $mathPricing = ['three_month_price' => 1000, 'three_month_discount_percent' => 10,
+            'six_month_price' => 1800, 'six_month_discount_percent' => 0,
+            'twelve_month_price' => 3000, 'twelve_month_discount_percent' => 20];
+        $physicsPricing = ['three_month_price' => 500, 'three_month_discount_percent' => 0,
+            'six_month_price' => 900, 'six_month_discount_percent' => 10,
+            'twelve_month_price' => 2000, 'twelve_month_discount_percent' => 25];
+        $payload['items'][0] = array_merge($payload['items'][0], $mathPricing);
+        $payload['items'][] = array_merge(['price' => 0, 'grade_id' => $package->grade_id,
+            'subjects' => [$physics->id]], $physicsPricing);
+        Sanctum::actingAs(User::factory()->create(['role' => 'tutor']));
+        $this->putJson('/api/packages/update/'.$package->id, $payload)->assertOk();
+        $saved = $package->fresh('items');
+        $this->assertEquals([900, 500], array_values($saved->pricesForDuration(3)));
+        $this->assertEquals([1800, 810], array_values($saved->pricesForDuration(6)));
+        $this->assertEquals([2400, 1500], array_values($saved->pricesForDuration(12)));
+        $payload['items'][0]['three_month_price'] = 1200;
+        $this->putJson('/api/packages/update/'.$package->id, $payload)->assertOk();
+        $saved = $package->fresh('items');
+        $this->assertEquals([1080, 500], array_values($saved->pricesForDuration(3)));
+        $this->assertSame('25.00', $saved->items[1]->twelve_month_discount_percent);
+        Sanctum::actingAs(User::factory()->create());
+        $this->postJson('/api/lesson-access/request', [
+            ['package_id' => $package->id, 'package_item_id' => $saved->items[0]->id, 'duration_months' => 3, 'requested_price' => 1],
+            ['package_id' => $package->id, 'package_item_id' => $saved->items[1]->id, 'duration_months' => 12, 'requested_price' => 1],
+        ])->assertOk();
+        $this->assertEquals(2580, LessonAccess::sum('requested_price'));
+    }
+
+    public function test_subject_validation_rejects_invalid_discounts_and_preserves_prices_on_old_payloads(): void
+    {
+        [$package, $item] = $this->package();
+        $item->update(['three_month_price' => 600, 'three_month_discount_percent' => 10]);
+        Sanctum::actingAs(User::factory()->create(['role' => 'tutor']));
+        $payload = $this->payload($package);
+        $this->putJson('/api/packages/update/'.$package->id, $payload)->assertOk();
+        $this->assertEquals([540], array_values($package->fresh('items')->pricesForDuration(3)));
+        foreach (['three_month_price' => -1, 'six_month_discount_percent' => 101,
+            'twelve_month_discount_percent' => -5, 'six_month_price' => 1.234] as $field => $value) {
+            $payload['items'][0][$field] = $value;
+            $this->putJson('/api/packages/update/'.$package->id, $payload)->assertUnprocessable()
+                ->assertJsonValidationErrors('items.0.'.$field);
+            unset($payload['items'][0][$field]);
+        }
+    }
+
+    public function test_new_subject_prices_can_be_zero_without_falling_back_to_package_prices(): void
+    {
+        [$package, $item] = $this->package();
+        $item->update(['three_month_price' => 0, 'three_month_discount_percent' => 0,
+            'six_month_price' => 1000, 'six_month_discount_percent' => 100]);
+        $this->assertEquals([0], array_values($package->fresh('items')->pricesForDuration(3)));
+        $this->assertEquals([0], array_values($package->fresh('items')->pricesForDuration(6)));
+        $item->update(['three_month_price' => 0.10, 'three_month_discount_percent' => 65]);
+        $this->assertEquals([0.04], array_values($package->fresh('items')->pricesForDuration(3)));
+    }
+
+    public function test_subject_price_migration_preserves_payable_amounts_and_independence_after_removal(): void
+    {
+        (require database_path('migrations/2026_11_19_000001_restore_twelve_month_package_price.php'))->up();
+        $grade = Grade::create(['name' => 'Grade 10']);
+        $subject = Subject::create(['name' => 'Mathematics']);
+        $package = Package::create(['name' => 'Legacy rounding', 'grade_id' => $grade->id, 'subject_id' => $subject->id,
+            'three_month_price' => 100, 'three_month_discount_percent' => 10,
+            'six_month_price' => 199.99, 'six_month_discount_percent' => 12.5,
+            'twelve_month_price' => 300, 'twelve_month_discount_percent' => 100]);
+        foreach ([$subject, Subject::create(['name' => 'Physics']), Subject::create(['name' => 'Chemistry'])] as $row) {
+            $package->items()->create(['subject_id' => $row->id, 'grade_id' => $grade->id, 'type' => 'subject', 'price' => 0]);
+        }
+        $before = [];
+        foreach ([3, 6, 12] as $months) $before[$months] = $package->fresh('items')->pricesForDuration($months);
+        (require database_path('migrations/2026_11_19_000002_add_subject_term_prices_to_package_items.php'))->up();
+        foreach ([3, 6, 12] as $months) $this->assertEquals($before[$months], $package->fresh('items')->pricesForDuration($months));
+        $removed = $package->items()->first();
+        $removed->delete();
+        unset($before[6][$removed->id]);
+        $this->assertEquals($before[6], $package->fresh('items')->pricesForDuration(6));
     }
 
 }

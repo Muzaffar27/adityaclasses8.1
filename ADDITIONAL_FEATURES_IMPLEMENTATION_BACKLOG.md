@@ -65,3 +65,22 @@ Status: Done locally
 
 - Removed only the base-price text from each Package Contents item in PackageBuilder.vue. Subject/grade labels and item editing remain available; saved values and calculation logic are unchanged. No migration.
 - Validation: production build and git diff --check passed. Playwright confirmed no Rs/base-price text in Package Contents, item editing still opens, no overflow at 390px and zero page exceptions. No database save, push or deployment. Installed-PWA verification remains pending.
+
+
+### Independent subject term prices and discounts - 19 November 2026
+
+Status: Done locally
+
+User clarified that Price Details must edit the selected subject rather than the whole package. This replaces package-wide authoring while retaining the compact store, independent access periods and isolated release branch.
+
+- [x] Package Contents selects a subject; highlighted card and Price Details heading identify it. Each subject keeps its own three term prices and discounts. Switching subjects preserves edits; the top Update saves them together. Newly added subjects receive independent pricing fields; removing an item keeps the remaining selection correct.
+- [x] The store shows each subject's own prices/discounts and sums selected subjects for equal or mixed durations. Server-calculated access-request amounts use the same independent prices. Package-list prices are sums, with no misleading shared percentage when discounts differ.
+- [x] New price/discount values validate numeric ranges and two decimal places. Explicit zero prices remain zero. Integer cents/basis-point arithmetic keeps half-cent discount rounding consistent between browser and server. Staff authorization remains enforced.
+- [x] Additive migration 2026_11_19_000002_add_subject_term_prices_to_package_items.php adds six nullable pricing columns to package_items. It populates only those new fields from existing effective subject prices/discounts, preserving payable amounts even with cent rounding. Existing package columns and lesson_access records are untouched. Older update payloads omitting these fields retain the saved subject pricing.
+
+Agent log:
+- Main files: PackageBuilder.vue, PackagePage.vue, PackageList.vue, utils/packagePricing.mjs, PackageController.php, Package.php, PackageItem.php, the additive migration, targeted tests and generated build assets.
+- Validation: isolated SQLite backend suite passed 13 tests / 88 assertions; frontend pricing suite passed 6 tests; production build and git diff --check passed. Migration regression covers rounded amounts, zero weights/full discounts and independent prices after removing a subject. A backup of the isolated preview SQLite database was taken before applying the new migration there; all existing payable amounts across its two packages matched before/after. Production was not accessed or migrated.
+- Playwright: real temporary preview package creation, independent field editing, switching/reopening without lost drafts, per-subject headings, validation, adding/removing subjects, saving and store totals verified. Example Math 1300 minus 15 percent = 1105; Physics 1800 minus 20 percent = 1440; mixed total 2545. Browser submission payload checked with a mocked success to avoid changing existing preview access requests; real backend request pricing is covered by isolated feature tests. Temporary verification packages were removed. Editor/store at 1440/390/320px had no horizontal overflow or page exceptions; screenshots inspected.
+- Remaining verification: real MySQL migration, user acceptance and installed-PWA/device checks. Production migration must run through approved /admin/migrate after the earlier pricing migration, with source/assets shipped together. Legacy package/base-price fields remain hidden compatibility data; newly edited subject term prices determine store totals.
+- Release: separate commit on hotfix/package-pricing-20261119, depending on preceding pricing commits only. No unrelated development, push or deployment.

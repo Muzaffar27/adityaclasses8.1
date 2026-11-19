@@ -52,7 +52,7 @@
                     <div class="package-price">
                         <div v-for="term in packageTerms" :key="term.months" class="is-size-7 mb-1">
                             {{ term.months }} months:
-                            <del v-if="termPrice(pkg, term).discount">Rs {{ formatMoney(termPrice(pkg, term).original) }}</del>
+                            <del v-if="termPrice(pkg, term).original > termPrice(pkg, term).final">Rs {{ formatMoney(termPrice(pkg, term).original) }}</del>
                             Rs {{ formatMoney(termPrice(pkg, term).final) }}
                             <span v-if="termPrice(pkg, term).discount">({{ termPrice(pkg, term).discount }}% off)</span>
                         </div>

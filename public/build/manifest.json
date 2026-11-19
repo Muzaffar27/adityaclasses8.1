@@ -1,6 +1,6 @@
 {
-  "_packagePricing-C934iqDY.js": {
-    "file": "assets/packagePricing-C934iqDY.js",
+  "_packagePricing-HJU3Ar2W.js": {
+    "file": "assets/packagePricing-HJU3Ar2W.js",
     "name": "packagePricing"
   },
   "node_modules/pdfjs-dist/build/pdf.mjs": {
@@ -14,7 +14,7 @@
     "src": "node_modules/pdfjs-dist/build/pdf.worker.min.mjs"
   },
   "resources/js/app.js": {
-    "file": "assets/app-BJm5DojW.js",
+    "file": "assets/app-qY98dDi1.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -36,7 +36,7 @@
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-D9xHu2G7.js",
+    "file": "assets/MyCourse-UhwdtG5u.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
@@ -48,33 +48,33 @@
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-t5HyhEZx.js",
+    "file": "assets/PackageBuilder-CRxPaVwX.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_packagePricing-C934iqDY.js"
+      "_packagePricing-HJU3Ar2W.js"
     ],
     "css": [
-      "assets/PackageBuilder-DTK0qws9.css"
+      "assets/PackageBuilder-Cc_zmx1S.css"
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-DqUz8jRr.js",
+    "file": "assets/PackagePage-4eJh4aUp.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_packagePricing-C934iqDY.js"
+      "_packagePricing-HJU3Ar2W.js"
     ],
     "css": [
-      "assets/PackagePage-CoW8DaO4.css"
+      "assets/PackagePage-DnfrlEt-.css"
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-B79FCwqK.js",
+    "file": "assets/Profile-BMJBC816.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -86,7 +86,7 @@
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-BiNxqHD6.js",
+    "file": "assets/StudentManagement-DzGOZ-Hu.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -98,25 +98,25 @@
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-BKgNq6U_.js",
+    "file": "assets/TutorSpace-DFgiYaQh.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/components/PackageBuilder.vue",
-      "_packagePricing-C934iqDY.js",
+      "_packagePricing-HJU3Ar2W.js",
       "resources/js/components/StudentManagement.vue"
     ],
     "dynamicImports": [
       "resources/js/components/tutor/RegistrationPanel.vue"
     ],
     "css": [
-      "assets/TutorSpace-BqlMS17r.css"
+      "assets/TutorSpace-rj_14EXP.css"
     ]
   },
   "resources/js/components/tutor/RegistrationPage.vue": {
-    "file": "assets/RegistrationPage-jm7td3Eo.js",
+    "file": "assets/RegistrationPage-y26IHVNO.js",
     "name": "RegistrationPage",
     "src": "resources/js/components/tutor/RegistrationPage.vue",
     "isDynamicEntry": true,
@@ -126,7 +126,7 @@
     ]
   },
   "resources/js/components/tutor/RegistrationPanel.vue": {
-    "file": "assets/RegistrationPanel-B_dYk2Sz.js",
+    "file": "assets/RegistrationPanel-BSP46yFa.js",
     "name": "RegistrationPanel",
     "src": "resources/js/components/tutor/RegistrationPanel.vue",
     "isDynamicEntry": true,

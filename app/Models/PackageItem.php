@@ -12,6 +12,21 @@ class PackageItem extends Model
         'grade_id',
         'price',
         'type',
+        'three_month_price',
+        'six_month_price',
+        'twelve_month_price',
+        'three_month_discount_percent',
+        'six_month_discount_percent',
+        'twelve_month_discount_percent',
+    ];
+
+    protected $casts = [
+        'three_month_price' => 'decimal:2',
+        'six_month_price' => 'decimal:2',
+        'twelve_month_price' => 'decimal:2',
+        'three_month_discount_percent' => 'decimal:2',
+        'six_month_discount_percent' => 'decimal:2',
+        'twelve_month_discount_percent' => 'decimal:2',
     ];
 
     public function package()

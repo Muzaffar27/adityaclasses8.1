@@ -30,6 +30,12 @@ class PackageController extends Controller
             'twelve_month_discount_percent' => 'nullable|numeric|min:0|max:100',
             'items' => 'required|array|min:1',
             'items.*.price' => 'required|numeric|min:0',
+            'items.*.three_month_price' => 'nullable|numeric|decimal:0,2|min:0|max:99999999.99',
+            'items.*.six_month_price' => 'nullable|numeric|decimal:0,2|min:0|max:99999999.99',
+            'items.*.twelve_month_price' => 'nullable|numeric|decimal:0,2|min:0|max:99999999.99',
+            'items.*.three_month_discount_percent' => 'nullable|numeric|decimal:0,2|min:0|max:100',
+            'items.*.six_month_discount_percent' => 'nullable|numeric|decimal:0,2|min:0|max:100',
+            'items.*.twelve_month_discount_percent' => 'nullable|numeric|decimal:0,2|min:0|max:100',
             'items.*.grade_id' => 'nullable|exists:grades,id',
             'items.*.subjects' => 'required|array|min:1',
             'items.*.subjects.*' => 'required|exists:subjects,id',
@@ -52,6 +58,7 @@ class PackageController extends Controller
     {
         return DB::transaction(function () use ($package, $data) {
             $items = $data['items'];
+            $existing = $package->exists ? $package->items()->get() : collect();
             unset($data['items']);
             foreach (['three_month', 'six_month', 'twelve_month'] as $term) {
                 $data[$term.'_discount_percent'] = $data[$term.'_discount_percent'] ?? 0;
@@ -61,12 +68,21 @@ class PackageController extends Controller
             $package->items()->delete();
             foreach ($items as $item) {
                 foreach ($item['subjects'] as $subjectId) {
-                    $package->items()->create([
+                    $gradeId = $item['grade_id'] ?? $data['grade_id'];
+                    $previous = $existing->first(fn ($row) => $row->subject_id == $subjectId && $row->grade_id == $gradeId);
+                    $pricing = [];
+                    foreach (['three_month', 'six_month', 'twelve_month'] as $term) {
+                        foreach (['_price', '_discount_percent'] as $suffix) {
+                            $field = $term.$suffix;
+                            $pricing[$field] = array_key_exists($field, $item) ? $item[$field] : $previous?->{$field};
+                        }
+                    }
+                    $package->items()->create(array_merge([
                         'subject_id' => $subjectId,
                         'grade_id' => $item['grade_id'] ?? $data['grade_id'],
                         'price' => $item['price'] / count($item['subjects']),
                         'type' => 'subject',
-                    ]);
+                    ], $pricing));
                 }
             }
             return response()->json($package->load('items'));

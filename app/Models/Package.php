@@ -55,6 +55,13 @@ class Package extends Model
             $prices[$item->id] = ($next - $allocated) / 100;
             $allocated = $next;
         }
+        foreach ($items as $item) {
+            if ($item->{$term.'_price'} !== null) {
+                $grossCents = (int) round((float) $item->{$term.'_price'} * 100);
+                $discountBasisPoints = (int) round((float) $item->{$term.'_discount_percent'} * 100);
+                $prices[$item->id] = intdiv($grossCents * (10000 - $discountBasisPoints) + 5000, 10000) / 100;
+            }
+        }
         return $prices;
     }
 

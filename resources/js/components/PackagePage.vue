@@ -52,7 +52,7 @@
                                             @click="itemDurations[item.id] = term.months">
                                             <span class="term-label">{{ term.label.split(' (')[0] }} <small>{{ term.months }}mo</small></span>
                                             <strong>{{ money(priceForItemTerm(item, term)) }}</strong>
-                                            <span v-if="termPrice(selectedPackage, term).discount" class="discount-badge">{{ termPrice(selectedPackage, term).discount }}% off</span>
+                                            <span v-if="subjectTermPrice(selectedPackage, item, term).discount" class="discount-badge">{{ subjectTermPrice(selectedPackage, item, term).discount }}% off</span>
                                         </button>
                                     </div>
                                 </div>
@@ -88,7 +88,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Layout from './common/Layout.vue'
 import api from "../api"
-import { packageTerms, termPrice, itemTermPrices } from "../utils/packagePricing.mjs"
+import { packageTerms, subjectTermPrice, itemTermPrices } from "../utils/packagePricing.mjs"
 import { useCacheStore } from "../stores/cache"
 
 import { storeToRefs } from "pinia"
