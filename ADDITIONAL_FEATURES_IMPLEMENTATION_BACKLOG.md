@@ -47,3 +47,13 @@ Status: Done locally
 - Files: PackagePage.vue and generated build assets. No backend, migration, dependency or other-feature changes.
 - Validation: frontend production build, three existing pricing calculation tests and git diff --check passed. Playwright verified removal of the shared-period option; mixed 3/12-month total Rs 1,937.50 and HTTP200 submission with individual durations; deselect-all disables requests; summary is below subjects at 1440/768/390/320px, with no horizontal overflow or page exceptions. Desktop/mobile screenshots inspected.
 - Remaining verification: user visual acceptance and installed-PWA/device check. No push, deployment or production writes. This revision supersedes the optional apply-to-all UI in the previous entry; backend pricing is unchanged.
+
+
+### Pricing display polish - 19 November 2026
+
+Status: Done locally
+
+- Restored the store total to the original primary blue (#4f46e5) and enlarged it to 24px. Hid the Subject base price input in PackageBuilder while keeping its reactive/saved values and pricing calculations; adjusted its helper text to describe the visible term-price controls.
+- Files: PackagePage.vue, PackageBuilder.vue and generated assets. No backend, schema or dependency changes.
+- Validation: production build and git diff --check passed. Playwright confirmed the hidden input is absent; editing an existing subject retains its price in the form; computed total is blue/24px; no document overflow at 1440/390/320px and zero page exceptions. Mobile screenshot inspected. No database save was made during this UI check.
+- Remaining: visual acceptance and installed-PWA/device verification. No push, deployment or production write.

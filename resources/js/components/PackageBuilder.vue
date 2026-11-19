@@ -111,11 +111,6 @@
                     </select>
                 </div>
 
-                <div style="flex:1;">
-                    <label class="custom-label">Subject base price (Rs)</label>
-                    <input class="input custom-input" type="text" v-model="newItem.price" />
-                </div>
-
                 <button class="button is-primary is-small has-text-white" style="height:34px;"
                     :disabled="!newItem.subjects.length" @click="handleItemSave">
                     {{ editingIndex === null ? "Add" : "Update" }}
@@ -131,7 +126,7 @@
             </div>
 
             <div style="flex:1;">
-                <label class="custom-label">Click an item to edit its subject base price, grade or subject.</label>
+                <label class="custom-label">Click an item to edit its grade or subject.</label>
             </div>
             <!-- =========================
                  ITEMS LIST
@@ -170,7 +165,7 @@
                 Price Details
             </div>
 
-            <p class="pricing-help">Term prices below are the full package prices. Subject base prices determine each subject's share when a student selects only part of a package. A zero term price uses the sum of subject base prices.</p>
+            <p class="pricing-help">Set the full package price and discount for each term. Students can choose a different term for each subject.</p>
             <!-- TERM PRICES -->
             <div class="total-bar mt-2">
                 <div class="duration-price-fields">
