@@ -117,3 +117,10 @@ Status: Done locally
 
 - Renamed Your total to Total Price in PackagePage.vue, preserving its styling and empty-selection message. No pricing/schema changes.
 - Validation: production build and git diff --check passed; Playwright confirmed the label and no overflow at 320px. No push or deployment.
+
+
+### Short total label - 19 November 2026
+
+Status: Done locally
+
+- Shortened Total Price to Total in PackagePage.vue; amount and styling retained. Production build, git diff --check and Playwright label/amount visibility check passed. No schema changes, push or deployment.

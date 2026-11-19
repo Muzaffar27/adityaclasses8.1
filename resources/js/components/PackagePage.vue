@@ -69,7 +69,7 @@
                         <p v-else class="selection-hint">Select at least one subject to see your total.</p>
                         <div class="checkout-actions">
                         <div class="summary-total" aria-live="polite" aria-atomic="true">
-                            <span>{{ selectedItemIds.length ? 'Total Price' : 'No subjects selected' }}</span>
+                            <span>{{ selectedItemIds.length ? 'Total' : 'No subjects selected' }}</span>
                             <strong v-if="selectedItemIds.length">{{ money(dynamicTotal) }}</strong>
                         </div>
                         <button class="button is-primary request-button" :disabled="buttonLoad || !selectedItemIds.length" @click="submitRequest">
