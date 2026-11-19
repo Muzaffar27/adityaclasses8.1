@@ -13,7 +13,10 @@ class Package extends Model
         'total_price',
         'three_month_price',
         'six_month_price',
-        'nine_month_price',
+        'twelve_month_price',
+        'three_month_discount_percent',
+        'six_month_discount_percent',
+        'twelve_month_discount_percent',
         'grade_id',
         'subject_id',
     ];
@@ -23,12 +26,43 @@ class Package extends Model
         'total_price' => 'decimal:2',
         'three_month_price' => 'decimal:2',
         'six_month_price' => 'decimal:2',
-        'nine_month_price' => 'decimal:2',
+        'twelve_month_price' => 'decimal:2',
+        'three_month_discount_percent' => 'decimal:2',
+        'six_month_discount_percent' => 'decimal:2',
+        'twelve_month_discount_percent' => 'decimal:2',
     ];
 
     public function items()
     {
         return $this->hasMany(PackageItem::class);
+    }
+
+    public function pricesForDuration(int $months): array
+    {
+        $term = [3 => 'three_month', 6 => 'six_month', 12 => 'twelve_month'][$months];
+        $items = $this->items->sortBy('id')->values();
+        $weight = (float) $items->sum('price');
+        $price = (float) $this->{$term.'_price'};
+        // Keep the existing zero-price fallback for packages already on sale.
+        $price = $price > 0 ? $price : $weight;
+        $cents = (int) round($price * (1 - (float) $this->{$term.'_discount_percent'} / 100) * 100);
+        $prices = [];
+        $accumulated = 0;
+        $allocated = 0;
+        foreach ($items as $item) {
+            $accumulated += $weight > 0 ? (float) $item->price / $weight : 1 / $items->count();
+            $next = (int) round($cents * $accumulated);
+            $prices[$item->id] = ($next - $allocated) / 100;
+            $allocated = $next;
+        }
+        foreach ($items as $item) {
+            if ($item->{$term.'_price'} !== null) {
+                $grossCents = (int) round((float) $item->{$term.'_price'} * 100);
+                $discountBasisPoints = (int) round((float) $item->{$term.'_discount_percent'} * 100);
+                $prices[$item->id] = intdiv($grossCents * (10000 - $discountBasisPoints) + 5000, 10000) / 100;
+            }
+        }
+        return $prices;
     }
 
     public function grade()

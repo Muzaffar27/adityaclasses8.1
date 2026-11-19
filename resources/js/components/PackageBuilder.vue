@@ -13,12 +13,7 @@
                 </p>
             </div>
 
-            <div class="package-actions">
-                <button v-if="isEdit" class="package-action-btn is-secondary" @click="$emit('cancel')"
-                    :disabled="loading">
-                    Cancel
-                </button>
-
+            <div v-if="!isEdit" class="package-actions">
                 <button class="package-action-btn is-primary-action" @click="submit" :disabled="loading">
                     <span v-if="!loading">
                         {{ isEdit ? "Update" : "Create" }}
@@ -111,11 +106,6 @@
                     </select>
                 </div>
 
-                <div style="flex:1;">
-                    <label class="custom-label">Price</label>
-                    <input class="input custom-input" type="text" v-model="newItem.price" />
-                </div>
-
                 <button class="button is-primary is-small has-text-white" style="height:34px;"
                     :disabled="!newItem.subjects.length" @click="handleItemSave">
                     {{ editingIndex === null ? "Add" : "Update" }}
@@ -131,7 +121,7 @@
             </div>
 
             <div style="flex:1;">
-                <label class="custom-label">Click on an item to modify the Price, Grade or Subject</label>
+                <label class="custom-label">Click a subject to edit its term prices and discounts.</label>
             </div>
             <!-- =========================
                  ITEMS LIST
@@ -139,12 +129,12 @@
             <div class="items-mini is-clickable">
 
                 <div v-for="(item, index) in form.items" :key="index" class="item-mini"
-                    :class="{ editing: editingIndex === index }" @click="loadItem(index)">
+                    :class="{ editing: pricingIndex === index }" @click="loadItem(index)"
+                    role="button" tabindex="0" :aria-pressed="pricingIndex === index"
+                    @keydown.enter.self.prevent="loadItem(index)" @keydown.space.self.prevent="loadItem(index)">
 
-                    <!-- PRICE -->
+                    <!-- GRADE -->
                     <div class="is-flex is-flex-direction-column">
-                        <strong class="price">Rs {{ item.price }}</strong>
-
                         <span v-if="item.grade_id" class="has-text-grey is-size-7" style="font-size:0.6rem;">
                             {{ getGradeName(item.grade_id) }}
                         </span>
@@ -167,35 +157,33 @@
             </div>
 
             <div class="section-title price-title">
-                Price Details
+                Price Details<span v-if="pricingItem"> - {{ pricingSubjectName }}</span>
             </div>
 
-            <!-- TOTAL -->
-            <div class="total-bar mt-2">
+            <p v-if="pricingItem" class="pricing-help">Prices and discounts below apply only to {{ pricingSubjectName }}. Select another subject above to edit its prices.</p>
+            <p v-else class="pricing-help">Add a subject to Package Contents to set its prices and discounts.</p>
+            <!-- TERM PRICES -->
+            <div v-if="pricingItem" class="total-bar mt-2">
                 <div class="duration-price-fields">
-                    <div>
-                        <label class="custom-label">1 Term (3 months)</label>
-                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
-                            v-model.number="form.three_month_price" />
-                    </div>
-
-                    <div>
-                        <label class="custom-label">2 Terms (6 months)</label>
-                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
-                            v-model.number="form.six_month_price" />
-                    </div>
-
-                    <div>
-                        <label class="custom-label">3 Terms (9 months)</label>
-                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
-                            v-model.number="form.nine_month_price" />
+                    <div v-for="term in packageTerms" :key="term.months" class="term-price-card">
+                        <label class="custom-label" :for="term.key + '-price'">{{ term.label }} - price (Rs)</label>
+                        <input :id="term.key + '-price'" class="input custom-input" type="number" min="0" step="0.01"
+                            :value="selectedTermPrice(term).original" @input="updateSubjectPricing(term, '_price', $event.target.value)" />
+                        <label class="custom-label mt-2" :for="term.key + '-discount'">Discount (%)</label>
+                        <input :id="term.key + '-discount'" class="input custom-input" type="number" min="0" max="100" step="0.01"
+                            :value="selectedTermPrice(term).discount" @input="updateSubjectPricing(term, '_discount_percent', $event.target.value)" />
+                        <p class="term-final mt-2">Final price: <strong>Rs {{ selectedTermPrice(term).final.toFixed(2) }}</strong></p>
                     </div>
                 </div>
+            </div>
 
-                <div class="total-summary">
-                    <span>Total</span>
-                    <strong>Rs {{ total }}</strong>
-                </div>
+            <div v-if="isEdit" class="package-actions package-actions-footer">
+                <button class="package-action-btn is-secondary" @click="$emit('cancel')" :disabled="loading">
+                    Cancel
+                </button>
+                <button class="package-action-btn is-primary-action" @click="submit" :disabled="loading">
+                    {{ loading ? 'Loading..' : 'Update' }}
+                </button>
             </div>
 
         </div>
@@ -205,6 +193,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import api from "../api";
+import { packageTerms, subjectTermPrice } from "../utils/packagePricing.mjs";
 import { useCacheStore } from "../stores/cache";
 import { storeToRefs } from "pinia";
 import { showAlert } from "../composables/dialog";
@@ -220,6 +209,9 @@ const emit = defineEmits(["saved", "cancel"]);
 
 const isEdit = computed(() => !!props.editPackage);
 const editingIndex = ref(null);
+const pricingIndex = ref(null);
+const pricingItem = computed(() => form.value.items[pricingIndex.value] || null);
+const pricingSubjectName = computed(() => pricingItem.value?.subjects.map(getSubjectName).join(", ") || "");
 const singleSubject = ref(null);
 const loading = ref(false);
 
@@ -233,7 +225,10 @@ const form = ref({
     base_price: 0,
     three_month_price: 0,
     six_month_price: 0,
-    nine_month_price: 0,
+    twelve_month_price: 0,
+    three_month_discount_percent: 0,
+    six_month_discount_percent: 0,
+    twelve_month_discount_percent: 0,
     items: []
 });
 
@@ -246,15 +241,6 @@ const newItem = ref({
 /* =========================
    TOTAL
    ========================= */
-const total = computed(() => {
-    let sum = Number(form.value.base_price || 0);
-
-    form.value.items.forEach(i => {
-        sum += Number(i.price || 0);
-    });
-
-    return sum;
-});
 
 /* =========================
    ITEM SAVE (ADD / EDIT)
@@ -277,6 +263,7 @@ async function handleItemSave() {
     }
 
     const payload = {
+        ...(editingIndex.value !== null ? form.value.items[editingIndex.value] : emptySubjectPricing()),
         price: newItem.value.price,
         grade_id: newItem.value.grade_id,
         subjects: [...newItem.value.subjects],
@@ -288,6 +275,7 @@ async function handleItemSave() {
         editingIndex.value = null;
     } else {
         form.value.items.push(payload);
+        pricingIndex.value = form.value.items.length - 1;
     }
 
     resetItem();
@@ -302,6 +290,7 @@ function selectSubject(id) {
    EDIT ITEM
    ========================= */
 function loadItem(index) {
+    pricingIndex.value = index;
     const item = form.value.items[index];
 
     newItem.value = {
@@ -319,6 +308,9 @@ function loadItem(index) {
    ========================= */
 function removeItem(index) {
     form.value.items.splice(index, 1);
+    if (pricingIndex.value === index) pricingIndex.value = form.value.items.length ? Math.min(index, form.value.items.length - 1) : null;
+    else if (pricingIndex.value > index) pricingIndex.value--;
+    if (editingIndex.value > index) editingIndex.value--;
 
     if (editingIndex.value === index) {
         resetItem();
@@ -341,6 +333,15 @@ function resetItem() {
    SUBMIT
    ========================= */
 async function submit() {
+    if (form.value.items.some(item => packageTerms.some(term => {
+        const price = item[term.key + '_price'];
+        const discount = item[term.key + '_discount_percent'];
+        return (price != null && (!Number.isFinite(Number(price)) || Number(price) < 0))
+            || (discount != null && (!Number.isFinite(Number(discount)) || Number(discount) < 0 || Number(discount) > 100));
+    }))) {
+        await showAlert('Enter valid subject term prices and discounts between 0 and 100%.');
+        return;
+    }
     loading.value = true;
 
     try {
@@ -359,7 +360,7 @@ async function submit() {
         console.error(e);
         await showAlert({
             title: "Save Failed",
-            message: "Could not save this package. Please try again.",
+            message: Object.values(e.response?.data?.errors || {}).flat()[0] || "Could not save this package. Please try again.",
         });
     }
     finally {
@@ -370,6 +371,27 @@ async function submit() {
 /* =========================
    HELPERS
    ========================= */
+function emptySubjectPricing() {
+    return Object.fromEntries(packageTerms.flatMap(term => [[term.key + '_price', 0], [term.key + '_discount_percent', 0]]));
+}
+
+function pricingPackage() {
+    return { ...form.value, items: form.value.items.map((item, index) => ({ ...item, id: index })) };
+}
+
+function selectedTermPrice(term) {
+    return subjectTermPrice(pricingPackage(), { ...pricingItem.value, id: pricingIndex.value }, term);
+}
+
+function updateSubjectPricing(term, suffix, value) {
+    const details = selectedTermPrice(term);
+    if (pricingItem.value[term.key + '_price'] == null) {
+        pricingItem.value[term.key + '_price'] = details.original;
+        pricingItem.value[term.key + '_discount_percent'] = details.discount;
+    }
+    pricingItem.value[term.key + suffix] = value === '' ? 0 : Number(value);
+}
+
 function getSubjectName(id) {
     return subjects.value.find(s => s.id === id)?.name || id;
 }
@@ -393,23 +415,43 @@ onMounted(async () => {
             base_price: props.editPackage.base_price,
             three_month_price: Number(props.editPackage.three_month_price ?? props.editPackage.total_price ?? 0),
             six_month_price: Number(props.editPackage.six_month_price ?? 0),
-            nine_month_price: Number(props.editPackage.nine_month_price ?? 0),
+            twelve_month_price: Number(props.editPackage.twelve_month_price ?? 0),
+            three_month_discount_percent: Number(props.editPackage.three_month_discount_percent ?? 0),
+            six_month_discount_percent: Number(props.editPackage.six_month_discount_percent ?? 0),
+            twelve_month_discount_percent: Number(props.editPackage.twelve_month_discount_percent ?? 0),
             items: []
         };
 
-        props.editPackage.items.forEach(i => {
+        [...props.editPackage.items].sort((a, b) => a.id - b.id).forEach(i => {
             form.value.items.push({
+                ...Object.fromEntries(packageTerms.flatMap(term => [[term.key + '_price', i[term.key + '_price'] ?? null], [term.key + '_discount_percent', i[term.key + '_discount_percent'] ?? null]])),
                 price: i.price,
                 grade_id: i.grade_id,
                 subjects: [i.subject_id],
                 type: "subject"
             });
         });
+        if (form.value.items.length) pricingIndex.value = 0;
     }
 });
 </script>
 
 <style scoped>
+.pricing-help { color: #cbd5e1; font-size: 0.8rem; margin-bottom: 0.75rem; }
+.term-price-card { min-width: 0; padding: 12px; border: 1px solid #64748b; border-radius: 8px; }
+.term-final { color: #cbd5e1; font-size: 0.85rem; }
+.term-final strong { color: #fff; }
+.package-actions-footer { justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.item-mini.editing { border-color: #818cf8; background: rgba(79, 70, 229, 0.18); }
+.item-mini:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 3px; }
+@media (max-width: 768px) {
+    .package-container > .is-flex { flex-wrap: wrap; gap: 12px; }
+    .package-container > .is-flex > div:first-child { width: 100%; }
+    .compact-card > .is-flex { flex-wrap: wrap; }
+    .compact-card > .is-flex > div { flex: 1 1 100% !important; }
+    .compact-card > .columns { flex-wrap: wrap; }
+    .compact-card > .columns > .column { flex: none; width: 100%; }
+}
 .package-container {
     width: 100%;
     min-width: 0;
@@ -687,7 +729,7 @@ onMounted(async () => {
     grid-template-columns: repeat(3, minmax(90px, 1fr));
     gap: 8px;
     flex: 1;
-    max-width: 520px;
+    width: 100%;
 }
 
 .duration-price-input {

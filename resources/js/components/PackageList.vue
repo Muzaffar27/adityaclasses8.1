@@ -50,7 +50,12 @@
                     </div>
 
                     <div class="package-price">
-                        Rs {{ formatMoney(pkg.total_price) }}
+                        <div v-for="term in packageTerms" :key="term.months" class="is-size-7 mb-1">
+                            {{ term.months }} months:
+                            <del v-if="termPrice(pkg, term).original > termPrice(pkg, term).final">Rs {{ formatMoney(termPrice(pkg, term).original) }}</del>
+                            Rs {{ formatMoney(termPrice(pkg, term).final) }}
+                            <span v-if="termPrice(pkg, term).discount">({{ termPrice(pkg, term).discount }}% off)</span>
+                        </div>
                     </div>
 
                     <div class="buttons are-small">
@@ -79,6 +84,7 @@
 <script setup>
 import { computed, ref, onMounted, nextTick } from "vue";
 import api from "../api";
+import { packageTerms, termPrice } from "../utils/packagePricing.mjs";
 import Loader from "./common/Loader.vue";
 import PackageBuilder from "./PackageBuilder.vue";
 import { showAlert, showConfirm } from "../composables/dialog";
@@ -106,11 +112,11 @@ const sortedPackages = computed(() => {
         }
 
         if (sortBy.value === "priceHigh") {
-            return Number(b.total_price || 0) - Number(a.total_price || 0);
+            return termPrice(b, packageTerms[0]).final - termPrice(a, packageTerms[0]).final;
         }
 
         if (sortBy.value === "priceLow") {
-            return Number(a.total_price || 0) - Number(b.total_price || 0);
+            return termPrice(a, packageTerms[0]).final - termPrice(b, packageTerms[0]).final;
         }
 
         return Number(b.id || 0) - Number(a.id || 0);

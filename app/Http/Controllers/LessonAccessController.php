@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\LessonAccess;
+use App\Models\Package;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class LessonAccessController extends Controller
 {
-    private const VALID_DURATIONS = [3, 6, 9];
+    private const VALID_DURATIONS = [3, 6, 12];
 
     public function count(Request $request)
     {
@@ -74,6 +75,7 @@ class LessonAccessController extends Controller
 
     public function accept(Request $request)
     {
+        abort_unless(in_array($request->user()->role, ['tutor', 'admin'], true), 403);
         $access = LessonAccess::findOrFail($request->id);
 
         LessonAccess::where([
@@ -93,6 +95,7 @@ class LessonAccessController extends Controller
 
     public function acceptMultiple(Request $request)
     {
+        abort_unless(in_array($request->user()->role, ['tutor', 'admin'], true), 403);
         LessonAccess::whereIn('id', $request->ids)
             ->get()
             ->each(function (LessonAccess $access) {
@@ -180,9 +183,30 @@ class LessonAccessController extends Controller
     {
         $payload = $request->all();
 
-        $items = isset($payload['subject_id'], $payload['grade_id'])
+        $items = isset($payload['package_id']) || isset($payload['subject_id'], $payload['grade_id'])
             ? [$payload]
             : array_values($payload);
+
+        // Prices come from the saved package, never the student's submitted amount.
+        validator(['items' => $items], [
+            'items' => 'required|array|min:1',
+            'items.*' => 'required|array',
+            'items.*.package_id' => 'required|integer|exists:packages,id',
+            'items.*.package_item_id' => 'required|integer',
+            'items.*.duration_months' => 'required|integer|in:3,6,12',
+        ], ['required' => 'Please reload the store and select your package again.'])->validate();
+        $packages = Package::with('items')->whereIn('id', array_column($items, 'package_id'))->get()->keyBy('id');
+        $items = collect($items)->map(function ($item) use ($packages) {
+            $package = $packages->get($item['package_id']);
+            $packageItem = $package->items->firstWhere('id', $item['package_item_id']);
+            abort_unless($packageItem, 422, 'This subject is no longer in the package. Please reload the store.');
+            return [
+                'subject_id' => $packageItem->subject_id,
+                'grade_id' => $packageItem->grade_id ?? $package->grade_id,
+                'duration_months' => (int) $item['duration_months'],
+                'requested_price' => $package->pricesForDuration((int) $item['duration_months'])[$packageItem->id],
+            ];
+        });
 
         return collect($items)
             ->filter(fn($item) => is_array($item) && isset($item['subject_id'], $item['grade_id']))
