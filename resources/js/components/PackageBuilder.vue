@@ -136,10 +136,8 @@
                 <div v-for="(item, index) in form.items" :key="index" class="item-mini"
                     :class="{ editing: editingIndex === index }" @click="loadItem(index)">
 
-                    <!-- PRICE -->
+                    <!-- GRADE -->
                     <div class="is-flex is-flex-direction-column">
-                        <strong class="price">Rs {{ item.price }}</strong>
-
                         <span v-if="item.grade_id" class="has-text-grey is-size-7" style="font-size:0.6rem;">
                             {{ getGradeName(item.grade_id) }}
                         </span>

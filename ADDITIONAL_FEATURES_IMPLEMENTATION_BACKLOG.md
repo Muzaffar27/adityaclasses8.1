@@ -57,3 +57,11 @@ Status: Done locally
 - Files: PackagePage.vue, PackageBuilder.vue and generated assets. No backend, schema or dependency changes.
 - Validation: production build and git diff --check passed. Playwright confirmed the hidden input is absent; editing an existing subject retains its price in the form; computed total is blue/24px; no document overflow at 1440/390/320px and zero page exceptions. Mobile screenshot inspected. No database save was made during this UI check.
 - Remaining: visual acceptance and installed-PWA/device verification. No push, deployment or production write.
+
+
+### Hide Package Contents base-price display - 19 November 2026
+
+Status: Done locally
+
+- Removed only the base-price text from each Package Contents item in PackageBuilder.vue. Subject/grade labels and item editing remain available; saved values and calculation logic are unchanged. No migration.
+- Validation: production build and git diff --check passed. Playwright confirmed no Rs/base-price text in Package Contents, item editing still opens, no overflow at 390px and zero page exceptions. No database save, push or deployment. Installed-PWA verification remains pending.
