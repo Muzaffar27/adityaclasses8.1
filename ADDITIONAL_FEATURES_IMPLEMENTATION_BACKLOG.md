@@ -109,3 +109,11 @@ Status: Done locally
 
 - Your total now shares the amount's 24px bold primary-blue styling in PackagePage.vue. No pricing or schema changes.
 - Validation: production build, git diff --check and Playwright computed-style comparison passed; identical font family, size, weight and colour, with no overflow at 1440/390/320px. No push or deployment. Installed-PWA check remains pending.
+
+
+### Total Price label - 19 November 2026
+
+Status: Done locally
+
+- Renamed Your total to Total Price in PackagePage.vue, preserving its styling and empty-selection message. No pricing/schema changes.
+- Validation: production build and git diff --check passed; Playwright confirmed the label and no overflow at 320px. No push or deployment.
