@@ -3,128 +3,74 @@
 namespace App\Http\Controllers;
 
 use App\Models\Package;
-use App\Models\PackageItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PackageController extends Controller
 {
-    public function store(Request $request)
+    public function __construct()
     {
-        $data = $request->validate([
-            //package
+        $this->middleware('auth:sanctum')->only(['store', 'update']);
+    }
+
+    private function validatedPackage(Request $request): array
+    {
+        abort_unless(in_array($request->user()->role, ['tutor', 'admin'], true), 403);
+
+        return $request->validate([
             'name' => 'required|string',
-            'description' => 'nullable|string',
             'grade_id' => 'required|exists:grades,id',
             'subject_id' => 'required|exists:subjects,id',
-            'base_price' => 'required|numeric',
-            'three_month_price' => 'nullable|numeric|min:0',
-            'six_month_price' => 'nullable|numeric|min:0',
-            'nine_month_price' => 'nullable|numeric|min:0',
-
-            //Package Item
-            'items' => 'required|array',
-            'items.*.price' => 'required|numeric',
-            'items.*.type' => 'required|string',
-            'items.*.subject_id' => 'nullable|exists:subjects,id',
+            'base_price' => 'required|numeric|min:0',
+            'three_month_price' => 'required|numeric|min:0',
+            'six_month_price' => 'required|numeric|min:0',
+            'twelve_month_price' => 'required|numeric|min:0',
+            'three_month_discount_percent' => 'nullable|numeric|min:0|max:100',
+            'six_month_discount_percent' => 'nullable|numeric|min:0|max:100',
+            'twelve_month_discount_percent' => 'nullable|numeric|min:0|max:100',
+            'items' => 'required|array|min:1',
+            'items.*.price' => 'required|numeric|min:0',
             'items.*.grade_id' => 'nullable|exists:grades,id',
-            'items.*.subjects' => 'array',
+            'items.*.subjects' => 'required|array|min:1',
+            'items.*.subjects.*' => 'required|exists:subjects,id',
         ]);
+    }
 
-        return DB::transaction(function () use ($data) {
-
-            // 🧠 Create package
-            $package = Package::create([
-                'name' => $data['name'],
-                'grade_id' => $data['grade_id'],
-                'subject_id' => $data['subject_id'],
-                'base_price' => $data['base_price'],
-                'three_month_price' => $data['three_month_price'] ?? 0,
-                'six_month_price' => $data['six_month_price'] ?? 0,
-                'nine_month_price' => $data['nine_month_price'] ?? 0,
-                'total_price' => 0,
-            ]);
-
-            $total = (float) $data['base_price'];
-            $rows = [];
-
-            foreach ($data['items'] as $item) {
-
-                $subjects = $item['subjects'] ?? [];
-                $subjectCount = max(count($subjects), 1);
-
-                $pricePerSubject = $item['price'] / $subjectCount;
-
-                foreach ($subjects as $subjectId) {
-
-                    $rows[] = [
-                        'package_id' => $package->id,
-                        'price' => $pricePerSubject,
-                        'type' => 'subject',
-                        'subject_id' => $subjectId,
-                        'grade_id' => $item['grade_id'] ?? $data['grade_id'],
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                }
-
-                $total += $item['price'];
-            }
-
-            // ⚡ SINGLE BULK INSERT (MAJOR SPEED BOOST)
-            if (!empty($rows)) {
-                PackageItem::insert($rows);
-            }
-
-            $package->update(['total_price' => $total]);
-
-            return response()->json(
-                $package->load('items')
-            );
-        });
+    public function store(Request $request)
+    {
+        $data = $this->validatedPackage($request);
+        return $this->savePackage(new Package, $data);
     }
 
     public function update(Request $request, $id)
     {
-        $package = Package::findOrFail($id);
+        $data = $this->validatedPackage($request);
+        return $this->savePackage(Package::findOrFail($id), $data);
+    }
 
-        DB::transaction(function () use ($request, $package) {
-
-            $package->update([
-                'name' => $request->name,
-                'grade_id' => $request->grade_id,
-                'subject_id' => $request->subject_id,
-                'base_price' => $request->base_price,
-                'three_month_price' => $request->three_month_price ?? 0,
-                'six_month_price' => $request->six_month_price ?? 0,
-                'nine_month_price' => $request->nine_month_price ?? 0,
-            ]);
-
-            PackageItem::where('package_id', $package->id)->delete();
-
-            $total = (float) $request->base_price; // 👈 start with base
-
-            foreach ($request->items as $item) {
+    private function savePackage(Package $package, array $data)
+    {
+        return DB::transaction(function () use ($package, $data) {
+            $items = $data['items'];
+            unset($data['items']);
+            foreach (['three_month', 'six_month', 'twelve_month'] as $term) {
+                $data[$term.'_discount_percent'] = $data[$term.'_discount_percent'] ?? 0;
+            }
+            $data['total_price'] = $data['base_price'] + array_sum(array_column($items, 'price'));
+            $package->fill($data)->save();
+            $package->items()->delete();
+            foreach ($items as $item) {
                 foreach ($item['subjects'] as $subjectId) {
-
-                    PackageItem::create([
-                        'package_id' => $package->id,
-                        'price' => $item['price'],
-                        'grade_id' => $item['grade_id'],
+                    $package->items()->create([
                         'subject_id' => $subjectId,
+                        'grade_id' => $item['grade_id'] ?? $data['grade_id'],
+                        'price' => $item['price'] / count($item['subjects']),
+                        'type' => 'subject',
                     ]);
                 }
-
-                $total += (float) $item['price']; // 👈 add item price once per item
             }
-
-            // ✅ THIS WAS MISSING
-            $package->update([
-                'total_price' => $total
-            ]);
+            return response()->json($package->load('items'));
         });
-
-        return response()->json($package->load('items'));
     }
 
     public function index(Request $request)

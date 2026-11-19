@@ -112,7 +112,7 @@
                 </div>
 
                 <div style="flex:1;">
-                    <label class="custom-label">Price</label>
+                    <label class="custom-label">Subject base price (Rs)</label>
                     <input class="input custom-input" type="text" v-model="newItem.price" />
                 </div>
 
@@ -131,7 +131,7 @@
             </div>
 
             <div style="flex:1;">
-                <label class="custom-label">Click on an item to modify the Price, Grade or Subject</label>
+                <label class="custom-label">Click an item to edit its subject base price, grade or subject.</label>
             </div>
             <!-- =========================
                  ITEMS LIST
@@ -170,31 +170,19 @@
                 Price Details
             </div>
 
-            <!-- TOTAL -->
+            <p class="pricing-help">Term prices below are the full package prices. Subject base prices determine each subject's share when a student selects only part of a package. A zero term price uses the sum of subject base prices.</p>
+            <!-- TERM PRICES -->
             <div class="total-bar mt-2">
                 <div class="duration-price-fields">
-                    <div>
-                        <label class="custom-label">1 Term (3 months)</label>
-                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
-                            v-model.number="form.three_month_price" />
+                    <div v-for="term in packageTerms" :key="term.months" class="term-price-card">
+                        <label class="custom-label" :for="term.key + '-price'">{{ term.label }} - price (Rs)</label>
+                        <input :id="term.key + '-price'" class="input custom-input" type="number" min="0" step="0.01"
+                            v-model.number="form[term.key + '_price']" />
+                        <label class="custom-label mt-2" :for="term.key + '-discount'">Discount (%)</label>
+                        <input :id="term.key + '-discount'" class="input custom-input" type="number" min="0" max="100" step="0.01"
+                            v-model.number="form[term.key + '_discount_percent']" />
+                        <p class="term-final mt-2">Final price: <strong>Rs {{ termPrice(form, term).final.toFixed(2) }}</strong></p>
                     </div>
-
-                    <div>
-                        <label class="custom-label">2 Terms (6 months)</label>
-                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
-                            v-model.number="form.six_month_price" />
-                    </div>
-
-                    <div>
-                        <label class="custom-label">3 Terms (9 months)</label>
-                        <input class="input custom-input duration-price-input" type="text" inputmode="decimal"
-                            v-model.number="form.nine_month_price" />
-                    </div>
-                </div>
-
-                <div class="total-summary">
-                    <span>Total</span>
-                    <strong>Rs {{ total }}</strong>
                 </div>
             </div>
 
@@ -205,6 +193,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import api from "../api";
+import { packageTerms, termPrice } from "../utils/packagePricing.mjs";
 import { useCacheStore } from "../stores/cache";
 import { storeToRefs } from "pinia";
 import { showAlert } from "../composables/dialog";
@@ -233,7 +222,10 @@ const form = ref({
     base_price: 0,
     three_month_price: 0,
     six_month_price: 0,
-    nine_month_price: 0,
+    twelve_month_price: 0,
+    three_month_discount_percent: 0,
+    six_month_discount_percent: 0,
+    twelve_month_discount_percent: 0,
     items: []
 });
 
@@ -246,15 +238,6 @@ const newItem = ref({
 /* =========================
    TOTAL
    ========================= */
-const total = computed(() => {
-    let sum = Number(form.value.base_price || 0);
-
-    form.value.items.forEach(i => {
-        sum += Number(i.price || 0);
-    });
-
-    return sum;
-});
 
 /* =========================
    ITEM SAVE (ADD / EDIT)
@@ -341,6 +324,14 @@ function resetItem() {
    SUBMIT
    ========================= */
 async function submit() {
+    if (packageTerms.some(term => !Number.isFinite(Number(form.value[term.key + '_price']))
+        || Number(form.value[term.key + '_price']) < 0
+        || !Number.isFinite(Number(form.value[term.key + '_discount_percent']))
+        || Number(form.value[term.key + '_discount_percent']) < 0
+        || Number(form.value[term.key + '_discount_percent']) > 100)) {
+        await showAlert('Enter valid term prices and discounts between 0 and 100%.');
+        return;
+    }
     loading.value = true;
 
     try {
@@ -359,7 +350,7 @@ async function submit() {
         console.error(e);
         await showAlert({
             title: "Save Failed",
-            message: "Could not save this package. Please try again.",
+            message: Object.values(e.response?.data?.errors || {}).flat()[0] || "Could not save this package. Please try again.",
         });
     }
     finally {
@@ -393,7 +384,10 @@ onMounted(async () => {
             base_price: props.editPackage.base_price,
             three_month_price: Number(props.editPackage.three_month_price ?? props.editPackage.total_price ?? 0),
             six_month_price: Number(props.editPackage.six_month_price ?? 0),
-            nine_month_price: Number(props.editPackage.nine_month_price ?? 0),
+            twelve_month_price: Number(props.editPackage.twelve_month_price ?? 0),
+            three_month_discount_percent: Number(props.editPackage.three_month_discount_percent ?? 0),
+            six_month_discount_percent: Number(props.editPackage.six_month_discount_percent ?? 0),
+            twelve_month_discount_percent: Number(props.editPackage.twelve_month_discount_percent ?? 0),
             items: []
         };
 
@@ -410,6 +404,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.pricing-help { color: #cbd5e1; font-size: 0.8rem; margin-bottom: 0.75rem; }
+.term-price-card { min-width: 0; padding: 12px; border: 1px solid #64748b; border-radius: 8px; }
+.term-final { color: #cbd5e1; font-size: 0.85rem; }
+.term-final strong { color: #fff; }
+@media (max-width: 768px) {
+    .package-container > .is-flex { flex-wrap: wrap; gap: 12px; }
+    .package-container > .is-flex > div:first-child { width: 100%; }
+    .compact-card > .is-flex { flex-wrap: wrap; }
+    .compact-card > .is-flex > div { flex: 1 1 100% !important; }
+    .compact-card > .columns { flex-wrap: wrap; }
+    .compact-card > .columns > .column { flex: none; width: 100%; }
+}
 .package-container {
     max-width: 1050px;
     margin: 0 auto;
@@ -674,7 +680,7 @@ onMounted(async () => {
     grid-template-columns: repeat(3, minmax(90px, 1fr));
     gap: 8px;
     flex: 1;
-    max-width: 520px;
+    width: 100%;
 }
 
 .duration-price-input {

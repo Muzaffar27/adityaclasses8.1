@@ -107,7 +107,7 @@
                                 </td>
 
                                 <td class="has-text-right has-text-grey-light">
-                                    Rs {{ priceForDuration(item.price).toFixed(2) }}
+                                    Rs {{ priceForDuration(item).toFixed(2) }}
                                 </td>
                             </tr>
                         </tbody>
@@ -130,6 +130,11 @@
                                     {{ option.label }}
                                 </button>
                             </div>
+                            <p v-if="currentTermPrice.discount" class="has-text-grey-light is-size-7">
+                                {{ currentTermPrice.discount }}% discount applied. Full package:
+                                <del>Rs {{ currentTermPrice.original.toFixed(2) }}</del>
+                                Rs {{ currentTermPrice.final.toFixed(2) }}
+                            </p>
                             <p class="is-size-5 has-text-primary has-text-weight-bold">
                                 Rs {{ dynamicTotal.toFixed(2) }}
                             </p>
@@ -155,6 +160,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Layout from './common/Layout.vue'
 import api from "../api"
+import { packageTerms, termPrice, itemTermPrices } from "../utils/packagePricing.mjs"
 import { useCacheStore } from "../stores/cache"
 
 import { storeToRefs } from "pinia"
@@ -175,11 +181,7 @@ const selectedSubjectId = ref(null)
 const selectedItemIds = ref([])
 const selectedDurationMonths = ref(3)
 const excludedSubjects = ['mechanics', 'statistics 1', 'statistics 2']
-const durationOptions = [
-    { months: 3, label: '3 months', priceKey: 'three_month_price' },
-    { months: 6, label: '6 months', priceKey: 'six_month_price' },
-    { months: 9, label: '9 months', priceKey: 'nine_month_price' },
-]
+const durationOptions = packageTerms
 
 
 // route
@@ -242,32 +244,18 @@ const dynamicTotal = computed(() => {
 
     return selectedPackage.value.items
         .filter(item => selectedItemIds.value.includes(item.id))
-        .reduce((sum, item) => sum + priceForDuration(item.price), 0);
+        .reduce((sum, item) => sum + priceForDuration(item), 0);
 });
 
 const selectedDurationOption = computed(() => {
     return durationOptions.find(option => option.months === selectedDurationMonths.value) || durationOptions[0]
 })
 
-function priceForDuration(price) {
-    if (!fullPackageBaseTotal.value) return 0
-
-    return (Number(price || 0) / fullPackageBaseTotal.value) * selectedDurationPrice.value
+const currentTermPrice = computed(() => termPrice(selectedPackage.value || {}, selectedDurationOption.value))
+const currentItemPrices = computed(() => itemTermPrices(selectedPackage.value || {}, selectedDurationOption.value))
+function priceForDuration(item) {
+    return currentItemPrices.value[item.id] || 0
 }
-
-const fullPackageBaseTotal = computed(() => {
-    if (!selectedPackage.value || !selectedPackage.value.items) return 0
-
-    return selectedPackage.value.items
-        .reduce((sum, item) => sum + Number(item.price || 0), 0)
-})
-
-const selectedDurationPrice = computed(() => {
-    const option = selectedDurationOption.value
-    const packagePrice = Number(selectedPackage.value?.[option.priceKey] || 0)
-
-    return packagePrice > 0 ? packagePrice : fullPackageBaseTotal.value
-})
 
 // select subject
 function selectSubject(subjectId) {
@@ -328,10 +316,12 @@ async function submitRequest() {
     }
 
     const payload = selectedItems.map(item => ({
+        package_id: selectedPackage.value.id,
+        package_item_id: item.id,
         subject_id: item.subject_id || item.subject?.id,
         grade_id: item.grade_id,
         duration_months: selectedDurationMonths.value,
-        requested_price: priceForDuration(item.price),
+        requested_price: priceForDuration(item),
     }))
     buttonLoad.value = true
     try {
@@ -347,7 +337,7 @@ async function submitRequest() {
         console.error(err)
         await showAlert({
             title: "Request Failed",
-            message: "Failed to send request.",
+            message: err.response?.data?.message || "Failed to send request.",
         })
     } finally {
         buttonLoad.value = false
