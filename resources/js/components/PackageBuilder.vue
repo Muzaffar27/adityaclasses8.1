@@ -13,12 +13,7 @@
                 </p>
             </div>
 
-            <div class="package-actions">
-                <button v-if="isEdit" class="package-action-btn is-secondary" @click="$emit('cancel')"
-                    :disabled="loading">
-                    Cancel
-                </button>
-
+            <div v-if="!isEdit" class="package-actions">
                 <button class="package-action-btn is-primary-action" @click="submit" :disabled="loading">
                     <span v-if="!loading">
                         {{ isEdit ? "Update" : "Create" }}
@@ -180,6 +175,15 @@
                         <p class="term-final mt-2">Final price: <strong>Rs {{ selectedTermPrice(term).final.toFixed(2) }}</strong></p>
                     </div>
                 </div>
+            </div>
+
+            <div v-if="isEdit" class="package-actions package-actions-footer">
+                <button class="package-action-btn is-secondary" @click="$emit('cancel')" :disabled="loading">
+                    Cancel
+                </button>
+                <button class="package-action-btn is-primary-action" @click="submit" :disabled="loading">
+                    {{ loading ? 'Loading..' : 'Update' }}
+                </button>
             </div>
 
         </div>
@@ -437,6 +441,7 @@ onMounted(async () => {
 .term-price-card { min-width: 0; padding: 12px; border: 1px solid #64748b; border-radius: 8px; }
 .term-final { color: #cbd5e1; font-size: 0.85rem; }
 .term-final strong { color: #fff; }
+.package-actions-footer { justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
 .item-mini.editing { border-color: #818cf8; background: rgba(79, 70, 229, 0.18); }
 .item-mini:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 3px; }
 @media (max-width: 768px) {

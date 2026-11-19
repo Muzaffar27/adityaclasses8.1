@@ -84,3 +84,12 @@ Agent log:
 - Playwright: real temporary preview package creation, independent field editing, switching/reopening without lost drafts, per-subject headings, validation, adding/removing subjects, saving and store totals verified. Example Math 1300 minus 15 percent = 1105; Physics 1800 minus 20 percent = 1440; mixed total 2545. Browser submission payload checked with a mocked success to avoid changing existing preview access requests; real backend request pricing is covered by isolated feature tests. Temporary verification packages were removed. Editor/store at 1440/390/320px had no horizontal overflow or page exceptions; screenshots inspected.
 - Remaining verification: real MySQL migration, user acceptance and installed-PWA/device checks. Production migration must run through approved /admin/migrate after the earlier pricing migration, with source/assets shipped together. Legacy package/base-price fields remain hidden compatibility data; newly edited subject term prices determine store totals.
 - Release: separate commit on hotfix/package-pricing-20261119, depending on preceding pricing commits only. No unrelated development, push or deployment.
+
+
+### Edit package footer actions and blue total label - 19 November 2026
+
+Status: Done locally
+
+- Moved Cancel and Update below Price Details for edit mode in PackageBuilder.vue; Create remains at the top for creation. Matched the store Your total label to the amount's primary blue in PackagePage.vue. No pricing, backend, schema or dependency changes.
+- Validation: production build and git diff --check passed. Playwright verified footer below prices, no header actions and no overflow at 1440/390/320px; Cancel closes the editor and Update sends the existing request (mocked success, no data save); Create remains at top. Computed colours of Your total and amount both rgb(79,70,229). No page exceptions in the interaction check.
+- Remaining: user visual acceptance and installed-PWA verification. No push, deploy or production writes.
