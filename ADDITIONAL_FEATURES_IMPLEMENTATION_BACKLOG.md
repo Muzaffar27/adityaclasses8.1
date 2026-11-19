@@ -93,3 +93,11 @@ Status: Done locally
 - Moved Cancel and Update below Price Details for edit mode in PackageBuilder.vue; Create remains at the top for creation. Matched the store Your total label to the amount's primary blue in PackagePage.vue. No pricing, backend, schema or dependency changes.
 - Validation: production build and git diff --check passed. Playwright verified footer below prices, no header actions and no overflow at 1440/390/320px; Cancel closes the editor and Update sends the existing request (mocked success, no data save); Create remains at top. Computed colours of Your total and amount both rgb(79,70,229). No page exceptions in the interaction check.
 - Remaining: user visual acceptance and installed-PWA verification. No push, deploy or production writes.
+
+
+### Compact selection blocks - 19 November 2026
+
+Status: Done locally
+
+- Styled each selected subject as a separate compact block in PackagePage.vue, reusing the package-choice background, border and 8px corner radius. Subject, access duration and price remain grouped; desktop uses a grid and phones stack the blocks. Kept both the total label and amount blue and the summary below subjects.
+- Validation: production build and git diff --check passed; Playwright verified separate blocks, mixed durations, unchanged blue total colours, no overflow at 1440/390/320px and zero page exceptions. Mobile summary screenshot inspected. No pricing, backend or migration changes. No push/deploy; installed-PWA check remains pending.

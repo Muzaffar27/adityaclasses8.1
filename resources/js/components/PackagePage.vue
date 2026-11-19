@@ -316,8 +316,9 @@ watch(gradeId, fetchAllPackagesForGrade)
 .item-term-options strong { color: #e2e8f0; font-size: .78rem; overflow-wrap: anywhere; }
 .discount-badge { color: #6ee7b7; font-size: .6rem; line-height: 1.2; }
 .order-summary { position: static; width: 100%; }
-.summary-items { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 12px 0; }
-.summary-items > div { display: flex; align-items: center; gap: 12px; font-size: .75rem; }
+.summary-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin: 12px 0; }
+.summary-items > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: .75rem; padding: 10px 12px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; }
+.summary-items > div > span { min-width: 0; overflow-wrap: anywhere; }
 .summary-items small { color: #94a3b8; display: block; font-size: .65rem; margin-top: 2px; }
 .summary-items strong { color: #e2e8f0; white-space: nowrap; font-size: .75rem; }
 .checkout-actions { display: flex; align-items: center; gap: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
@@ -340,7 +341,7 @@ button:disabled { cursor: default; opacity: .45; }
     .checkout-actions { flex-wrap: wrap; gap: 12px; }
     .summary-total { flex-basis: 100%; justify-content: space-between; }
     .request-button { width: 100%; }
-    .summary-items { display: grid; gap: 8px; }
+    .summary-items { grid-template-columns: minmax(0, 1fr); }
     .summary-items > div { justify-content: space-between; }
 }
 @media (max-width: 360px) {
