@@ -323,8 +323,7 @@ watch(gradeId, fetchAllPackagesForGrade)
 .summary-items strong { color: #e2e8f0; white-space: nowrap; font-size: .75rem; }
 .checkout-actions { display: flex; align-items: center; gap: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
 .summary-total { display: flex; flex: 1; align-items: center; gap: 14px; font-size: .78rem; }
-.summary-total > span { color: #4f46e5; }
-.summary-total strong { color: #4f46e5; font-size: 1.5rem; font-weight: 700; }
+.summary-total > span, .summary-total strong { color: #4f46e5; font-size: 1.5rem; font-weight: 700; }
 .request-button { min-height: 44px; min-width: 180px; border-radius: 8px; color: #fff; font-weight: 600; font-size: .8rem; }
 .approval-note { color: #94a3b8; font-size: .65rem; margin-top: 8px; }
 .selection-hint, .section-help { color: #a8b2c3; font-size: .8rem; margin: 12px 0; }

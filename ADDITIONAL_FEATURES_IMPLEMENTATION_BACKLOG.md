@@ -101,3 +101,11 @@ Status: Done locally
 
 - Styled each selected subject as a separate compact block in PackagePage.vue, reusing the package-choice background, border and 8px corner radius. Subject, access duration and price remain grouped; desktop uses a grid and phones stack the blocks. Kept both the total label and amount blue and the summary below subjects.
 - Validation: production build and git diff --check passed; Playwright verified separate blocks, mixed durations, unchanged blue total colours, no overflow at 1440/390/320px and zero page exceptions. Mobile summary screenshot inspected. No pricing, backend or migration changes. No push/deploy; installed-PWA check remains pending.
+
+
+### Match total label typography - 19 November 2026
+
+Status: Done locally
+
+- Your total now shares the amount's 24px bold primary-blue styling in PackagePage.vue. No pricing or schema changes.
+- Validation: production build, git diff --check and Playwright computed-style comparison passed; identical font family, size, weight and colour, with no overflow at 1440/390/320px. No push or deployment. Installed-PWA check remains pending.
