@@ -50,7 +50,7 @@
                                             :class="{ active: durationForItem(item) === term.months }"
                                             :aria-pressed="durationForItem(item) === term.months"
                                             @click="itemDurations[item.id] = term.months">
-                                            <span class="term-label">{{ term.label.split(' (')[0] }} <small>{{ term.months }}mo</small></span>
+                                            <span class="term-label">{{ term.months }} months <small>· {{ term.label.split(' (')[0].toLowerCase() }}</small></span>
                                             <del v-if="hasDiscount(item, term)" class="original-price" aria-label="Original price">{{ money(subjectTermPrice(selectedPackage, item, term).original) }}</del>
                                             <strong :class="{ 'discounted-price': hasDiscount(item, term) }">{{ money(priceForItemTerm(item, term)) }}</strong>
                                             <span v-if="subjectTermPrice(selectedPackage, item, term).discount" class="discount-badge">{{ subjectTermPrice(selectedPackage, item, term).discount }}% off</span>
