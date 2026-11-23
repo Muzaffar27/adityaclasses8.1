@@ -115,7 +115,9 @@ class StudentDashboardController extends Controller
             'stats' => [
                 'active_courses' => $courses->count(),
                 'available_lessons' => $courses->sum('lesson_count'),
-                'tests_attempted' => 0,
+                'tests_attempted' => Schema::hasTable('test_papers') && Schema::hasTable('test_paper_attempts')
+                    ? \App\Models\TestPaper::whereHas('batch', fn ($q) => $q->where('student_id', $user->id))
+                        ->whereHas('attempt', fn ($q) => $q->whereNotNull('submitted_at'))->count() : 0,
                 'average_score' => null,
             ],
             'courses' => $courses,

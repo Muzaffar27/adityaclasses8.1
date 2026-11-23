@@ -54,6 +54,7 @@
     </header>
 
     <div class="content-body px-4 py-5">
+      <StudentTestPaperNotice />
       <div v-if="loading" class="loader-overlay">
         <Loader />
       </div>
@@ -70,6 +71,7 @@
 import { ArrowLeftIcon, HomeIcon, Squares2X2Icon } from "@heroicons/vue/24/outline";
 import Loader from "./Loader.vue";
 import PwaInstallButton from "./PwaInstallButton.vue";
+import StudentTestPaperNotice from "./StudentTestPaperNotice.vue";
 import { useRoute, useRouter } from "vue-router";
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/auth";

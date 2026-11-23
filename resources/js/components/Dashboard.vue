@@ -80,10 +80,7 @@
                             <button v-if="primaryCourse" type="button" @click="openCourse(primaryCourse)">Start a lesson <ArrowRightIcon /></button>
                         </article>
 
-                        <article class="test-card">
-                            <div class="test-card-top"><span class="test-icon"><ClipboardDocumentCheckIcon /></span><span class="soon-badge">Coming next</span></div>
-                            <div><p class="card-kicker">Tests to complete</p><h3>No tests due</h3><p>Assigned tests and deadlines will appear here—not mixed with your course library.</p></div>
-                        </article>
+                        <DashboardTestPapers />
                     </div>
                 </section>
 
@@ -132,6 +129,7 @@ import { ArrowRightIcon, BookOpenIcon, ChevronRightIcon, ClipboardDocumentCheckI
 import api from '../api'
 import Layout from './common/Layout.vue'
 import { DocumentTextIcon } from '@heroicons/vue/24/outline'
+import DashboardTestPapers from './DashboardTestPapers.vue'
 
 const router = useRouter()
 const loading = ref(true)
@@ -155,8 +153,8 @@ const primaryCourse = computed(() => featuredCourses.value[0] || dashboard.cours
 const statCards = computed(() => [
     { label: 'Courses', value: dashboard.stats.active_courses, note: 'Active now', icon: Squares2X2Icon, tone: 'blue' },
     { label: 'Lessons', value: dashboard.stats.available_lessons, note: 'Ready to learn', icon: BookOpenIcon, tone: 'aqua' },
-    { label: 'Tests done', value: dashboard.stats.tests_attempted, note: 'No attempts yet', icon: ClipboardDocumentCheckIcon, tone: 'green' },
-    { label: 'Average', value: dashboard.stats.average_score === null ? '—' : `${dashboard.stats.average_score}%`, note: 'After your first test', icon: PresentationChartLineIcon, tone: 'orange' },
+    { label: 'Tests done', value: dashboard.stats.tests_attempted, note: dashboard.stats.tests_attempted ? 'Submitted papers' : 'No submissions yet', icon: ClipboardDocumentCheckIcon, tone: 'green' },
+    { label: 'Average', value: dashboard.stats.average_score === null ? '—' : `${dashboard.stats.average_score}%`, note: 'Marking is not enabled yet', icon: PresentationChartLineIcon, tone: 'orange' },
 ])
 
 async function fetchDashboard() {
@@ -367,7 +365,7 @@ onMounted(fetchDashboard)
 .section-heading a { align-items: center; color: #a5b4fc; display: flex; font-size: 0.72rem; font-weight: 700; gap: 0.3rem; }
 .section-heading a svg { height: 15px; width: 15px; }
 
-.action-grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr); }
+.action-grid { display: grid; align-items: start; gap: 1rem; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr); }
 .resume-card,
 .start-card,
 .test-card { border-radius: 20px; min-height: 225px; padding: 1.3rem; }
@@ -453,6 +451,8 @@ onMounted(fetchDashboard)
 .test-card .test-icon { background: rgba(236, 72, 153, 0.14); color: #f9a8d4; }
 .test-card .card-kicker { color: #f9a8d4; }
 .test-card-top { align-items: center; display: flex; justify-content: space-between; }
+.paper-count { border-radius: 20px; padding: 6px 12px; background: rgba(236, 72, 153, 0.18); color: #fce7f3; font-size: 14px; }
+.test-card .paper-action { display: block; margin-bottom: 10px; }
 .soon-badge { background: rgba(236, 72, 153, 0.14); border: 1px solid rgba(244, 114, 182, 0.2); border-radius: 999px; color: #fbcfe8; font-size: 0.6rem; font-weight: 800; padding: 0.32rem 0.52rem; }
 
 .course-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
