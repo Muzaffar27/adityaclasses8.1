@@ -39,6 +39,7 @@ class CourseRegistrationTest extends TestCase
             'submission_id' => (string) Str::uuid(), 'studentName' => 'Test Student',
             'grade' => 'Grade 8', 'school' => 'Test School', 'returning' => 'New student',
             'subjects' => ['English', 'Mathematics'], 'batches' => ['mathematics' => 'batch-2'],
+            'attendance_modes' => ['english' => 'online', 'mathematics' => 'face_to_face'],
             'guardian' => 'Test Guardian', 'phone' => '5000 0000', 'email' => 'guardian@example.test',
             'message' => 'Registration test', 'consent' => true, 'updates' => false,
         ];
@@ -101,6 +102,7 @@ class CourseRegistrationTest extends TestCase
     {
         $this->postJson('/registration', array_replace($this->payload(), [
             'grade' => 'Grade 9', 'subjects' => ['Science'], 'batches' => [], 'monthly_total' => 1,
+            'attendance_modes' => ['science' => 'online'],
         ]))->assertCreated();
         $details = CourseRegistration::sole()->details;
         $this->assertSame(['science' => 'standard'], $details['batches']);
@@ -116,6 +118,7 @@ class CourseRegistrationTest extends TestCase
             $subjects = $grade >= 12 ? ['English General Paper', 'Mathematics (Main)'] : ['English', 'Mathematics'];
             $payload = array_replace($this->payload(), ['grade' => 'Grade '.$grade, 'subjects' => $subjects,
                 'batches' => $grade === 7 || $grade >= 12 ? [] : ['mathematics' => 'batch-1', 'english' => $grade === 9 ? 'batch-1' : 'standard']]);
+            $payload['attendance_modes'] = array_fill_keys(array_keys(array_filter(config('registration.catalogue.Grade '.$grade.'.courses'), fn ($course) => in_array($course['name'], $subjects))), 'online');
             $reference = $this->postJson('/registration', $payload)->assertCreated()->json('reference');
             $details = CourseRegistration::where('reference', $reference)->firstOrFail()->details;
             $this->assertSame($fee, $details['monthly_fee_per_subject']);
@@ -130,6 +133,7 @@ class CourseRegistrationTest extends TestCase
     {
         $this->postJson('/registration', array_replace($this->payload(), [
             'grade' => 'Grade 13', 'subjects' => ['Mathematics (Main)'], 'batches' => [],
+            'attendance_modes' => array_fill_keys(array_keys(array_filter(config('registration.catalogue.Grade 13.courses'), fn ($course) => $course['name'] === 'Mathematics (Main)')), 'face_to_face'),
         ]))->assertCreated();
         $details = CourseRegistration::sole()->details;
         $this->assertSame(1100, $details['monthly_total']);
@@ -143,6 +147,7 @@ class CourseRegistrationTest extends TestCase
         $this->postJson('/registration', array_replace($this->payload(), [
             'grade' => 'Grade 10', 'subjects' => array_column(config('registration.catalogue.Grade 10.courses'), 'name'),
             'batches' => ['mathematics' => 'batch-2', 'additional-mathematics' => 'batch-1', 'accounts' => 'batch-2'],
+            'attendance_modes' => array_fill_keys(array_keys(config('registration.catalogue.Grade 10.courses')), 'online'),
         ]))->assertCreated();
         $details = CourseRegistration::sole()->details;
         $this->assertCount(9, $details['subjects']);
@@ -213,4 +218,33 @@ class CourseRegistrationTest extends TestCase
         $this->assertNull(CourseRegistration::sole()->acknowledged_at);
         Mail::assertNothingSent();
     }
+    public function test_each_selected_subject_requires_one_valid_attendance_mode(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        foreach ([null, [], ['english' => 'online'], ['english' => 'invalid', 'mathematics' => 'online'],
+            ['english' => ['online', 'face_to_face'], 'mathematics' => 'online'],
+            ['english' => 'online', 'mathematics' => 'face_to_face', 'unknown' => 'online']] as $modes) {
+            $this->postJson('/registration', array_replace($this->payload(), ['attendance_modes' => $modes]))
+                ->assertUnprocessable();
+        }
+        $this->assertSame(0, CourseRegistration::count());
+        Mail::assertNothingSent();
+    }
+
+    public function test_attendance_is_saved_per_subject_in_authoritative_timetable_and_email(): void
+    {
+        $payload = $this->payload();
+        $payload['attendance_modes']['french'] = 'online';
+        $this->postJson('/registration', $payload)->assertCreated();
+        $registration = CourseRegistration::sole();
+        $this->assertSame(['english' => 'online', 'mathematics' => 'face_to_face'], $registration->details['attendance_modes']);
+        $this->assertSame('online', $registration->details['timetable'][0]['attendance_mode']);
+        $this->assertSame('face_to_face', $registration->details['timetable'][1]['attendance_mode']);
+        $this->assertSame(['English' => 'Online', 'Mathematics' => 'Face-to-face'], $registration->subjectAttendance());
+        $html = (new RegistrationAcknowledgement($registration))->render();
+        $this->assertStringContainsString('Online', $html);
+        $this->assertStringContainsString('Face-to-face', $html);
+        $this->assertSame(1000, $registration->details['monthly_total']);
+    }
+
 }

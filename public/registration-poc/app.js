@@ -21,6 +21,7 @@ function element(tag, text, className) {
 
 const money = amount => `Rs ${amount.toLocaleString('en-MU')}`;
 const selectedGrade = () => catalogue[form.elements.grade.value];
+const attendanceLabel = mode => ({online: 'Online', face_to_face: 'Face-to-face'}[mode] || 'Choose Online or Face-to-face');
 
 function selectedCourses() {
   const grade = selectedGrade();
@@ -28,7 +29,7 @@ function selectedCourses() {
   const data = new FormData(form);
   const selected = data.getAll('subjects');
   return Object.entries(grade.courses).filter(([, course]) => selected.includes(course.name)).map(([id, course]) => ({
-    id, ...course, option: course.options.length === 1 ? course.options[0]
+    id, ...course, attendanceMode: data.get(`attendance_modes[${id}]`) || null, option: course.options.length === 1 ? course.options[0]
       : course.options.find(option => option.id === data.get(`batches[${id}]`)),
   }));
 }
@@ -47,7 +48,8 @@ function renderCoursePicker() {
   if (renderedGrade) {
     const fields = new FormData(form);
     drafts.set(renderedGrade, {subjects: fields.getAll('subjects'), batches: Object.fromEntries(
-      [...form.querySelectorAll('[data-batch-course]:checked')].map(input => [input.dataset.batchCourse, input.value]))});
+      [...form.querySelectorAll('[data-batch-course]:checked')].map(input => [input.dataset.batchCourse, input.value])),
+      attendance: Object.fromEntries([...form.querySelectorAll('[data-attendance-course]:checked')].map(input => [input.dataset.attendanceCourse, input.value]))});
   }
   renderedGrade = gradeName;
   const grade = selectedGrade();
@@ -71,6 +73,24 @@ function renderCoursePicker() {
     price.append(element('small', '/ month'));
     label.append(checkbox, element('span', course.name.includes('Mathematics') ? '∑' : course.name.slice(0, 2), 'class-monogram'), title, price);
     card.append(label);
+    const attendance = element('fieldset', undefined, 'attendance-picker');
+    attendance.dataset.attendancePicker = id;
+    attendance.append(element('legend', 'How will you attend?'));
+    const modes = element('div', undefined, 'attendance-options');
+    for (const [value, text] of [['online', 'Online'], ['face_to_face', 'Face-to-face']]) {
+      const choice = element('label', undefined, 'attendance-choice');
+      const radio = document.createElement('input');
+      Object.assign(radio, {type: 'radio', name: 'attendance_modes[' + id + ']', value, checked: draft?.attendance?.[id] === value});
+      radio.dataset.attendanceCourse = id;
+      radio.setAttribute('aria-describedby', 'attendance-' + id + '-error');
+      choice.append(radio, element('span', text));
+      modes.append(choice);
+    }
+    const attendanceError = element('small', '', 'error');
+    attendanceError.id = 'attendance-' + id + '-error';
+    attendanceError.setAttribute('role', 'alert');
+    attendance.append(modes, attendanceError);
+    card.append(attendance);
     if (course.options.length > 1) {
       const batches = element('fieldset', undefined, 'batch-picker');
       batches.dataset.batchPicker = id;
@@ -103,6 +123,7 @@ function renderCoursePicker() {
 }
 
 function appendMeetings(target, course) {
+  target.append(element('small', attendanceLabel(course.attendanceMode), 'attendance-summary'));
   if (!course.option) {
     target.append(element('small', 'Choose a batch to complete this timetable.', 'hint'));
     return;
@@ -116,6 +137,8 @@ function renderSelection() {
   for (const checkbox of form.querySelectorAll('[data-course]')) {
     const picker = form.querySelector(`[data-batch-picker="${checkbox.dataset.course}"]`);
     if (picker) { picker.hidden = !checkbox.checked; picker.disabled = !checkbox.checked; }
+    const attendance = form.querySelector(`[data-attendance-picker="${checkbox.dataset.course}"]`);
+    attendance.hidden = !checkbox.checked; attendance.disabled = !checkbox.checked;
   }
   const courses = selectedCourses();
   document.querySelector('#selection-summary').hidden = !courses.length;
@@ -196,6 +219,11 @@ function validateStep() {
     document.querySelector('#subjects-error').textContent = courses.length ? '' : 'Choose at least one subject to continue.';
     if (!courses.length) firstInvalid ||= form.querySelector('[data-course]');
     for (const course of courses) {
+      const modeError = document.querySelector('#attendance-' + course.id + '-error');
+      modeError.textContent = course.attendanceMode ? '' : 'Choose Online or Face-to-face for ' + course.name + '.';
+      const modeInput = form.querySelector('[data-attendance-course="' + course.id + '"]');
+      modeInput.setAttribute('aria-invalid', String(!course.attendanceMode));
+      if (!course.attendanceMode) firstInvalid ||= modeInput;
       const error = document.querySelector(`#batch-${course.id}-error`);
       if (error) error.textContent = course.option ? '' : 'Choose a batch to continue.';
       if (!course.option) firstInvalid ||= form.querySelector(`[data-batch-course="${course.id}"]`);
@@ -214,6 +242,7 @@ form.addEventListener('submit', async event => {
   const payload = {
     studentName: data.student, grade: data.grade, school: data.school, returning: fields.get('returning'),
     subjects: data.courses.map(course => course.name), batches: Object.fromEntries(data.courses.map(course => [course.id, course.option.id])),
+    attendance_modes: Object.fromEntries(data.courses.map(course => [course.id, course.attendanceMode])),
     guardian: data.guardian, phone: data.phone, email: data.email,
     message: fields.get('message').trim(), consent: fields.get('consent') === 'on', updates: fields.get('updates') === 'on',
   };
@@ -281,9 +310,9 @@ form.addEventListener('input', event => {
     if (error) error.textContent = '';
   }
   if (input.name === 'grade') renderCoursePicker();
-  if (input.dataset.course || input.dataset.batchCourse) {
+  if (input.dataset.course || input.dataset.batchCourse || input.dataset.attendanceCourse) {
     document.querySelector('#subjects-error').textContent = '';
-    form.querySelectorAll('[data-batch-picker] .error').forEach(error => { error.textContent = ''; });
+    form.querySelectorAll('[data-batch-picker] .error, [data-attendance-picker] .error').forEach(error => { error.textContent = ''; });
     renderSelection();
   }
 });

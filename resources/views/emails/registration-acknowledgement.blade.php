@@ -26,6 +26,9 @@
 @foreach($registration->details['timetable'] as $meeting)
 <tr><td style="padding:9px 0;border-bottom:1px solid #e5e5e5;font-size:13px;line-height:20px;color:#525252;">
 <strong style="color:#171717;">{{ $meeting['subject'] }}{{ $meeting['batch'] ? ' - '.$meeting['batch'] : '' }}</strong><br>
+@if(isset($meeting['attendance_mode']))
+{{ \App\Models\CourseRegistration::attendanceLabel($meeting['attendance_mode']) }}<br>
+@endif
 {{ $meeting['day'] }} &middot; {{ $meeting['time'] }}<br>
 <span style="color:#171717;">Starts {{ $meeting['start'] }}@if($meeting['note']) &middot; {{ $meeting['note'] }}@endif</span>
 </td></tr>

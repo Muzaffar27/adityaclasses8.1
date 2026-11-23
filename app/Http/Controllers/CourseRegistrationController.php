@@ -25,6 +25,7 @@ class CourseRegistrationController extends Controller
             'subjects' => ['required', 'array', 'min:1', 'max:'.max(1, count($courses))],
             'subjects.*' => ['required', 'string', 'distinct', Rule::in(array_column($courses, 'name'))],
             'batches' => ['nullable', 'array:'.implode(',', array_keys($courses))],
+            'attendance_modes' => ['required', 'array:'.implode(',', array_keys($courses))],
             'guardian' => ['required', 'string', 'max:100'],
             'phone' => ['required', 'string', 'max:22', 'regex:/^[+0-9 ()-]+$/', function ($attribute, $value, $fail) {
                 if (strlen(preg_replace('/\D/', '', $value)) < 7) $fail('Enter a valid contact number.');
@@ -38,21 +39,26 @@ class CourseRegistrationController extends Controller
             $selected = in_array($course['name'], (array) $request->input('subjects'), true);
             $rules['batches.'.$id] = [Rule::requiredIf($selected && count($course['options']) > 1),
                 'nullable', Rule::in(array_column($course['options'], 'id'))];
+            $rules['attendance_modes.'.$id] = [Rule::requiredIf($selected), 'nullable', 'string', Rule::in(['online', 'face_to_face'])];
         }
         $data = $request->validate($rules);
 
         $submission = $data['submission_id'];
         unset($data['submission_id']);
         $choices = $data['batches'] ?? [];
+        $attendance = $data['attendance_modes'];
         $data['batches'] = [];
+        $data['attendance_modes'] = [];
         $data['timetable'] = [];
         foreach ($courses as $id => $course) {
             if (! in_array($course['name'], $data['subjects'], true)) continue;
             $option = count($course['options']) === 1 ? $course['options'][0]
                 : collect($course['options'])->firstWhere('id', $choices[$id]);
             $data['batches'][$id] = $option['id'];
+            $data['attendance_modes'][$id] = $attendance[$id];
             foreach ($option['meetings'] as $meeting) {
-                $data['timetable'][] = array_merge($meeting, ['subject' => $course['name'], 'batch' => $option['label']]);
+                $data['timetable'][] = array_merge($meeting, ['subject' => $course['name'], 'batch' => $option['label'],
+                    'attendance_mode' => $attendance[$id]]);
             }
         }
         // Snapshot authoritative prices and schedules, never a client-provided total.

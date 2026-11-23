@@ -1136,3 +1136,14 @@ body:has(dialog[open]) { overflow: hidden; }
 .batch-picker legend { float:none; width:auto; margin-bottom:0; padding-top:12px; }
 .batch-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
 @media(max-width:410px) { .batch-options { grid-template-columns:1fr; } }
+
+/* Attendance is chosen independently for each selected subject. */
+.attendance-picker { border: 0; margin: 10px 0 0; padding: 0 14px 12px; min-width: 0; }
+.attendance-picker[hidden] { display: none; }
+.attendance-picker legend { color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+.attendance-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.attendance-choice { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--app-text); font-size: 12px; cursor: pointer; }
+.attendance-choice input { width: 17px; height: 17px; accent-color: #818cf8; flex-shrink: 0; margin: 0; }
+.attendance-choice:has(input:checked) { border-color: #818cf8; background: rgba(99,102,241,.14); }
+.attendance-choice:has(input:focus-visible) { outline: 2px solid #a5b4fc; outline-offset: 2px; }
+.attendance-summary { color: var(--app-accent) !important; font-weight: 600; }

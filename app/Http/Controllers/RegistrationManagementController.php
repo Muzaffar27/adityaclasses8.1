@@ -167,6 +167,7 @@ class RegistrationManagementController extends Controller
             'student' => $details['studentName'], 'grade' => $details['grade'],
             'guardian' => $details['guardian'], 'email' => $details['email'],
             'subjects' => $details['subjects'], 'monthly_total' => $details['monthly_total'] ?? null,
+            'subject_attendance' => $registration->subjectAttendance(),
             'registration_status' => $registration->registration_status,
             'payment_status' => $registration->payment_status,
             'email_status' => $registration->acknowledged_at ? 'sent' : 'pending',
@@ -258,6 +259,7 @@ class RegistrationManagementController extends Controller
                     $details = $registration->details;
                     $timetable = collect($details['timetable'] ?? [])->map(fn ($item) => implode(' · ', array_filter([
                         $item['subject'], $item['batch'] ?? null, $item['note'] ?? null,
+                        isset($item['attendance_mode']) ? CourseRegistration::attendanceLabel($item['attendance_mode']) : null,
                         $item['day'], $item['time'], 'Starts '.$item['start'],
                     ])))->implode('; ');
                     fputcsv($stream, array_map($safe, [$registration->reference, $registration->created_at->toIso8601String(),

@@ -388,4 +388,23 @@ class RegistrationManagementTest extends TestCase
             ->assertJsonPath('registration.email_status', 'pending');
         Mail::assertNothingSent();
     }
+    public function test_subject_attendance_is_visible_in_staff_list_details_and_csv_with_legacy_fallback(): void
+    {
+        $new = $this->registration(['subjects' => ['English', 'Mathematics'], 'timetable' => [
+            ['subject' => 'English', 'batch' => null, 'note' => null, 'day' => 'Saturday', 'time' => '1 pm', 'start' => '9 January 2027', 'attendance_mode' => 'online'],
+            ['subject' => 'Mathematics', 'batch' => 'Batch 2', 'note' => null, 'day' => 'Wednesday', 'time' => '3 pm', 'start' => '6 January 2027', 'attendance_mode' => 'face_to_face'],
+        ]]);
+        $legacy = $this->registration();
+        Sanctum::actingAs($this->tutor);
+        $rows = collect($this->getJson('/api/admin/registrations')->assertOk()->json('data'))->keyBy('id');
+        $this->assertSame(['English' => 'Online', 'Mathematics' => 'Face-to-face'], $rows[$new->id]['subject_attendance']);
+        $this->assertSame(['English' => 'Not specified'], $rows[$legacy->id]['subject_attendance']);
+        $this->getJson('/api/admin/registrations/'.$new->id)->assertOk()
+            ->assertJsonPath('subject_attendance.Mathematics', 'Face-to-face');
+        $csv = $this->get('/api/admin/registrations/export')->assertOk()->streamedContent();
+        $this->assertStringContainsString('Online', $csv);
+        $this->assertStringContainsString('Face-to-face', $csv);
+        $this->assertArrayNotHasKey('attendance_modes', $legacy->fresh()->details);
+    }
+
 }

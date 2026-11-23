@@ -23,9 +23,9 @@
   <meta name="twitter:description" content="Register for Grades 7–13. Choose your subjects and view class schedules at Aditya Classes.">
   <meta name="twitter:image" content="{{ asset('registration-poc/registration-share-2027-20261109.jpg') }}">
   <link rel="icon" href="{{ asset('logo.png') }}">
-  <link rel="stylesheet" href="{{ asset('registration-poc/styles.css') }}?v=registration-mail-off-20261104">
+  <link rel="stylesheet" href="{{ asset('registration-poc/styles.css') }}?v=attendance-mode-20261123">
   <script type="application/json" id="registration-catalogue">@json(config('registration.catalogue'))</script>
-  <script src="{{ asset('registration-poc/app.js') }}?v=registration-mail-off-20261104" defer></script>
+  <script src="{{ asset('registration-poc/app.js') }}?v=attendance-mode-20261123" defer></script>
 </head>
 <body>
   <header class="site-header">
