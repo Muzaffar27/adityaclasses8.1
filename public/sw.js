@@ -1,4 +1,4 @@
-const CACHE_VERSION = "aditya-classes-v9-20260920";
+const CACHE_VERSION = "aditya-classes-v13-20261112";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -34,6 +34,13 @@ self.addEventListener("activate", (event) => {
                         .map((cacheName) => caches.delete(cacheName))
                 )
             )
+            .then(async () => {
+                const cache = await caches.open(RUNTIME_CACHE);
+                const requests = await cache.keys();
+                await Promise.all(requests
+                    .filter((request) => isPrivateApiPath(new URL(request.url).pathname))
+                    .map((request) => cache.delete(request)));
+            })
             .then(() => self.clients.claim())
     );
 });
@@ -44,6 +51,13 @@ self.addEventListener("message", (event) => {
     }
 });
 
+function isPrivateApiPath(pathname) {
+    return /^\/api\/admin\/registrations(?:\/|$)/.test(pathname)
+        || /^\/api\/admin\/automatic-test-papers(?:\/|$)/.test(pathname)
+        || /^\/api\/admin\/question-answer-keys(?:\/|$)/.test(pathname)
+        || /^\/api\/(?:admin\/)?test-papers(?:\/|$)/.test(pathname);
+}
+
 self.addEventListener("fetch", (event) => {
     const { request } = event;
 
@@ -52,6 +66,13 @@ self.addEventListener("fetch", (event) => {
     }
 
     const url = new URL(request.url);
+
+    // Registrations and saved papers/diagrams contain private account data.
+    // Never fall back to a cached response, including after a user signs out.
+    if (url.origin === self.location.origin && isPrivateApiPath(url.pathname)) {
+        event.respondWith(fetch(request, { cache: "no-store" }));
+        return;
+    }
 
     if (request.mode === "navigate") {
         event.respondWith(networkFirst(request, "/"));
@@ -95,7 +116,9 @@ async function staleWhileRevalidate(request) {
     const cache = await caches.open(RUNTIME_CACHE);
     const cachedResponse = await cache.match(request);
 
-    const fetchPromise = fetch(request)
+    // Chrome can send cache-only requests when restoring/inspecting a page.
+    // A cold HTTP cache must not prevent the worker from fetching it online.
+    const fetchPromise = fetch(request, request.cache === "only-if-cached" ? { cache: "no-store" } : undefined)
         .then((networkResponse) => {
             if (networkResponse.ok) {
                 cache.put(request, networkResponse.clone());
