@@ -18,6 +18,11 @@ use Illuminate\Support\Facades\Route;
 
 //Auth
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/admin/students/{student}/automatic-test-papers', [\App\Http\Controllers\AutomaticAssessmentController::class, 'enrol'])->whereNumber('student');
+    Route::get('/admin/automatic-test-papers', [\App\Http\Controllers\AutomaticAssessmentController::class, 'index']);
+    Route::put('/admin/automatic-test-papers/{enrolment}', [\App\Http\Controllers\AutomaticAssessmentController::class, 'update'])->whereNumber('enrolment');
+    Route::post('/admin/automatic-test-papers/batches/{batch}/cancel', [\App\Http\Controllers\AutomaticAssessmentController::class, 'cancel'])->whereUuid('batch');
+    Route::post('/admin/automatic-test-papers/{enrolment}/reconcile', [\App\Http\Controllers\AutomaticAssessmentController::class, 'reconcile'])->whereNumber('enrolment')->middleware('throttle:10,1,automatic-test-paper-reconcile:');
     Route::get('/admin/question-answer-keys', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'index']);
     Route::get('/admin/question-answer-keys/questions/{question}', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'show'])->where('question', '[a-f0-9]{64}');
     Route::post('/admin/question-answer-keys/questions/{question}/generate', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'generate'])->where('question', '[a-f0-9]{64}')->middleware('throttle:20,1,answer-key-generate:');
