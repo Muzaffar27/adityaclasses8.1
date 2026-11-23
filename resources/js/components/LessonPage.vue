@@ -304,6 +304,7 @@ import LessonProgressStatus from "./Lesson/LessonProgressStatus.vue";
 import LessonCompletionCheckbox from "./Lesson/LessonCompletionCheckbox.vue";
 import { showAlert } from '../composables/dialog';
 import { getVimeoPlayerUrl } from "../utils/vimeo";
+import { createPlaybackDiagnostics } from "../utils/playbackDiagnostics";
 import { PlayIcon, LockClosedIcon, ChevronRightIcon, CheckCircleIcon, XMarkIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();
@@ -324,6 +325,8 @@ const openSubTopics = ref({});
 const isPlaying = ref(false);
 const videoHistoryEntryOpen = ref(false);
 const searchQuery = ref('');
+let videoDiagnostics = { record() {}, dispose() {} };
+let diagnosticTimer, playerReadySeen = false, playbackSeen = false;
 let activeVimeoFrame = null;
 let resumeApplied = false;
 let progressLoadPromise = Promise.resolve(0);
@@ -385,6 +388,8 @@ onBeforeUnmount(() => {
     document.removeEventListener('fullscreenchange', handleVideoFullscreenChange);
     document.removeEventListener('webkitfullscreenchange', handleVideoFullscreenChange);
     releaseVideoOrientation();
+    clearTimeout(diagnosticTimer);
+    videoDiagnostics.dispose();
 });
 
 async function fetchLessons() {
@@ -486,16 +491,18 @@ function onVideoLoaded(event) {
 
     if (!event?.target || !selectedLesson.value) return;
 
+    videoDiagnostics.record('iframe-loaded');
     activeVimeoFrame = event.target;
     subscribeToVimeoEvents();
 }
 
 function postToVimeo(message) {
+    if (['ping', 'setCurrentTime', 'getCurrentTime', 'getPaused', 'getDuration'].includes(message.method)) videoDiagnostics.record('player-command', { method: message.method, value: message.value });
     activeVimeoFrame?.contentWindow?.postMessage(message, 'https://player.vimeo.com');
 }
 
 function subscribeToVimeoEvents() {
-    ['play', 'timeupdate', 'pause', 'ended'].forEach((eventName) => {
+    ['play', 'timeupdate', 'pause', 'ended', 'error', 'bufferstart', 'bufferend'].forEach((eventName) => {
         postToVimeo({ method: 'addEventListener', value: eventName });
     });
     postToVimeo({ method: 'ping' });
@@ -517,9 +524,13 @@ async function handleVimeoMessage(event) {
 
     if (!message || typeof message !== 'object') return;
 
+    if (message.event === 'error') videoDiagnostics.record('player-error', { name: message.data?.name, message: message.data?.message, method: message.data?.method });
+    if (['bufferstart', 'bufferend'].includes(message.event)) videoDiagnostics.record(message.event);
+    if (['setCurrentTime', 'getCurrentTime', 'getPaused', 'getDuration'].includes(message.method)) videoDiagnostics.record('player-reply', { method: message.method, value: message.value });
     if (message.event === 'ready' || message.method === 'ping') {
+        if (!playerReadySeen) { playerReadySeen = true; videoDiagnostics.record('player-ready'); }
         isVideoLoading.value = false;
-        ['play', 'timeupdate', 'pause', 'ended'].forEach((eventName) => {
+        ['play', 'timeupdate', 'pause', 'ended', 'error', 'bufferstart', 'bufferend'].forEach((eventName) => {
             postToVimeo({ method: 'addEventListener', value: eventName });
         });
 
@@ -536,13 +547,16 @@ async function handleVimeoMessage(event) {
     }
 
     if (message.event === 'play') {
+        videoDiagnostics.record('player-play', { seconds: message.data?.seconds, duration: message.data?.duration });
         isPlaying.value = true;
         latestPlayback = { seconds: Number(message.data?.seconds) || latestPlayback.seconds, duration: Number(message.data?.duration) || latestPlayback.duration };
         void saveCurrentProgress(true);
     }
     if (message.event === 'timeupdate') {
+        if (!playbackSeen) { playbackSeen = true; videoDiagnostics.record('first-playback', { seconds: message.data?.seconds, duration: message.data?.duration }); }
         handlePlaybackUpdate(message.data || {});
     }
+    if (['pause', 'ended'].includes(message.event)) videoDiagnostics.record(`player-${message.event}`, { seconds: message.data?.seconds, duration: message.data?.duration });
     if (message.event === 'pause') handlePlaybackPause(message.data || latestPlayback);
     if (message.event === 'ended') handlePlaybackEnded(message.data || latestPlayback);
 }
@@ -711,14 +725,27 @@ async function markVideoViewed(lessonId, mode) {
 
 async function loadSavedProgress(lessonId, mode) {
     if (!lessonId) return 0;
+    videoDiagnostics.dispose();
+    clearTimeout(diagnosticTimer);
+    videoDiagnostics = createPlaybackDiagnostics({ lessonId, videoType: mode });
+    const debug = videoDiagnostics;
+    playerReadySeen = false; playbackSeen = false;
+    debug.record('resume-start', { navigationType: performance.getEntriesByType('navigation')[0]?.type, online: navigator.onLine, controlled: Boolean(navigator.serviceWorker?.controller), visibility: document.visibilityState });
+    if (debug.enabled) diagnosticTimer = setTimeout(() => {
+        debug.record('checkpoint', { playbackSeen, readySeen: playerReadySeen, online: navigator.onLine, visibility: document.visibilityState });
+        if (activeVimeoFrame) ['getCurrentTime', 'getPaused', 'getDuration'].forEach(method => postToVimeo({ method }));
+    }, 15000);
+    debug.record('progress-load-start');
 
     try {
         const { data } = await api.get(`/lesson-progress/${lessonId}`, {
             params: { video_type: mode },
         });
         applyLessonProgress(lessonId, data.progress);
+        debug.record('progress-loaded', { httpStatus: 200, seconds: Number(data.position_seconds) || 0, duration: data.duration_seconds, completed: Boolean(data.completed) });
         return data.completed ? 0 : Number(data.position_seconds) || 0;
     } catch (error) {
+        debug.record('progress-load-failed', { httpStatus: error.response?.status || 0, name: error.code, message: error.response?.data?.message || error.message });
         if (![403, 503].includes(error.response?.status)) {
             console.warn('Could not load video progress', error);
         }
@@ -773,6 +800,7 @@ async function saveCurrentProgress(force = false) {
 
 async function persistProgress({ lessonId, mode, seconds, duration, session, active }) {
 
+    const debug = videoDiagnostics;
     progressSaveInFlight = true;
     lastSavedSecond = seconds;
 
@@ -784,8 +812,10 @@ async function persistProgress({ lessonId, mode, seconds, duration, session, act
             activity_session_id: session,
             activity_active: active,
         });
+        debug.record('progress-saved', { seconds, duration, completed: Boolean(data.completed), method: `${mode}:${lessonId}` });
         applyLessonProgress(lessonId, data.progress);
     } catch (error) {
+        debug.record('progress-save-failed', { httpStatus: error.response?.status || 0, seconds, duration, name: error.code, message: error.response?.data?.message || error.message, method: `${mode}:${lessonId}` });
         if (![403, 503].includes(error.response?.status)) {
             console.warn('Could not save video progress', error);
         }
@@ -923,6 +953,9 @@ function clearSelectedLesson() {
     isPlaying.value = false;
     void saveCurrentProgress(true);
     detachVimeoPlayer();
+    videoDiagnostics.record('player-closed');
+    clearTimeout(diagnosticTimer);
+    videoDiagnostics.dispose();
     selectedLesson.value = null;
     videoMode.value = 'lesson';
     isVideoLoading.value = false;
