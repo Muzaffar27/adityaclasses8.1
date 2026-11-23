@@ -18,6 +18,12 @@ use Illuminate\Support\Facades\Route;
 
 //Auth
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/question-answer-keys', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'index']);
+    Route::get('/admin/question-answer-keys/questions/{question}', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'show'])->where('question', '[a-f0-9]{64}');
+    Route::post('/admin/question-answer-keys/questions/{question}/generate', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'generate'])->where('question', '[a-f0-9]{64}')->middleware('throttle:20,1,answer-key-generate:');
+    Route::post('/admin/question-answer-keys/questions/{question}', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'store'])->where('question', '[a-f0-9]{64}');
+    Route::post('/admin/question-answer-keys/{key}/approve', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'approve'])->whereUuid('key');
+    Route::post('/admin/question-answer-keys/{key}/revoke', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'revoke'])->whereUuid('key');
     Route::get('/admin/registrations/export', [\App\Http\Controllers\RegistrationManagementController::class, 'export']);
     Route::post('/admin/registrations/deletion-preview', [\App\Http\Controllers\RegistrationManagementController::class, 'previewDeletion'])->middleware('throttle:20,1,registration-delete-preview:');
     Route::post('/admin/registrations/deletion-review', [\App\Http\Controllers\RegistrationManagementController::class, 'deletionReview']);
