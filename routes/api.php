@@ -18,37 +18,6 @@ use Illuminate\Support\Facades\Route;
 
 //Auth
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/admin/students/{student}/automatic-test-papers', [\App\Http\Controllers\AutomaticAssessmentController::class, 'enrol'])->whereNumber('student');
-    Route::get('/admin/automatic-test-papers', [\App\Http\Controllers\AutomaticAssessmentController::class, 'index']);
-    Route::put('/admin/automatic-test-papers/{enrolment}', [\App\Http\Controllers\AutomaticAssessmentController::class, 'update'])->whereNumber('enrolment');
-    Route::post('/admin/automatic-test-papers/batches/{batch}/cancel', [\App\Http\Controllers\AutomaticAssessmentController::class, 'cancel'])->whereUuid('batch');
-    Route::post('/admin/automatic-test-papers/{enrolment}/reconcile', [\App\Http\Controllers\AutomaticAssessmentController::class, 'reconcile'])->whereNumber('enrolment')->middleware('throttle:10,1,automatic-test-paper-reconcile:');
-    Route::get('/admin/question-answer-keys', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'index']);
-    Route::get('/admin/question-answer-keys/questions/{question}', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'show'])->where('question', '[a-f0-9]{64}');
-    Route::post('/admin/question-answer-keys/questions/{question}/generate', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'generate'])->where('question', '[a-f0-9]{64}')->middleware('throttle:20,1,answer-key-generate:');
-    Route::post('/admin/question-answer-keys/questions/{question}', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'store'])->where('question', '[a-f0-9]{64}');
-    Route::post('/admin/question-answer-keys/{key}/approve', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'approve'])->whereUuid('key');
-    Route::post('/admin/question-answer-keys/{key}/revoke', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'revoke'])->whereUuid('key');
-    Route::get('/test-papers', [\App\Http\Controllers\TestPaperController::class, 'index']);
-    Route::get('/test-papers/attention', [\App\Http\Controllers\TestPaperController::class, 'attention']);
-    Route::get('/admin/test-papers', [\App\Http\Controllers\TestPaperController::class, 'adminIndex']);
-    Route::post('/admin/test-papers', [\App\Http\Controllers\TestPaperController::class, 'store'])->middleware('throttle:10,1,saved-test-paper-create:');
-    Route::get('/test-papers/{paper}', [\App\Http\Controllers\TestPaperController::class, 'show'])->whereUuid('paper');
-    Route::post('/test-papers/{paper}/start', [\App\Http\Controllers\TestPaperController::class, 'start'])->whereUuid('paper');
-    Route::put('/test-papers/{paper}/answers', [\App\Http\Controllers\TestPaperController::class, 'saveAnswers'])->whereUuid('paper');
-    Route::post('/test-papers/{paper}/submit', [\App\Http\Controllers\TestPaperController::class, 'submit'])->whereUuid('paper');
-    Route::post('/admin/test-papers/{paper}/cancel', [\App\Http\Controllers\TestPaperController::class, 'cancel'])->whereUuid('paper');
-    Route::post('/admin/test-papers/{paper}/replace', [\App\Http\Controllers\TestPaperController::class, 'replace'])->whereUuid('paper')->middleware('throttle:10,1,saved-test-paper-replace:');
-    Route::get('/test-papers/{paper}/diagrams/{hash}', [\App\Http\Controllers\TestPaperController::class, 'diagram'])->whereUuid('paper')->where('hash', '[a-f0-9]{64}');
-    Route::get('/admin/registrations/export', [\App\Http\Controllers\RegistrationManagementController::class, 'export']);
-    Route::post('/admin/registrations/deletion-preview', [\App\Http\Controllers\RegistrationManagementController::class, 'previewDeletion'])->middleware('throttle:20,1,registration-delete-preview:');
-    Route::post('/admin/registrations/deletion-review', [\App\Http\Controllers\RegistrationManagementController::class, 'deletionReview']);
-    Route::delete('/admin/registrations', [\App\Http\Controllers\RegistrationManagementController::class, 'deleteRegistrations'])->middleware('throttle:10,1,registration-delete:');
-    Route::get('/admin/registrations', [\App\Http\Controllers\RegistrationManagementController::class, 'index']);
-    Route::get('/admin/registrations/{id}', [\App\Http\Controllers\RegistrationManagementController::class, 'show'])->whereNumber('id');
-    Route::put('/admin/registrations/{id}', [\App\Http\Controllers\RegistrationManagementController::class, 'update'])->whereNumber('id');
-    Route::post('/admin/registrations/{id}/resend-acknowledgement', [\App\Http\Controllers\RegistrationManagementController::class, 'resendAcknowledgement'])
-        ->whereNumber('id')->middleware('throttle:6,1,registration-mail:');
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
 });
@@ -154,6 +123,37 @@ Route::post('/client-error', function (Request $request) {
 
 //User routes
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/admin/students/{student}/automatic-test-papers', [\App\Http\Controllers\AutomaticAssessmentController::class, 'enrol'])->whereNumber('student');
+    Route::get('/admin/automatic-test-papers', [\App\Http\Controllers\AutomaticAssessmentController::class, 'index']);
+    Route::put('/admin/automatic-test-papers/{enrolment}', [\App\Http\Controllers\AutomaticAssessmentController::class, 'update'])->whereNumber('enrolment');
+    Route::post('/admin/automatic-test-papers/batches/{batch}/cancel', [\App\Http\Controllers\AutomaticAssessmentController::class, 'cancel'])->whereUuid('batch');
+    Route::post('/admin/automatic-test-papers/{enrolment}/reconcile', [\App\Http\Controllers\AutomaticAssessmentController::class, 'reconcile'])->whereNumber('enrolment')->middleware('throttle:10,1,automatic-test-paper-reconcile:');
+    Route::get('/admin/question-answer-keys', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'index']);
+    Route::get('/admin/question-answer-keys/questions/{question}', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'show'])->where('question', '[a-f0-9]{64}');
+    Route::post('/admin/question-answer-keys/questions/{question}/generate', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'generate'])->where('question', '[a-f0-9]{64}')->middleware('throttle:20,1,answer-key-generate:');
+    Route::post('/admin/question-answer-keys/questions/{question}', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'store'])->where('question', '[a-f0-9]{64}');
+    Route::post('/admin/question-answer-keys/{key}/approve', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'approve'])->whereUuid('key');
+    Route::post('/admin/question-answer-keys/{key}/revoke', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'revoke'])->whereUuid('key');
+    Route::get('/test-papers', [\App\Http\Controllers\TestPaperController::class, 'index']);
+    Route::get('/test-papers/attention', [\App\Http\Controllers\TestPaperController::class, 'attention']);
+    Route::get('/admin/test-papers', [\App\Http\Controllers\TestPaperController::class, 'adminIndex']);
+    Route::post('/admin/test-papers', [\App\Http\Controllers\TestPaperController::class, 'store'])->middleware('throttle:10,1,saved-test-paper-create:');
+    Route::get('/test-papers/{paper}', [\App\Http\Controllers\TestPaperController::class, 'show'])->whereUuid('paper');
+    Route::post('/test-papers/{paper}/start', [\App\Http\Controllers\TestPaperController::class, 'start'])->whereUuid('paper');
+    Route::put('/test-papers/{paper}/answers', [\App\Http\Controllers\TestPaperController::class, 'saveAnswers'])->whereUuid('paper');
+    Route::post('/test-papers/{paper}/submit', [\App\Http\Controllers\TestPaperController::class, 'submit'])->whereUuid('paper');
+    Route::post('/admin/test-papers/{paper}/cancel', [\App\Http\Controllers\TestPaperController::class, 'cancel'])->whereUuid('paper');
+    Route::post('/admin/test-papers/{paper}/replace', [\App\Http\Controllers\TestPaperController::class, 'replace'])->whereUuid('paper')->middleware('throttle:10,1,saved-test-paper-replace:');
+    Route::get('/test-papers/{paper}/diagrams/{hash}', [\App\Http\Controllers\TestPaperController::class, 'diagram'])->whereUuid('paper')->where('hash', '[a-f0-9]{64}');
+    Route::get('/admin/registrations/export', [\App\Http\Controllers\RegistrationManagementController::class, 'export']);
+    Route::post('/admin/registrations/deletion-preview', [\App\Http\Controllers\RegistrationManagementController::class, 'previewDeletion'])->middleware('throttle:20,1,registration-delete-preview:');
+    Route::post('/admin/registrations/deletion-review', [\App\Http\Controllers\RegistrationManagementController::class, 'deletionReview']);
+    Route::delete('/admin/registrations', [\App\Http\Controllers\RegistrationManagementController::class, 'deleteRegistrations'])->middleware('throttle:10,1,registration-delete:');
+    Route::get('/admin/registrations', [\App\Http\Controllers\RegistrationManagementController::class, 'index']);
+    Route::get('/admin/registrations/{id}', [\App\Http\Controllers\RegistrationManagementController::class, 'show'])->whereNumber('id');
+    Route::put('/admin/registrations/{id}', [\App\Http\Controllers\RegistrationManagementController::class, 'update'])->whereNumber('id');
+    Route::post('/admin/registrations/{id}/resend-acknowledgement', [\App\Http\Controllers\RegistrationManagementController::class, 'resendAcknowledgement'])
+        ->whereNumber('id')->middleware('throttle:6,1,registration-mail:');
     Route::get('/getStudents', [UserController::class, 'getStudents']);
     Route::put('/students/{student}/profile', [UserController::class, 'updateStudentProfile']);
     Route::post('/students/{student}/reset-password', [UserController::class, 'resetPassword']);

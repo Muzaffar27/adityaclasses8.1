@@ -20,6 +20,7 @@ This is a source-control delivery only. Do not deploy this development branch wh
 12. Show pending test papers on the dashboard. Requires saved papers and the student attention API.
 13. Refresh the development frontend build. This build matches the complete development source, including all batches above.
 14. Document development batches and local housekeeping. Keeps local tutor screenshots out of Git.
+15. Keep feature routes together. Places the feature endpoints beside the existing signed-in user APIs, retaining their authentication and endpoint middleware.
 
 Shared API and frontend route files are staged by feature. These are ordered review commits, not independent production releases. Frontend source commits share the final development build in batch 13; before releasing any subset, integrate its dependencies onto the verified production baseline and rebuild that resulting source tree.
 
