@@ -8,14 +8,14 @@ use App\Models\LessonAccess;
 use App\Models\LessonProgress;
 use App\Models\Subject;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\UsesIsolatedLearningDatabase;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class LessonProgressTest extends TestCase
 {
-    use RefreshDatabase;
+    use UsesIsolatedLearningDatabase;
 
     private User $student;
     private Lesson $lesson;
@@ -24,6 +24,7 @@ class LessonProgressTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->prepareLearningDatabase(true);
         $this->student = User::factory()->create(['role' => 'student']);
         $this->lesson = Lesson::create([
             'grade_id' => Grade::create(['name' => 'Grade 10'])->id,
@@ -38,6 +39,12 @@ class LessonProgressTest extends TestCase
             'expires_at' => now()->addMonth(),
         ]);
         Sanctum::actingAs($this->student);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->closeLearningDatabase();
+        parent::tearDown();
     }
 
     private function saveProgress(float $position, ?float $duration = 100, string $type = 'lesson')

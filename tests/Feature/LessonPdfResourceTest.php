@@ -7,7 +7,7 @@ use App\Models\Lesson;
 use App\Models\LessonAccess;
 use App\Models\Subject;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\UsesIsolatedLearningDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
@@ -15,7 +15,19 @@ use Tests\TestCase;
 
 class LessonPdfResourceTest extends TestCase
 {
-    use RefreshDatabase;
+    use UsesIsolatedLearningDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->prepareLearningDatabase();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->closeLearningDatabase();
+        parent::tearDown();
+    }
 
     public function test_tutor_can_manage_both_pdfs_and_student_with_course_access_can_view_them(): void
     {

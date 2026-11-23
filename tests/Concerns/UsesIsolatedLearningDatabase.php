@@ -26,6 +26,24 @@ trait UsesIsolatedLearningDatabase
             '2026_09_26_000002_create_lesson_progress_table.php',
             '2026_10_01_000001_add_video_source_to_lesson_progress_table.php',
         ] as $migration) {
+            if ($migration === '2026_03_24_163323_create_lessons_table.php') {
+                // Match the current schema directly; SQLite cannot run the historical nullable change without DBAL.
+                Schema::create('lessons', function (Blueprint $table) {
+                    $table->id();
+                    $table->foreignId('grade_id')->constrained();
+                    $table->foreignId('subject_id')->constrained();
+                    $table->string('topic');
+                    $table->string('title');
+                    $table->integer('part_number')->nullable();
+                    $table->text('description')->nullable();
+                    $table->text('vimeo_url')->nullable();
+                    $table->string('duration')->nullable();
+                    $table->string('pdf_resource')->nullable();
+                    $table->boolean('is_active')->default(true);
+                    $table->timestamps();
+                });
+                continue;
+            }
             if ($migration === '2026_09_21_000001_create_student_profiles_table.php') {
                 Schema::table('users', fn (Blueprint $table) => $table->string('role')->default('student'));
             }
