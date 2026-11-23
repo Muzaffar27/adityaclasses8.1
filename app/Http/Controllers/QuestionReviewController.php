@@ -35,6 +35,15 @@ class QuestionReviewController extends Controller
         $allIssues = collect($service->currentExtractionIssues());
         $issues = $allIssues->filter(fn ($row) => $matches($row['grade_id'], $row['subject_id'], $row['origins']));
         $reviews = QuestionReview::orderBy('created_at')->orderBy('id')->get();
+        // Global sidebar totals are independent of review filters and starter-bank scope.
+        $corrections = Schema::hasTable('question_corrections')
+            ? \App\Models\QuestionCorrection::where('status', '!=', 'resolved')->get(['question_id', 'replacement_id']) : collect();
+        $flaggedIds = $corrections->pluck('question_id')->merge($corrections->pluck('replacement_id'))->filter()->unique();
+        $notificationCounts = [
+            'important' => $corrections->count() + $reviews->filter(fn ($row) => $row->status === 'needs_attention'
+                || ($row->status === 'needs_correction' && isset($current[$row->id])))->whereNotIn('id', $flaggedIds)->count(),
+            'optional' => $reviews->filter(fn ($row) => isset($current[$row->id]))->whereIn('status', ['pending', 'review_again'])->whereNotIn('id', $flaggedIds)->count(),
+        ];
         $selection = app(StarterQuestionReviewService::class)->select($current, $reviews);
         $rows = $reviews->filter(function ($row) use ($current, $matches) {
             if (!isset($current[$row->id]) && !in_array($row->status, ['reprocessing', 'needs_attention'], true)) return false;
@@ -64,7 +73,7 @@ class QuestionReviewController extends Controller
         ])->values();
         $lessons = collect($current)->concat($allIssues)->flatMap(fn ($q) => array_map(fn ($origin) => ['id' => $origin['lesson_id'], 'title' => $origin['lesson_title'],
             'grade_id' => $q['grade_id'], 'subject_id' => $q['subject_id'], 'topic' => $origin['topic']], $q['origins']))->unique('id')->values();
-        return response()->json(['data' => $items, 'counts' => $counts, 'total' => $rows->count(), 'page' => $page,
+        return response()->json(['data' => $items, 'counts' => $counts, 'notification_counts' => $notificationCounts, 'total' => $rows->count(), 'page' => $page,
             'last_page' => max(1, (int) ceil($rows->count() / 20)), 'grades' => Grade::select('id', 'name')->get(),
             'subjects' => Subject::select('id', 'name')->get(), 'lessons' => $lessons, 'selection' => $selection]);
     }

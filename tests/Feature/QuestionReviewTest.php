@@ -62,6 +62,36 @@ class QuestionReviewTest extends TestCase
 
     private function queue(): void { $this->getJson('/api/admin/question-reviews')->assertOk(); }
 
+    public function test_sidebar_counts_separate_optional_approvals_from_corrections_until_resolved(): void
+    {
+        $url = '/api/admin/question-reviews';
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 1]);
+        $this->flagQuestion();
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 1, 'optional' => 0]);
+        $saved = app(QuestionCorrectionService::class)->correct($this->fingerprint, 2, ['text' => 'Corrected question'], auth()->id());
+        // Its pending replacement still belongs to the red correction, not both badges.
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 1, 'optional' => 0]);
+        $this->putJson('/api/admin/question-reviews/'.$saved->id, ['approved' => true, 'revision' => $saved->revision])->assertOk();
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 0]);
+    }
+
+    public function test_sidebar_counts_are_global_and_do_not_use_the_starter_shortlist(): void
+    {
+        $this->pdfBatch(10);
+        $this->getJson('/api/admin/question-reviews?review_scope=starter')->assertOk()
+            ->assertJsonPath('counts.pending', 5)->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 10]);
+        $this->getJson('/api/admin/question-reviews?grade_id=999&topic=Other')->assertOk()
+            ->assertJsonPath('total', 0)->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 10]);
+    }
+
+    public function test_sidebar_needs_attention_is_red_instead_of_optional_yellow(): void
+    {
+        $this->queue();
+        QuestionReview::findOrFail($this->fingerprint)->update(['status' => 'needs_attention']);
+        $this->getJson('/api/admin/question-reviews')->assertOk()
+            ->assertJsonPath('notification_counts', ['important' => 1, 'optional' => 0]);
+    }
+
     public function test_topic_picker_filters_both_review_modes_and_reports_progress(): void
     {
         $this->getJson('/api/admin/question-reviews?topic=Fractions')->assertOk()
