@@ -15,6 +15,36 @@ use Illuminate\Validation\ValidationException;
 
 class LessonProgressController extends Controller
 {
+    public function complete(Request $request, Lesson $lesson): JsonResponse
+    {
+        $this->ensureReadyAndAccessible($request, $lesson);
+        $input = $request->validate(['video_url' => ['required', 'string', 'max:10000'], 'video_type' => ['sometimes', 'in:lesson,answer']]);
+        DB::transaction(function () use ($request, $lesson, $input) {
+            $current = Lesson::whereKey($lesson->id)->lockForUpdate()->firstOrFail();
+            $videoType = $input['video_type'] ?? 'lesson';
+            $videoField = $videoType === 'answer' ? 'answer_vimeo_url' : 'vimeo_url';
+            abort_unless($current->is_active && $current->{$videoField}, 422, 'This video is not available.');
+            $service = app(LessonProgressService::class);
+            $source = $service->videoSource($current->{$videoField});
+            abort_unless(hash_equals($source, (string) $service->videoSource($input['video_url'])), 409, 'This video changed. Refresh the lessons and try again.');
+            $record = LessonProgress::firstOrCreate(['user_id' => $request->user()->id,
+                'lesson_id' => $current->id, 'video_type' => $videoType]);
+            $record = LessonProgress::whereKey($record->id)->lockForUpdate()->firstOrFail();
+            if (!hash_equals($source, (string) $record->video_source)) {
+                $record->video_source = $source;
+                $record->position_seconds = 0;
+                $record->duration_seconds = null;
+                $record->video_started_at = now();
+                $record->completed_at = null;
+                app(StudentLearningActivityService::class)->recordActivity($record, [], true);
+            }
+            // An explicit self-completion never fabricates playback or learning activity.
+            $record->completed_at ??= now();
+            $record->save();
+        });
+        return response()->json(['saved' => true, 'progress' => app(LessonProgressService::class)->forUser($lesson, $request->user()->id)]);
+    }
+
     public function show(Request $request, Lesson $lesson): JsonResponse
     {
         $this->ensureReadyAndAccessible($request, $lesson);
