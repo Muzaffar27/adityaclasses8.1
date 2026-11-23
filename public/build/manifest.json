@@ -1,21 +1,59 @@
 {
-  "_ArrowRightIcon-C1jzKldr.js": {
-    "file": "assets/ArrowRightIcon-C1jzKldr.js",
+  "_ArrowRightIcon-CsvKORTf.js": {
+    "file": "assets/ArrowRightIcon-CsvKORTf.js",
     "name": "ArrowRightIcon",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_QuestionReviewPanel-!~{00e}~.js": {
-    "file": "assets/QuestionReviewPanel-B3MMOSW6.css",
-    "src": "_QuestionReviewPanel-!~{00e}~.js"
+  "_MathsAnswerEditor-!~{00f}~.js": {
+    "file": "assets/MathsAnswerEditor-DnfbetRZ.css",
+    "src": "_MathsAnswerEditor-!~{00f}~.js"
   },
-  "_QuestionReviewPanel-lKZ_6MW-.js": {
-    "file": "assets/QuestionReviewPanel-lKZ_6MW-.js",
+  "_MathsAnswerEditor-BTX7qNXK.js": {
+    "file": "assets/MathsAnswerEditor-BTX7qNXK.js",
+    "name": "MathsAnswerEditor",
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/MathsAnswerEditor-DnfbetRZ.css"
+    ],
+    "assets": [
+      "assets/KaTeX_AMS-Regular-BQhdFMY1.woff2",
+      "assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2",
+      "assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2",
+      "assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2",
+      "assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2",
+      "assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2",
+      "assets/KaTeX_Main-Bold-Cx986IdX.woff2",
+      "assets/KaTeX_Main-Italic-NWA7e6Wa.woff2",
+      "assets/KaTeX_Main-Regular-B22Nviop.woff2",
+      "assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2",
+      "assets/KaTeX_Math-Italic-t53AETM-.woff2",
+      "assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2",
+      "assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2",
+      "assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2",
+      "assets/KaTeX_Script-Regular-D3wIWfF6.woff2",
+      "assets/KaTeX_Size1-Regular-mCD8mA8B.woff2",
+      "assets/KaTeX_Size2-Regular-Dy4dx90m.woff2",
+      "assets/KaTeX_Size3-Regular-gV2CO0n9.woff2",
+      "assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2",
+      "assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2"
+    ]
+  },
+  "_QuestionReviewPanel-!~{00i}~.js": {
+    "file": "assets/QuestionReviewPanel-D3R8ZRRA.css",
+    "src": "_QuestionReviewPanel-!~{00i}~.js"
+  },
+  "_QuestionReviewPanel-41x25qHE.js": {
+    "file": "assets/QuestionReviewPanel-41x25qHE.js",
     "name": "QuestionReviewPanel",
     "isDynamicEntry": true,
     "imports": [
-      "resources/js/app.js"
+      "resources/js/app.js",
+      "_questionReviewSaves-h2kYgMzo.js",
+      "_StructuredQuestion-DA_A7U5C.js"
     ],
     "dynamicImports": [
       "resources/js/components/tutor/QuestionCorrectionPanel.vue",
@@ -24,12 +62,113 @@
       "resources/js/components/tutor/QuestionDiagrams.vue"
     ],
     "css": [
-      "assets/QuestionReviewPanel-B3MMOSW6.css"
+      "assets/QuestionReviewPanel-D3R8ZRRA.css"
+    ]
+  },
+  "_StructuredQuestion-!~{00e}~.js": {
+    "file": "assets/StructuredQuestion-BNL6GjEe.css",
+    "src": "_StructuredQuestion-!~{00e}~.js"
+  },
+  "_StructuredQuestion-DA_A7U5C.js": {
+    "file": "assets/StructuredQuestion-DA_A7U5C.js",
+    "name": "StructuredQuestion",
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/StructuredQuestion-BNL6GjEe.css"
     ]
   },
   "_packagePricing-HJU3Ar2W.js": {
     "file": "assets/packagePricing-HJU3Ar2W.js",
     "name": "packagePricing"
+  },
+  "_questionReviewSaves-h2kYgMzo.js": {
+    "file": "assets/questionReviewSaves-h2kYgMzo.js",
+    "name": "questionReviewSaves",
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "node_modules/mathlive/fonts/KaTeX_AMS-Regular.woff2": {
+    "file": "assets/KaTeX_AMS-Regular-BQhdFMY1.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_AMS-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Caligraphic-Bold.woff2": {
+    "file": "assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Caligraphic-Bold.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Caligraphic-Regular.woff2": {
+    "file": "assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Caligraphic-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Fraktur-Bold.woff2": {
+    "file": "assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Fraktur-Bold.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Fraktur-Regular.woff2": {
+    "file": "assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Fraktur-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Main-Bold.woff2": {
+    "file": "assets/KaTeX_Main-Bold-Cx986IdX.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Main-Bold.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Main-BoldItalic.woff2": {
+    "file": "assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Main-BoldItalic.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Main-Italic.woff2": {
+    "file": "assets/KaTeX_Main-Italic-NWA7e6Wa.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Main-Italic.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Main-Regular.woff2": {
+    "file": "assets/KaTeX_Main-Regular-B22Nviop.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Main-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Math-BoldItalic.woff2": {
+    "file": "assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Math-BoldItalic.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Math-Italic.woff2": {
+    "file": "assets/KaTeX_Math-Italic-t53AETM-.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Math-Italic.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_SansSerif-Bold.woff2": {
+    "file": "assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_SansSerif-Bold.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_SansSerif-Italic.woff2": {
+    "file": "assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_SansSerif-Italic.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_SansSerif-Regular.woff2": {
+    "file": "assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_SansSerif-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Script-Regular.woff2": {
+    "file": "assets/KaTeX_Script-Regular-D3wIWfF6.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Script-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Size1-Regular.woff2": {
+    "file": "assets/KaTeX_Size1-Regular-mCD8mA8B.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Size1-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Size2-Regular.woff2": {
+    "file": "assets/KaTeX_Size2-Regular-Dy4dx90m.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Size2-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Size3-Regular.woff2": {
+    "file": "assets/KaTeX_Size3-Regular-gV2CO0n9.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Size3-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Size4-Regular.woff2": {
+    "file": "assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Size4-Regular.woff2"
+  },
+  "node_modules/mathlive/fonts/KaTeX_Typewriter-Regular.woff2": {
+    "file": "assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2",
+    "src": "node_modules/mathlive/fonts/KaTeX_Typewriter-Regular.woff2"
   },
   "node_modules/pdfjs-dist/build/pdf.mjs": {
     "file": "assets/pdf-CHhNo-mi.js",
@@ -42,13 +181,16 @@
     "src": "node_modules/pdfjs-dist/build/pdf.worker.min.mjs"
   },
   "resources/js/app.js": {
-    "file": "assets/app-D6bLiq5W.js",
+    "file": "assets/app-DP7JTNNa.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "isDynamicEntry": true,
     "dynamicImports": [
       "node_modules/pdfjs-dist/build/pdf.mjs",
+      "resources/js/components/TestPapersPage.vue",
+      "resources/js/components/TestPaperDemo.vue",
+      "resources/js/components/TestPapersPage.vue",
       "resources/js/components/Dashboard.vue",
       "resources/js/components/MyCourse.vue",
       "resources/js/components/StudentManagement.vue",
@@ -56,43 +198,44 @@
       "resources/js/components/PackagePage.vue",
       "resources/js/components/PackageBuilder.vue",
       "resources/js/components/TutorSpace.vue",
+      "resources/js/components/tutor/RegistrationPage.vue",
       "resources/js/components/tutor/QuestionReviewPage.vue"
     ],
     "css": [
-      "assets/app-KKuQRsLb.css"
+      "assets/app-BLLzwhse.css"
     ],
     "assets": [
       "assets/pdf.worker.min-Cpi8b8z3.mjs"
     ]
   },
   "resources/js/components/Dashboard.vue": {
-    "file": "assets/Dashboard-wqTV6_8R.js",
+    "file": "assets/Dashboard-RLvx3AMJ.js",
     "name": "Dashboard",
     "src": "resources/js/components/Dashboard.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_ArrowRightIcon-C1jzKldr.js"
+      "_ArrowRightIcon-CsvKORTf.js"
     ],
     "css": [
-      "assets/Dashboard-CxPGZlhm.css"
+      "assets/Dashboard-CVl6nG2Q.css"
     ]
   },
   "resources/js/components/MyCourse.vue": {
-    "file": "assets/MyCourse-CCA1qW8E.js",
+    "file": "assets/MyCourse-DCEeycbv.js",
     "name": "MyCourse",
     "src": "resources/js/components/MyCourse.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_ArrowRightIcon-C1jzKldr.js"
+      "_ArrowRightIcon-CsvKORTf.js"
     ],
     "css": [
-      "assets/MyCourse-CYdllg0T.css"
+      "assets/MyCourse-CvABHYpD.css"
     ]
   },
   "resources/js/components/PackageBuilder.vue": {
-    "file": "assets/PackageBuilder-DYZ-8zPn.js",
+    "file": "assets/PackageBuilder-BX9csx-a.js",
     "name": "PackageBuilder",
     "src": "resources/js/components/PackageBuilder.vue",
     "isDynamicEntry": true,
@@ -105,7 +248,7 @@
     ]
   },
   "resources/js/components/PackagePage.vue": {
-    "file": "assets/PackagePage-DtzLewTx.js",
+    "file": "assets/PackagePage-DCP_TkVG.js",
     "name": "PackagePage",
     "src": "resources/js/components/PackagePage.vue",
     "isDynamicEntry": true,
@@ -114,11 +257,11 @@
       "_packagePricing-HJU3Ar2W.js"
     ],
     "css": [
-      "assets/PackagePage-BZQ2_CTy.css"
+      "assets/PackagePage-B1qQSU_i.css"
     ]
   },
   "resources/js/components/Profile.vue": {
-    "file": "assets/Profile-B04K8USn.js",
+    "file": "assets/Profile-BGcCDt7z.js",
     "name": "Profile",
     "src": "resources/js/components/Profile.vue",
     "isDynamicEntry": true,
@@ -130,7 +273,7 @@
     ]
   },
   "resources/js/components/StudentManagement.vue": {
-    "file": "assets/StudentManagement-Bm8qkI7_.js",
+    "file": "assets/StudentManagement-CoCuuShj.js",
     "name": "StudentManagement",
     "src": "resources/js/components/StudentManagement.vue",
     "isDynamicEntry": true,
@@ -138,36 +281,67 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/StudentManagement-DsuN5wZb.css"
+      "assets/StudentManagement-CuLDwnAN.css"
+    ]
+  },
+  "resources/js/components/TestPaperDemo.vue": {
+    "file": "assets/TestPaperDemo-DejEeoJs.js",
+    "name": "TestPaperDemo",
+    "src": "resources/js/components/TestPaperDemo.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_StructuredQuestion-DA_A7U5C.js",
+      "_MathsAnswerEditor-BTX7qNXK.js"
+    ],
+    "css": [
+      "assets/TestPaperDemo-CetE26yQ.css"
+    ]
+  },
+  "resources/js/components/TestPapersPage.vue": {
+    "file": "assets/TestPapersPage-BDLnbbvv.js",
+    "name": "TestPapersPage",
+    "src": "resources/js/components/TestPapersPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_StructuredQuestion-DA_A7U5C.js",
+      "_MathsAnswerEditor-BTX7qNXK.js"
+    ],
+    "css": [
+      "assets/TestPapersPage-_MW60Gl3.css"
     ]
   },
   "resources/js/components/TutorSpace.vue": {
-    "file": "assets/TutorSpace-Dp4ICZXt.js",
+    "file": "assets/TutorSpace-BNbVLV6X.js",
     "name": "TutorSpace",
     "src": "resources/js/components/TutorSpace.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
+      "_questionReviewSaves-h2kYgMzo.js",
       "resources/js/components/PackageBuilder.vue",
       "_packagePricing-HJU3Ar2W.js",
       "resources/js/components/StudentManagement.vue"
     ],
     "dynamicImports": [
-      "resources/js/components/tutor/QuestionBuilderPreview.vue",
-      "_QuestionReviewPanel-lKZ_6MW-.js"
+      "_QuestionReviewPanel-41x25qHE.js",
+      "resources/js/components/tutor/RegistrationPanel.vue"
     ],
     "css": [
-      "assets/TutorSpace-CBLJGWLZ.css"
+      "assets/TutorSpace-5Ib9j4Jd.css"
     ]
   },
   "resources/js/components/tutor/PdfQuestionReview.vue": {
-    "file": "assets/PdfQuestionReview-8yrkwbuK.js",
+    "file": "assets/PdfQuestionReview-uXdyzDGx.js",
     "name": "PdfQuestionReview",
     "src": "resources/js/components/tutor/PdfQuestionReview.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_QuestionReviewPanel-lKZ_6MW-.js"
+      "_questionReviewSaves-h2kYgMzo.js",
+      "_StructuredQuestion-DA_A7U5C.js",
+      "_QuestionReviewPanel-41x25qHE.js"
     ],
     "dynamicImports": [
       "resources/js/components/tutor/QuestionDiagrams.vue",
@@ -177,26 +351,16 @@
       "assets/PdfQuestionReview-BD2WWstX.css"
     ]
   },
-  "resources/js/components/tutor/QuestionBuilderPreview.vue": {
-    "file": "assets/QuestionBuilderPreview-JfrUhQgT.js",
-    "name": "QuestionBuilderPreview",
-    "src": "resources/js/components/tutor/QuestionBuilderPreview.vue",
-    "isDynamicEntry": true,
-    "imports": [
-      "resources/js/app.js"
-    ],
-    "css": [
-      "assets/QuestionBuilderPreview-DgZRt5id.css"
-    ]
-  },
   "resources/js/components/tutor/QuestionCorrectionPanel.vue": {
-    "file": "assets/QuestionCorrectionPanel-DnenigFG.js",
+    "file": "assets/QuestionCorrectionPanel-B8hJkG_2.js",
     "name": "QuestionCorrectionPanel",
     "src": "resources/js/components/tutor/QuestionCorrectionPanel.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_QuestionReviewPanel-lKZ_6MW-.js"
+      "_StructuredQuestion-DA_A7U5C.js",
+      "_QuestionReviewPanel-41x25qHE.js",
+      "_questionReviewSaves-h2kYgMzo.js"
     ],
     "dynamicImports": [
       "resources/js/app.js",
@@ -207,7 +371,7 @@
     ]
   },
   "resources/js/components/tutor/QuestionDiagrams.vue": {
-    "file": "assets/QuestionDiagrams-DutGWsu3.js",
+    "file": "assets/QuestionDiagrams-CE1aegid.js",
     "name": "QuestionDiagrams",
     "src": "resources/js/components/tutor/QuestionDiagrams.vue",
     "isDynamicEntry": true,
@@ -219,13 +383,37 @@
     ]
   },
   "resources/js/components/tutor/QuestionReviewPage.vue": {
-    "file": "assets/QuestionReviewPage-CEvgqxRa.js",
+    "file": "assets/QuestionReviewPage-U_TmDPBh.js",
     "name": "QuestionReviewPage",
     "src": "resources/js/components/tutor/QuestionReviewPage.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_QuestionReviewPanel-lKZ_6MW-.js"
+      "_QuestionReviewPanel-41x25qHE.js",
+      "_questionReviewSaves-h2kYgMzo.js",
+      "_StructuredQuestion-DA_A7U5C.js"
+    ]
+  },
+  "resources/js/components/tutor/RegistrationPage.vue": {
+    "file": "assets/RegistrationPage-DFvXYH_X.js",
+    "name": "RegistrationPage",
+    "src": "resources/js/components/tutor/RegistrationPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "resources/js/components/tutor/RegistrationPanel.vue"
+    ]
+  },
+  "resources/js/components/tutor/RegistrationPanel.vue": {
+    "file": "assets/RegistrationPanel-rIfUM2e5.js",
+    "name": "RegistrationPanel",
+    "src": "resources/js/components/tutor/RegistrationPanel.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/RegistrationPanel-DKoUnQ7V.css"
     ]
   }
 }

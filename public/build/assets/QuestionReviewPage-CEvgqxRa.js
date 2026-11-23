@@ -1,1 +1,0 @@
-import{d as e,w as a,L as t,o,i as s}from"./app-D6bLiq5W.js";import{Q as r}from"./QuestionReviewPanel-lKZ_6MW-.js";const l={__name:"QuestionReviewPage",setup(n){return(c,i)=>(o(),e(t,null,{default:a(()=>[s(r)]),_:1}))}};export{l as default};

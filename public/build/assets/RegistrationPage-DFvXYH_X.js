@@ -1,0 +1,1 @@
+import{e,f as t,L as a,l as o,n as r}from"./app-DP7JTNNa.js";import s from"./RegistrationPanel-rIfUM2e5.js";const p={__name:"RegistrationPage",setup(n){return(c,_)=>(o(),e(a,null,{default:t(()=>[r(s)]),_:1}))}};export{p as default};
