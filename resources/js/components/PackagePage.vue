@@ -51,7 +51,8 @@
                                             :aria-pressed="durationForItem(item) === term.months"
                                             @click="itemDurations[item.id] = term.months">
                                             <span class="term-label">{{ term.label.split(' (')[0] }} <small>{{ term.months }}mo</small></span>
-                                            <strong>{{ money(priceForItemTerm(item, term)) }}</strong>
+                                            <del v-if="hasDiscount(item, term)" class="original-price" aria-label="Original price">{{ money(subjectTermPrice(selectedPackage, item, term).original) }}</del>
+                                            <strong :class="{ 'discounted-price': hasDiscount(item, term) }">{{ money(priceForItemTerm(item, term)) }}</strong>
                                             <span v-if="subjectTermPrice(selectedPackage, item, term).discount" class="discount-badge">{{ subjectTermPrice(selectedPackage, item, term).discount }}% off</span>
                                         </button>
                                     </div>
@@ -64,7 +65,13 @@
                     <aside class="order-summary store-card" aria-labelledby="summary-heading">
                         <h3 id="summary-heading">Your selection</h3>
                         <div v-if="selectedItemIds.length" class="summary-items">
-                            <div v-for="item in selectedItems" :key="item.id"><span>{{ item.subject?.name || 'Subject' }}<small>{{ durationForItem(item) }} months access</small></span><strong>{{ money(priceForDuration(item)) }}</strong></div>
+                            <div v-for="item in selectedItems" :key="item.id">
+                                <span>{{ item.subject?.name || 'Subject' }}<small>{{ durationForItem(item) }} months access</small></span>
+                                <span class="selection-price">
+                                    <del v-if="hasDiscount(item, selectedTerm(item))" class="original-price" aria-label="Original price">{{ money(subjectTermPrice(selectedPackage, item, selectedTerm(item)).original) }}</del>
+                                    <strong :class="{ 'discounted-price': hasDiscount(item, selectedTerm(item)) }">{{ money(priceForDuration(item)) }}</strong>
+                                </span>
+                            </div>
                         </div>
                         <p v-else class="selection-hint">Select at least one subject to see your total.</p>
                         <div class="checkout-actions">
@@ -188,6 +195,11 @@ const termPricesByDuration = computed(() => Object.fromEntries(durationOptions.m
 function durationForItem(item) { return itemDurations.value[item.id] || 3 }
 function priceForItemTerm(item, term) { return termPricesByDuration.value[term.months]?.[item.id] || 0 }
 function priceForDuration(item) { return termPricesByDuration.value[durationForItem(item)]?.[item.id] || 0 }
+function selectedTerm(item) { return durationOptions.find(term => term.months === durationForItem(item)) }
+function hasDiscount(item, term) {
+    const price = subjectTermPrice(selectedPackage.value, item, term)
+    return price.discount > 0 && price.original > price.final
+}
 // select subject
 function selectSubject(subjectId) {
     selectedSubjectId.value = subjectId
@@ -321,6 +333,10 @@ watch(gradeId, fetchAllPackagesForGrade)
 .summary-items > div > span { min-width: 0; overflow-wrap: anywhere; }
 .summary-items small { color: #94a3b8; display: block; font-size: .65rem; margin-top: 2px; }
 .summary-items strong { color: #e2e8f0; white-space: nowrap; font-size: .75rem; }
+.selection-price { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.original-price { position: relative; display: inline-block; color: #fca5a5; text-decoration: none; font-size: .65rem; line-height: 1.4; }
+.original-price::after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; border-top: 1.5px solid #f87171; transform: rotate(-12deg); pointer-events: none; }
+.item-term-options strong.discounted-price, .summary-items strong.discounted-price { color: #4ade80; }
 .checkout-actions { display: flex; align-items: center; gap: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
 .summary-total { display: flex; flex: 1; align-items: center; gap: 14px; font-size: .78rem; }
 .summary-total > span, .summary-total strong { color: #4f46e5; font-size: 1.5rem; font-weight: 700; }
