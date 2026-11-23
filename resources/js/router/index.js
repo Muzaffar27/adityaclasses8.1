@@ -12,6 +12,9 @@ import lessonList from "../components/Lesson/LessonList.vue";
 import LessonManagePage from "../components/Lesson/LessonManagePage.vue";
 
 const routes = [
+    { path: '/test-papers', name: 'testPapers', component: () => import('../components/TestPapersPage.vue'), meta: { requiresAuth: true } },
+    { path: '/test-papers/demo', name: 'testPaperDemo', component: () => import('../components/TestPaperDemo.vue'), meta: { requiresAuth: true } },
+    { path: '/test-papers/:paper', name: 'testPaper', component: () => import('../components/TestPapersPage.vue'), meta: { requiresAuth: true } },
     {
         path: "/",
         name: "home",

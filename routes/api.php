@@ -24,6 +24,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/question-answer-keys/questions/{question}', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'store'])->where('question', '[a-f0-9]{64}');
     Route::post('/admin/question-answer-keys/{key}/approve', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'approve'])->whereUuid('key');
     Route::post('/admin/question-answer-keys/{key}/revoke', [\App\Http\Controllers\QuestionAnswerKeyController::class, 'revoke'])->whereUuid('key');
+    Route::get('/test-papers', [\App\Http\Controllers\TestPaperController::class, 'index']);
+    Route::get('/test-papers/attention', [\App\Http\Controllers\TestPaperController::class, 'attention']);
+    Route::get('/admin/test-papers', [\App\Http\Controllers\TestPaperController::class, 'adminIndex']);
+    Route::post('/admin/test-papers', [\App\Http\Controllers\TestPaperController::class, 'store'])->middleware('throttle:10,1,saved-test-paper-create:');
+    Route::get('/test-papers/{paper}', [\App\Http\Controllers\TestPaperController::class, 'show'])->whereUuid('paper');
+    Route::post('/test-papers/{paper}/start', [\App\Http\Controllers\TestPaperController::class, 'start'])->whereUuid('paper');
+    Route::put('/test-papers/{paper}/answers', [\App\Http\Controllers\TestPaperController::class, 'saveAnswers'])->whereUuid('paper');
+    Route::post('/test-papers/{paper}/submit', [\App\Http\Controllers\TestPaperController::class, 'submit'])->whereUuid('paper');
+    Route::post('/admin/test-papers/{paper}/cancel', [\App\Http\Controllers\TestPaperController::class, 'cancel'])->whereUuid('paper');
+    Route::post('/admin/test-papers/{paper}/replace', [\App\Http\Controllers\TestPaperController::class, 'replace'])->whereUuid('paper')->middleware('throttle:10,1,saved-test-paper-replace:');
+    Route::get('/test-papers/{paper}/diagrams/{hash}', [\App\Http\Controllers\TestPaperController::class, 'diagram'])->whereUuid('paper')->where('hash', '[a-f0-9]{64}');
     Route::get('/admin/registrations/export', [\App\Http\Controllers\RegistrationManagementController::class, 'export']);
     Route::post('/admin/registrations/deletion-preview', [\App\Http\Controllers\RegistrationManagementController::class, 'previewDeletion'])->middleware('throttle:20,1,registration-delete-preview:');
     Route::post('/admin/registrations/deletion-review', [\App\Http\Controllers\RegistrationManagementController::class, 'deletionReview']);
