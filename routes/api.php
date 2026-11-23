@@ -18,6 +18,15 @@ use Illuminate\Support\Facades\Route;
 
 //Auth
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/registrations/export', [\App\Http\Controllers\RegistrationManagementController::class, 'export']);
+    Route::post('/admin/registrations/deletion-preview', [\App\Http\Controllers\RegistrationManagementController::class, 'previewDeletion'])->middleware('throttle:20,1,registration-delete-preview:');
+    Route::post('/admin/registrations/deletion-review', [\App\Http\Controllers\RegistrationManagementController::class, 'deletionReview']);
+    Route::delete('/admin/registrations', [\App\Http\Controllers\RegistrationManagementController::class, 'deleteRegistrations'])->middleware('throttle:10,1,registration-delete:');
+    Route::get('/admin/registrations', [\App\Http\Controllers\RegistrationManagementController::class, 'index']);
+    Route::get('/admin/registrations/{id}', [\App\Http\Controllers\RegistrationManagementController::class, 'show'])->whereNumber('id');
+    Route::put('/admin/registrations/{id}', [\App\Http\Controllers\RegistrationManagementController::class, 'update'])->whereNumber('id');
+    Route::post('/admin/registrations/{id}/resend-acknowledgement', [\App\Http\Controllers\RegistrationManagementController::class, 'resendAcknowledgement'])
+        ->whereNumber('id')->middleware('throttle:6,1,registration-mail:');
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
 });

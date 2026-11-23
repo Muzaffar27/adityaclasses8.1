@@ -89,6 +89,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: "/registrations",
+        name: "registrations",
+        component: () => import("../components/tutor/RegistrationPage.vue"),
+        meta: { requiresAuth: true, requiresStaff: true },
+    },
+    {
         path: "/question-review",
         name: "questionReview",
         component: () => import("../components/tutor/QuestionReviewPage.vue"),
