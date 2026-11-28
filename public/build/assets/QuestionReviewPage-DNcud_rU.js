@@ -1,0 +1,1 @@
+import{e,f as t,L as a,l as o,q as r}from"./app-DWuBNTeE.js";import{Q as s}from"./QuestionReviewPanel-hLyiAdFb.js";import"./questionReviewSaves-CwIUyZ1u.js";import"./StructuredQuestion-C05ETUXM.js";const m={__name:"QuestionReviewPage",setup(i){return(n,c)=>(o(),e(a,null,{default:t(()=>[r(s)]),_:1}))}};export{m as default};
