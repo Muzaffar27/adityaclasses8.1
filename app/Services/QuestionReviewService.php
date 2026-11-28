@@ -12,17 +12,17 @@ use Illuminate\Support\Facades\Storage;
 
 class QuestionReviewService
 {
-    public function currentQuestions(?array $sourceIds = null): array
+    public function currentQuestions(?array $sourceIds = null, ?array $validatedSources = null, bool $verifyFiles = true): array
     {
         if (!Schema::hasTable('question_reviews')) return [];
         $path = Storage::disk('local')->path('structured/bank.json');
         if (!is_file($path)) return [];
         $bank = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
-        $valid = $this->currentSources($sourceIds);
+        $valid = $validatedSources ?? $this->currentSources($sourceIds, $verifyFiles);
         $current = [];
         foreach ($bank['questions'] ?? [] as $question) {
             if (empty($question['active']) || !preg_match('/^[a-f0-9]{64}$/', $question['id'] ?? '')) continue;
-            if (!$this->diagramsAvailable($question['diagrams'] ?? [])) continue;
+            if (!$this->diagramsAvailable($question['diagrams'] ?? [], $verifyFiles)) continue;
             $origins = [];
             foreach ($question['origins'] ?? [] as $origin) {
                 $entry = $valid[$origin['source_key']] ?? null;
@@ -42,8 +42,8 @@ class QuestionReviewService
         $superseded = [];
         if ($corrections->available()) foreach (QuestionCorrection::whereNotNull('corrected_content')->whereNotNull('replacement_id')->orderBy('flagged_at')->get() as $issue) {
             if ($sourceIds !== null && !array_intersect($sourceIds, array_column($issue->sources, 'id'))) continue;
-            $origins = $corrections->validOrigins($issue);
-            if (!$origins || !$this->diagramsAvailable($issue->corrected_content['diagrams'] ?? [])) continue;
+            $origins = $corrections->validOrigins($issue, verifyFiles: $verifyFiles);
+            if (!$origins || !$this->diagramsAvailable($issue->corrected_content['diagrams'] ?? [], $verifyFiles)) continue;
             $original = $issue->original;
             $current[$issue->replacement_id] = ['id' => $issue->replacement_id, 'grade_id' => $original['grade_id'],
                 'subject_id' => $original['subject_id'], 'content' => $issue->corrected_content, 'origins' => $origins, 'correction_of' => $issue->question_id];
@@ -53,7 +53,7 @@ class QuestionReviewService
         return $current;
     }
 
-    private function currentSources(?array $sourceIds = null): array
+    private function currentSources(?array $sourceIds = null, bool $verifyFiles = true): array
     {
         $sources = LessonQuestionSource::whereIn('status', ['processed', 'processed_with_issues'])->whereNotNull('source_sha256')
             ->when($sourceIds !== null, fn ($query) => $query->whereIn('id', $sourceIds))->get();
@@ -65,20 +65,20 @@ class QuestionReviewService
             if (!$lesson || !$lesson->is_active || $lesson->{$field} !== $source->pdf_path || $lesson->topic !== $source->topic
                 || (int) $lesson->grade_id !== (int) $source->grade_id || (int) $lesson->subject_id !== (int) $source->subject_id) continue;
             $file = Storage::disk('local')->path($source->pdf_path);
-            if (!is_file($file) || !hash_equals($source->source_sha256, hash_file('sha256', $file))) continue;
+            if (!is_file($file) || ($verifyFiles && !hash_equals($source->source_sha256, hash_file('sha256', $file)))) continue;
             $key = "{$source->grade_id}:{$source->subject_id}:{$source->lesson_id}:{$source->slot}";
             $valid[$key] = ['source' => $source, 'lesson' => $lesson];
         }
         return $valid;
     }
 
-    public function currentExtractionIssues(): array
+    public function currentExtractionIssues(?array $validatedSources = null, ?array $sourceIds = null): array
     {
         $path = Storage::disk('local')->path('structured/bank.json');
         if (!is_file($path)) return [];
         $bank = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
         $issues = [];
-        foreach ($this->currentSources() as $key => $entry) {
+        foreach ($validatedSources ?? $this->currentSources($sourceIds) as $key => $entry) {
             $source = $entry['source']; $lesson = $entry['lesson'];
             $record = $bank['sources'][$key] ?? null;
             if (!$record || !in_array($record['status'] ?? '', ['processed', 'processed_with_issues'], true)
@@ -122,22 +122,41 @@ class QuestionReviewService
         });
     }
 
-    private function diagramsAvailable(array $diagrams): bool
+    private function diagramsAvailable(array $diagrams, bool $verifyFiles = true): bool
     {
         if (count($diagrams) > 12) return false;
         foreach ($diagrams as $diagram) {
             $hash = $diagram['sha256'] ?? '';
             if (!is_string($hash) || !preg_match('/^[a-f0-9]{64}$/', $hash) || ($diagram['path'] ?? '') !== "structured/diagrams/{$hash}.png") return false;
             $file = Storage::disk('local')->path($diagram['path']);
-            if (!is_file($file) || !is_readable($file) || !hash_equals($hash, hash_file('sha256', $file))) return false;
+            if (!is_file($file) || !is_readable($file) || ($verifyFiles && !hash_equals($hash, hash_file('sha256', $file)))) return false;
         }
         return true;
     }
 
-    public function synchronize(): array
+    public function reviewQueue(bool $withIssues = true): array
+    {
+        $sources = $this->currentSources();
+        return [$this->synchronize($sources), $withIssues ? $this->currentExtractionIssues($sources) : [], $this->sourcesById($sources)];
+    }
+
+    public function reviewCountSnapshot(): array
+    {
+        $sources = $this->currentSources(verifyFiles: false);
+        return [$this->currentQuestions(validatedSources: $sources, verifyFiles: false), $this->sourcesById($sources)];
+    }
+
+    private function sourcesById(array $sources): array
+    {
+        $indexed = [];
+        foreach ($sources as $entry) $indexed[$entry['source']->id] = $entry['source'];
+        return $indexed;
+    }
+
+    public function synchronize(?array $validatedSources = null): array
     {
         if (!Schema::hasTable('question_reviews')) return [];
-        $current = $this->currentQuestions();
+        $current = $this->currentQuestions(validatedSources: $validatedSources);
         foreach ($current as $id => $question) {
             $review = QuestionReview::firstOrCreate(['id' => $id], $question + ['status' => 'pending']);
             if ($review->origins !== $question['origins']) $review->update(['origins' => $question['origins']]);

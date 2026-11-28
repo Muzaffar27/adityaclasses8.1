@@ -62,34 +62,51 @@ class QuestionReviewTest extends TestCase
 
     private function queue(): void { $this->getJson('/api/admin/question-reviews')->assertOk(); }
 
-    public function test_sidebar_counts_separate_optional_approvals_from_corrections_until_resolved(): void
+    public function test_sidebar_starter_review_badge_excludes_the_correction_queue(): void
     {
         $url = '/api/admin/question-reviews';
-        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 1]);
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 1, 'optional' => 0]);
         $this->flagQuestion();
-        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 1, 'optional' => 0]);
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 0])
+            ->assertJsonPath('counts.corrections', 1);
         $saved = app(QuestionCorrectionService::class)->correct($this->fingerprint, 2, ['text' => 'Corrected question'], auth()->id());
-        // Its pending replacement still belongs to the red correction, not both badges.
-        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 1, 'optional' => 0]);
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 0])
+            ->assertJsonPath('counts.corrections', 1);
         $this->putJson('/api/admin/question-reviews/'.$saved->id, ['approved' => true, 'revision' => $saved->revision])->assertOk();
         $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 0]);
     }
 
-    public function test_sidebar_counts_are_global_and_do_not_use_the_starter_shortlist(): void
+    public function test_sidebar_counts_starter_reviews_and_optional_reviews_independent_of_filters(): void
     {
         $this->pdfBatch(10);
         $this->getJson('/api/admin/question-reviews?review_scope=starter')->assertOk()
-            ->assertJsonPath('counts.pending', 5)->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 10]);
+            ->assertJsonPath('counts.pending', 5)->assertJsonPath('notification_counts', ['important' => 5, 'optional' => 5]);
         $this->getJson('/api/admin/question-reviews?grade_id=999&topic=Other')->assertOk()
-            ->assertJsonPath('total', 0)->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 10]);
+            ->assertJsonPath('total', 0)->assertJsonPath('notification_counts', ['important' => 5, 'optional' => 5]);
     }
 
-    public function test_sidebar_needs_attention_is_red_instead_of_optional_yellow(): void
+    public function test_sidebar_does_not_count_questions_that_cannot_be_reviewed(): void
     {
         $this->queue();
         QuestionReview::findOrFail($this->fingerprint)->update(['status' => 'needs_attention']);
         $this->getJson('/api/admin/question-reviews')->assertOk()
-            ->assertJsonPath('notification_counts', ['important' => 1, 'optional' => 0]);
+            ->assertJsonPath('notification_counts', ['important' => 0, 'optional' => 0]);
+    }
+
+    public function test_sidebar_count_endpoint_is_cached_and_does_not_materialize_review_rows(): void
+    {
+        $url = '/api/admin/question-reviews/counts';
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts', ['important' => 1, 'optional' => 0]);
+        $this->assertSame(0, QuestionReview::count());
+
+        $path = $this->source->pdf_path;
+        Storage::disk('local')->put($path, 'new bytes at the old path');
+        $this->getJson($url . '?refresh=1')->assertOk()->assertJsonPath('notification_counts.important', 1);
+        $this->getJson('/api/admin/question-reviews')->assertOk()->assertJsonPath('notification_counts.important', 0);
+        $this->getJson($url)->assertOk()->assertJsonPath('notification_counts.important', 0);
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'student']));
+        $this->getJson($url)->assertForbidden();
     }
 
     public function test_topic_picker_filters_both_review_modes_and_reports_progress(): void
@@ -488,7 +505,50 @@ class QuestionReviewTest extends TestCase
         Storage::disk('local')->put('structured/bank.json', json_encode($bank));
         $this->processed([]);
         $this->getJson('/api/admin/question-reviews?status=skipped')->assertOk()->assertJsonPath('total', 1)
-            ->assertJsonPath('counts.pending', 0)->assertJsonPath('lessons.0.id', $this->lesson->id);
+            ->assertJsonPath('counts.pending', 0)->assertJsonPath('lessons.0.id', $this->lesson->id)
+            ->assertJsonPath('selection.topics.0.approved', 0)->assertJsonPath('selection.topics.0.target', 5)
+            ->assertJsonPath('selection.topics.0.question_pdfs', 1)->assertJsonPath('selection.topics.0.skipped', 1);
+    }
+
+    public function test_extraction_issues_can_be_transcribed_and_require_staff_approval(): void
+    {
+        $this->coverageBank();
+        $issue = $this->getJson('/api/admin/question-reviews?status=skipped')->json('data.0');
+        $url = '/api/admin/question-reviews/issues/' . $issue['id'] . '/draft';
+        $revision = $issue['coverage']['source_revision'];
+        Sanctum::actingAs(User::factory()->create(['role' => 'student']));
+        $this->postJson($url, ['revision' => $revision, 'label' => '1(a)'])->assertForbidden();
+        Sanctum::actingAs(User::factory()->create(['role' => 'tutor']));
+        $this->postJson($url, ['revision' => $revision + 1, 'label' => '1(a)'])->assertConflict();
+        $this->postJson($url, ['revision' => $revision])->assertUnprocessable();
+        $draft = $this->postJson($url, ['revision' => $revision, 'label' => '1(a)'])->assertOk()
+            ->assertJsonPath('status', 'needs_manual')->json('id');
+        $this->postJson($url, ['revision' => $revision, 'label' => ' 1(A) '])->assertOk()->assertJsonPath('id', $draft);
+        $second = $this->postJson($url, ['revision' => $revision, 'label' => '1(b)'])->assertOk()->json('id');
+        $this->assertNotSame($draft, $second);
+        $this->getJson('/api/admin/question-corrections?id=' . $draft)->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.origins.0.label', '1(a)');
+        $this->getJson('/api/admin/question-corrections?' . http_build_query([
+            'topic' => $this->lesson->topic, 'grade_id' => $this->lesson->grade_id, 'subject_id' => $this->lesson->subject_id,
+        ]))->assertOk()->assertJsonPath('total', 2);
+        $this->assertSame('needs_correction', QuestionReview::findOrFail($draft)->status);
+        $this->putJson('/api/admin/question-corrections/' . $draft, [
+            'revision' => 1, 'content' => ['text' => 'Solve x + 1 = 6.'], 'approve' => true,
+        ])->assertOk()->assertJsonPath('status', 'approved');
+        $this->getJson('/api/admin/question-reviews?review_scope=starter')->assertOk()
+            ->assertJsonPath('selection.topics.0.approved', 1)->assertJsonPath('selection.topics.0.open_corrections', 1)
+            ->assertJsonPath('selection.topics.0.available', 3);
+        foreach (['2(a)', '2(b)', '3'] as $label) {
+            $this->postJson($url, ['revision' => $revision, 'label' => $label])->assertOk();
+        }
+        $this->getJson('/api/admin/question-reviews?review_scope=starter')->assertOk()
+            ->assertJsonPath('selection.topics.0.available', 5)->assertJsonPath('selection.topics.0.ready', true)
+            ->assertJsonPath('selection.topics.0.approved', 1)->assertJsonPath('selection.remaining', 0);
+        $this->getJson('/api/admin/question-reviews/pdfs?review_scope=starter')->assertOk()
+            ->assertJsonPath('selection.topics.0.available', 5)->assertJsonPath('selection.remaining', 0);
+        Storage::disk('local')->put($this->source->pdf_path, 'changed PDF');
+        $this->getJson('/api/admin/question-reviews?review_scope=starter')->assertOk()
+            ->assertJsonPath('selection.topics.0.available', 0)->assertJsonPath('selection.topics.0.ready', false);
     }
 
     public function test_issue_retry_queues_one_forced_source_rescan_and_preserves_approvals(): void

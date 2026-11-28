@@ -2,7 +2,8 @@
     <section class="corrections" :class="{ 'has-source': sourceItem }" aria-label="Needs correction">
         <p v-if="message" ref="notice" tabindex="-1" role="status" class="feedback">{{ message }}</p>
         <p v-if="error" role="alert" class="error">{{ error }} <button @click="load">Retry</button></p>
-        <div class="toolbar queue-toolbar"><label>Show<select v-model="status" :disabled="saving" @change="page = 1; load()"><option value="open">Open corrections</option><option value="resolved">Resolved</option><option value="all">All</option></select></label><span class="queue-count">{{ total }} corrections</span><button :disabled="loading || saving" @click="load">Refresh corrections</button></div>
+        <div v-if="focusedId || focusedTopic" class="toolbar queue-toolbar"><span v-if="focusedTopic">{{ focusedTopic.topic }}</span><button :disabled="saving" @click="focusedId = ''; focusedTopic = null; status = 'open'; page = 1; load()">All open corrections</button></div>
+        <div v-else class="toolbar queue-toolbar"><label>Show<select v-model="status" :disabled="saving" @change="page = 1; load()"><option value="open">Open corrections</option><option value="resolved">Resolved</option><option value="all">All</option></select></label><span class="queue-count">{{ total }} corrections</span><button :disabled="loading || saving" @click="load">Refresh corrections</button></div>
         <p v-if="loading" role="status">Loading corrections…</p>
         <p v-else-if="!items.length">No corrections match this view.</p>
         <template v-else>
@@ -41,7 +42,7 @@
             <p class="source-caption">{{ sourceOrigin?.lesson_title }} · page {{ sourceOrigin?.page }}</p>
             <p v-if="sourceLoading" role="status">Loading PDF…</p>
             <p v-if="sourceError" role="alert">{{ sourceError }} <button type="button" @click="loadOriginal">Retry PDF</button></p>
-            <div v-if="sourceUrl" class="source-document"><a :href="sourceUrl" target="_blank" rel="noopener">Open full PDF</a><PdfDocumentViewer :url="sourceUrl" :page-number="sourceOrigin?.page" /></div>
+            <div v-if="sourceUrl" class="source-document"><a :href="sourceUrl" target="_blank" rel="noopener">Open full PDF</a><PdfDocumentViewer :url="sourceUrl" :page-number="sourceOrigin?.page" :focus-rect="sourceOrigin?.rect" /></div>
         </aside>
     </section>
 </template>
@@ -53,10 +54,13 @@ import ReviewQuestionContent from './ReviewQuestionContent.vue';
 import MathExpressionEditor from './MathExpressionEditor.vue';
 import { mathToWriting, needsFormulaLayout } from '../../composables/questionWriting.mjs';
 const PdfDocumentViewer = defineAsyncComponent(() => import('../common/PdfDocumentViewer.vue'));
+const props = defineProps({ initialId: String, initialTopic: Object });
 const emit = defineEmits(['changed', 'busy']);
 const QuestionDiagrams = defineAsyncComponent(() => import('./QuestionDiagrams.vue'));
 const diagramsReady = ref({});
-const items = ref([]), status = ref('open'), page = ref(1), lastPage = ref(1), total = ref(0);
+const focusedId = ref(props.initialId || '');
+const focusedTopic = ref(props.initialTopic || null);
+const items = ref([]), status = ref(focusedId.value ? 'all' : 'open'), page = ref(1), lastPage = ref(1), total = ref(0);
 const loading = ref(false), saving = ref(false), error = ref(''), message = ref(''), notice = ref(null), editing = ref('');
 const draft = ref({}), format = ref('text');
 const writingInput = ref(null), writingEdited = ref(false);
@@ -76,7 +80,11 @@ function closeSourceOnEscape(event) {
 }
 async function load() {
     const request = ++serial; loading.value = true; error.value = ''; editing.value = ''; diagramsReady.value = {}; closeSource();
-    try { const { data } = await api.get('/admin/question-corrections', { params: { page: page.value, status: status.value } }); if (request !== serial) return;
+    try {
+        const scope = focusedTopic.value;
+        const { data } = await api.get('/admin/question-corrections', { params: { page: page.value, status: status.value, id: focusedId.value || undefined,
+            topic: scope?.topic, grade_id: scope?.grade_id, subject_id: scope?.subject_id } });
+        if (request !== serial) return;
         items.value = data.data; total.value = data.total; lastPage.value = data.last_page;
         if (page.value > lastPage.value) { page.value = lastPage.value; await load(); }
     } catch (e) { if (request === serial) error.value = e.response?.data?.message || 'Could not load corrections.'; }
@@ -152,7 +160,15 @@ async function loadOriginal() {
     catch { if (request === sourceSerial) sourceError.value = 'Could not load the original PDF.'; }
     finally { if (request === sourceSerial) sourceLoading.value = false; }
 }
-onMounted(() => { load(); window.addEventListener('keydown', closeSourceOnEscape); });
+onMounted(async () => {
+    window.addEventListener('keydown', closeSourceOnEscape);
+    await load();
+    const item = focusedId.value && items.value[0];
+    if (item && ['needs_manual', 'review_needed'].includes(item.status)) {
+        startEdit(item);
+        await openOriginal(item);
+    }
+});
 onBeforeUnmount(() => { serial++; closeSource(); window.removeEventListener('keydown', closeSourceOnEscape); });
 </script>
 <style scoped>

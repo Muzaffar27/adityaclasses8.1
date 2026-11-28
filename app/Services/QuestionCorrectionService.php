@@ -14,6 +14,45 @@ class QuestionCorrectionService
 {
     public function available(): bool { return Schema::hasTable('question_corrections'); }
 
+    public function draftFromExtractionIssue(string $id, int $revision, int $reviewer, ?string $label, ?int $sourceId = null): QuestionCorrection
+    {
+        abort_unless($this->available(), 503, 'Question correction setup is pending.');
+        $reviews = app(QuestionReviewService::class);
+        $issue = collect($reviews->currentExtractionIssues(sourceIds: $sourceId === null ? null : [$sourceId]))->firstWhere('id', $id);
+        abort_unless($issue, 409, 'This extraction issue changed. Refresh the queue.');
+
+        return DB::transaction(function () use ($id, $issue, $revision, $reviewer, $label, $reviews) {
+            $origin = $issue['origins'][0];
+            $source = LessonQuestionSource::lockForUpdate()->find($origin['source_id']);
+            abort_unless($source && $source->revision === $revision, 409, 'This PDF changed. Refresh the queue.');
+            $fresh = collect($reviews->currentExtractionIssues(sourceIds: [$source->id]))->firstWhere('id', $id);
+            abort_unless($fresh && $fresh['coverage']['source_revision'] === $revision, 409, 'This extraction issue changed. Refresh the queue.');
+
+            $label = $fresh['status'] === 'skipped' ? trim($label ?? '') : $origin['label'];
+            abort_if($label === '', 422, 'Enter the question number or label from the PDF.');
+            $origin['label'] = $label;
+            if ($fresh['coverage']['rect']) $origin['rect'] = $fresh['coverage']['rect'];
+            $draftId = hash('sha256', 'extraction-draft:' . $id . ':' . mb_strtolower(preg_replace('/\s+/u', ' ', $label)));
+            $existing = QuestionCorrection::find($draftId);
+            if ($existing && $existing->sources[0]['pdf_path'] !== $source->pdf_path) {
+                $draftId = hash('sha256', $draftId . ':' . $source->pdf_path);
+                $existing = QuestionCorrection::find($draftId);
+            }
+            if ($existing) return $existing;
+
+            $content = ['instructions' => '', 'text' => $fresh['status'] === 'rejected'
+                ? mb_substr($fresh['coverage']['raw_text'] ?? '', 0, 15000) : ''];
+            $original = ['id' => $draftId, 'grade_id' => $source->grade_id, 'subject_id' => $source->subject_id,
+                'content' => $content, 'origins' => [$origin]];
+            QuestionReview::create($original + ['status' => 'needs_correction', 'reviewer_id' => $reviewer, 'rejected_at' => now()]);
+            return QuestionCorrection::create([
+                'question_id' => $draftId, 'status' => 'needs_manual', 'reason' => 'Transcribe from the original question PDF.',
+                'flagged_by' => $reviewer, 'flagged_at' => now(), 'original' => $original,
+                'sources' => [$source->only(['id', 'source_sha256', 'revision', 'lesson_id', 'slot', 'pdf_path', 'grade_id', 'subject_id', 'topic'])],
+            ]);
+        }, 3);
+    }
+
     public function flag(string $id, int $revision, int $reviewer, ?string $reason, ?array $current = null): QuestionReview
     {
         abort_unless($this->available(), 503, 'Apply the question-correction migration first.');
@@ -39,7 +78,7 @@ class QuestionCorrectionService
     }
 
     // Only validate the PDFs attached to this correction, never the entire bank.
-    public function validOrigins(QuestionCorrection $issue, bool $processed = true): array
+    public function validOrigins(QuestionCorrection $issue, bool $processed = true, bool $verifyFiles = true): array
     {
         $valid = [];
         foreach ($issue->sources as $snapshot) {
@@ -51,7 +90,7 @@ class QuestionCorrectionService
             $field = LessonQuestionBankService::FIELDS[$source->slot];
             if ($lesson->{$field} !== $source->pdf_path || $lesson->topic !== $source->topic || (int) $lesson->grade_id !== (int) $source->grade_id || (int) $lesson->subject_id !== (int) $source->subject_id) continue;
             $file = Storage::disk('local')->path($source->pdf_path);
-            if (!is_file($file) || !hash_equals($snapshot['source_sha256'], hash_file('sha256', $file))) continue;
+            if (!is_file($file) || ($verifyFiles && !hash_equals($snapshot['source_sha256'], hash_file('sha256', $file)))) continue;
             foreach ($issue->original['origins'] as $origin) if ($origin['source_id'] === $source->id) $valid[] = $origin;
         }
         return $valid;

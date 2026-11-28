@@ -3,20 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\Grade;
+use App\Models\Lesson;
+use App\Models\QuestionCorrection;
 use App\Models\Subject;
 use App\Models\QuestionReview;
 use App\Services\QuestionReviewService;
+use App\Services\QuestionCorrectionService;
 use App\Services\StarterQuestionReviewService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class QuestionReviewController extends Controller
 {
+    private const COUNTS_CACHE_KEY = 'question-review.badge-counts.v1';
+    private const COUNTS_TTL_SECONDS = 30;
+
     private function authorizeStaff(Request $request): void
     {
         abort_unless(in_array($request->user()->role, ['tutor', 'admin'], true), 403);
         abort_unless(Schema::hasTable('question_reviews'), 503, 'Question review setup is pending.');
+    }
+
+    public function counts(Request $request, QuestionReviewService $service, StarterQuestionReviewService $starter)
+    {
+        $this->authorizeStaff($request);
+        if ($request->boolean('refresh')) Cache::forget(self::COUNTS_CACHE_KEY);
+        $counts = Cache::remember(self::COUNTS_CACHE_KEY, self::COUNTS_TTL_SECONDS, function () use ($service, $starter) {
+            [$current, $sources] = $service->reviewCountSnapshot();
+            $reviews = QuestionReview::whereIn('id', array_keys($current))->get(['id', 'status'])->keyBy('id');
+            foreach (array_keys($current) as $id) {
+                $reviews[$id] ??= new QuestionReview(['id' => $id, 'status' => 'pending']);
+            }
+            $corrections = $this->openCorrections();
+            $selection = $starter->select($current, $reviews, corrections: $corrections, currentSources: $sources);
+            return $this->notificationCounts($current, $reviews, $corrections, $selection);
+        });
+        return response()->json(['notification_counts' => $counts]);
     }
 
     public function index(Request $request, QuestionReviewService $service)
@@ -24,7 +49,7 @@ class QuestionReviewController extends Controller
         $this->authorizeStaff($request);
         $filters = $request->validate(['grade_id' => 'nullable|integer', 'subject_id' => 'nullable|integer', 'lesson_id' => 'nullable|integer',
             'status' => 'nullable|in:pending,approved,reprocessing,all,rejected,skipped', 'page' => 'nullable|integer|min:1', 'review_scope' => 'nullable|in:all,starter', 'topic' => 'nullable|string|max:255']);
-        $current = $service->synchronize();
+        [$current, $extractionIssues, $currentSources] = $service->reviewQueue();
         $matches = function ($grade, $subject, $origins) use ($filters) {
             if (!empty($filters['grade_id']) && (int) $grade !== (int) $filters['grade_id']) return false;
             if (!empty($filters['subject_id']) && (int) $subject !== (int) $filters['subject_id']) return false;
@@ -32,19 +57,15 @@ class QuestionReviewController extends Controller
             if (!empty($filters['topic']) && !in_array($filters['topic'], array_column($origins, 'topic'), true)) return false;
             return true;
         };
-        $allIssues = collect($service->currentExtractionIssues());
+        $allIssues = collect($extractionIssues);
         $issues = $allIssues->filter(fn ($row) => $matches($row['grade_id'], $row['subject_id'], $row['origins']));
         $reviews = QuestionReview::orderBy('created_at')->orderBy('id')->get();
-        // Global sidebar totals are independent of review filters and starter-bank scope.
-        $corrections = Schema::hasTable('question_corrections')
-            ? \App\Models\QuestionCorrection::where('status', '!=', 'resolved')->get(['question_id', 'replacement_id']) : collect();
-        $flaggedIds = $corrections->pluck('question_id')->merge($corrections->pluck('replacement_id'))->filter()->unique();
-        $notificationCounts = [
-            'important' => $corrections->count() + $reviews->filter(fn ($row) => $row->status === 'needs_attention'
-                || ($row->status === 'needs_correction' && isset($current[$row->id])))->whereNotIn('id', $flaggedIds)->count(),
-            'optional' => $reviews->filter(fn ($row) => isset($current[$row->id]))->whereIn('status', ['pending', 'review_again'])->whereNotIn('id', $flaggedIds)->count(),
-        ];
-        $selection = app(StarterQuestionReviewService::class)->select($current, $reviews);
+        $corrections = $this->openCorrections();
+        $lessons = Lesson::where('is_active', true)->whereNotNull('topic')->whereRaw("TRIM(topic) <> ''")
+            ->orderBy('title')->get(['id', 'title', 'grade_id', 'subject_id', 'topic', 'question_pdf_path', 'question_pdf_2_path']);
+        $selection = app(StarterQuestionReviewService::class)->select($current, $reviews, $lessons, $allIssues, $corrections, $currentSources);
+        $notificationCounts = $this->notificationCounts($current, $reviews, $corrections, $selection);
+        Cache::put(self::COUNTS_CACHE_KEY, $notificationCounts, self::COUNTS_TTL_SECONDS);
         $rows = $reviews->filter(function ($row) use ($current, $matches) {
             if (!isset($current[$row->id]) && !in_array($row->status, ['reprocessing', 'needs_attention'], true)) return false;
             return $matches($row->grade_id, $row->subject_id, $row->origins);
@@ -71,8 +92,6 @@ class QuestionReviewController extends Controller
             'retry_outcome' => $row->retry_outcome, 'review_note' => $row->review_note,
             'current' => isset($current[$row->id]), 'approved_at' => $row->approved_at?->toIso8601String(),
         ])->values();
-        $lessons = collect($current)->concat($allIssues)->flatMap(fn ($q) => array_map(fn ($origin) => ['id' => $origin['lesson_id'], 'title' => $origin['lesson_title'],
-            'grade_id' => $q['grade_id'], 'subject_id' => $q['subject_id'], 'topic' => $origin['topic']], $q['origins']))->unique('id')->values();
         return response()->json(['data' => $items, 'counts' => $counts, 'notification_counts' => $notificationCounts, 'total' => $rows->count(), 'page' => $page,
             'last_page' => max(1, (int) ceil($rows->count() / 20)), 'grades' => Grade::select('id', 'name')->get(),
             'subjects' => Subject::select('id', 'name')->get(), 'lessons' => $lessons, 'selection' => $selection]);
@@ -82,9 +101,10 @@ class QuestionReviewController extends Controller
     {
         $this->authorizeStaff($request);
         $filters = $request->validate(['grade_id' => 'nullable|integer', 'subject_id' => 'nullable|integer', 'lesson_id' => 'nullable|integer', 'review_scope' => 'nullable|in:all,starter', 'topic' => 'nullable|string|max:255']);
-        $current = $service->synchronize();
+        [$current, , $currentSources] = $service->reviewQueue(withIssues: false);
         $reviews = QuestionReview::whereIn('id', array_keys($current))->get();
-        $selection = app(StarterQuestionReviewService::class)->select($current, $reviews);
+        $selection = app(StarterQuestionReviewService::class)->select($current, $reviews,
+            corrections: $this->openCorrections(), currentSources: $currentSources);
         $pending = ($filters['review_scope'] ?? 'all') === 'starter' ? $selection['ids'] : $reviews->whereIn('status', ['pending', 'review_again'])->pluck('id')->all();
         $sources = [];
         foreach ($current as $question) {
@@ -110,6 +130,23 @@ class QuestionReviewController extends Controller
     {
         $this->authorizeStaff($request);
         return response()->json($service->pdfReview($source));
+    }
+
+    private function openCorrections(): Collection
+    {
+        return Schema::hasTable('question_corrections')
+            ? QuestionCorrection::where('status', '!=', 'resolved')->get(['question_id', 'replacement_id', 'status', 'original', 'sources'])
+            : collect();
+    }
+
+    private function notificationCounts(array $current, Collection $reviews, Collection $corrections, array $selection): array
+    {
+        $correctionIds = $corrections->pluck('question_id')->merge($corrections->pluck('replacement_id'))->filter()->unique();
+        return [
+            'important' => $selection['remaining'],
+            'optional' => $reviews->filter(fn ($row) => isset($current[$row->id]))
+                ->whereIn('status', ['pending', 'review_again'])->whereNotIn('id', $selection['ids'])->whereNotIn('id', $correctionIds)->count(),
+        ];
     }
 
     public function approvePdf(Request $request, int $source, QuestionReviewService $service)
@@ -138,6 +175,15 @@ class QuestionReviewController extends Controller
         abort_unless(preg_match('/^[a-f0-9]{64}$/', $id), 404);
         $input = $request->validate(['revision' => 'required|integer|min:1']);
         return response()->json($service->retryExtractionIssue($id, $input['revision']), 202);
+    }
+
+    public function draftIssue(Request $request, string $id, QuestionCorrectionService $service)
+    {
+        $this->authorizeStaff($request);
+        abort_unless(preg_match('/^[a-f0-9]{64}$/', $id), 404);
+        $input = $request->validate(['revision' => 'required|integer|min:1', 'label' => 'nullable|string|max:80']);
+        $issue = $service->draftFromExtractionIssue($id, $input['revision'], $request->user()->id, $input['label'] ?? null);
+        return response()->json(['id' => $issue->question_id, 'status' => $issue->status]);
     }
 
     public function decide(Request $request, string $id, QuestionReviewService $service)

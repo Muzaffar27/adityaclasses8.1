@@ -18,6 +18,19 @@
         </section>
         <nav class="review-tabs" aria-label="Review status"><button v-for="tab in tabs.slice(0, 3)" :key="tab.key" type="button" :data-status="tab.key" :disabled="saving" :aria-pressed="status === tab.key" @click="selectStatus(tab.key)">{{ tab.label }} <span>{{ counts[tab.key] || 0 }}</span></button></nav>
         <StarterBankOverview v-if="status === 'pending' && reviewSelection" :selection="reviewSelection" :scope="reviewScope" :disabled="saving || loading" @scope="selectScope" />
+        <section v-if="status === 'pending' && reviewScope === 'starter' && selectedTopic" class="notice" aria-label="Starter topic progress">
+            <strong>{{ selectedTopic.available }} / {{ selectedTopic.target }} questions available</strong>
+            <p>{{ Math.min(selectedTopic.approved, selectedTopic.target) }} approved · {{ Math.max(0, selectedTopic.available - selectedTopic.approved) }} to verify or edit</p>
+            <template v-if="!selectedTopic.ready">
+                <p v-if="!selectedTopic.question_pdfs">No question PDF is attached to this topic.</p>
+                <p v-else>{{ selectedTopic.target - selectedTopic.available }} more needed. Check the original PDF for questions you can recover.</p>
+            </template>
+            <div v-if="selectedTopic.open_corrections || (!selectedTopic.ready && (counts.rejected || counts.skipped))" class="coverage-actions">
+                <button v-if="selectedTopic.open_corrections" type="button" :disabled="saving" @click="selectStatus('corrections', true)">Edit questions for this topic ({{ selectedTopic.open_corrections }})</button>
+                <button v-if="!selectedTopic.ready && counts.rejected" type="button" :disabled="saving" @click="selectStatus('rejected')">Inspect rejected regions ({{ counts.rejected }})</button>
+                <button v-if="!selectedTopic.ready && counts.skipped" type="button" :disabled="saving" @click="selectStatus('skipped')">Inspect skipped pages ({{ counts.skipped }})</button>
+            </div>
+        </section>
         <div v-if="status !== 'corrections'" class="selection-toolbar">
             <span>{{ selectionSummary }}</span>
             <button type="button" :disabled="saving" @click="filterDialog.showModal()">Filter</button>
@@ -27,7 +40,7 @@
             <div class="filters">
                 <label>Grade<select :disabled="saving" v-model="grade" @change="changeFilters"><option value="">All grades</option><option v-for="g in grades" :key="g.id" :value="g.id">{{ g.name }}</option></select></label>
                 <label>Subject<select :disabled="saving" v-model="subject" @change="changeFilters"><option value="">All subjects</option><option v-for="s in subjects" :key="s.id" :value="s.id">{{ s.name }}</option></select></label>
-                <label class="full-field">Topic<select :disabled="saving" :value="activeTopicKey" @change="selectTopic(reviewSelection?.topics.find(item => item.key === $event.target.value))"><option value="">All topics</option><option v-for="item in visibleTopics" :key="item.key" :value="item.key">{{ item.topic.replace(/^\d+\.\s*/, '') }} ({{ item.approved }}/{{ item.target }})</option></select></label>
+                <label class="full-field">Topic<select :disabled="saving" :value="activeTopicKey" @change="selectTopic(reviewSelection?.topics.find(item => item.key === $event.target.value))"><option value="">All topics</option><option v-for="item in visibleTopics" :key="item.key" :value="item.key">{{ item.topic.replace(/^\d+\.\s*/, '') }} ({{ item.available }}/{{ item.target }})</option></select></label>
                 <label class="full-field">Lesson<select :disabled="saving" v-model="lesson" @change="changeLesson"><option value="">All lessons</option><option v-for="l in visibleLessons" :key="l.id" :value="l.id">{{ l.title }}</option></select></label>
             </div>
             <section v-if="status === 'pending'" class="dialog-section" aria-label="Review layout"><h4>Review layout</h4><nav class="review-tabs"><button :disabled="saving" :aria-pressed="pdfMode" @click="pdfMode = true">By PDF</button><button :disabled="saving" :aria-pressed="!pdfMode" @click="pdfMode = false">One at a time</button></nav></section>
@@ -35,7 +48,7 @@
             <footer><button type="button" :disabled="saving" @click="resetFilters">Reset filters</button><button type="button" class="filter-done" @click="filterDialog.close()">Done</button></footer>
         </dialog>
         <p v-if="isCoverage" class="coverage-intro">{{ status === 'rejected' ? 'Rejected regions' : 'Skipped pages' }} · {{ total }} to inspect</p>
-        <QuestionCorrectionPanel v-if="status === 'corrections'" @busy="saving = $event" @changed="load(true, true)" />
+        <QuestionCorrectionPanel v-if="status === 'corrections'" :initial-id="correctionId" :initial-topic="correctionTopic" @busy="saving = $event" @changed="load(true, true)" />
         <PdfQuestionReview v-else-if="status === 'pending' && pdfMode" ref="pdfReview" :grade="grade" :subject="subject" :lesson="lesson" :scope="reviewScope" :topic="topic" />
         <p v-else-if="loading" role="status">Loading the review queue…</p>
         <div v-else-if="!question && !error" class="empty"><h3>{{ isCoverage ? 'No extraction issues match these filters' : status === 'approved' ? 'No verified questions yet' : status === 'reprocessing' ? 'No extractions running' : 'No questions to review' }}</h3><p>{{ status === 'pending' ? 'New and changed questions appear here after their lesson PDFs are processed.' : 'Choose another status or change the filters.' }}</p></div>
@@ -65,6 +78,10 @@
                             <p v-else class="coverage-empty">No readable text was extracted. Check the original PDF.</p>
                         </ReviewQuestionContent>
                         <div class="coverage-actions"><button type="button" class="retry-extraction" :disabled="saving || ['pending', 'processing'].includes(recovery?.status)" @click="retryExtraction">{{ saving ? 'Queueing…' : recovery?.status === 'pending' ? 'Queued — awaiting worker' : recovery?.status === 'processing' ? 'Processing PDF…' : 'Retry extraction' }}</button><button type="button" :disabled="sourceLoading" @click="sourceUrl ? closeSource() : openSource()">{{ sourceLoading ? 'Loading PDF…' : sourceUrl ? 'Hide original PDF' : 'Compare original PDF' }}</button></div>
+                        <form class="coverage-draft" @submit.prevent="draftExtractionIssue">
+                            <label v-if="status === 'skipped'">Question number or label on this page<input v-model.trim="draftLabel" maxlength="80" required /></label>
+                            <button type="submit" :disabled="saving">Create editable draft</button>
+                        </form>
                         <details class="coverage-options"><summary>Extraction details</summary>
                             <p>{{ questionGrade }} · {{ questionSubject }} · {{ origin?.topic }}</p>
                             <p v-if="status === 'skipped'">{{ auditLabel(question.coverage.audit_hint) }}</p>
@@ -131,7 +148,12 @@ const countsUnchanged = computed(() => recovery.value && recovery.value.question
     && recovery.value.rejected_count === recovery.value.before_rejected && recovery.value.skipped_count === recovery.value.before_skipped);
 const recoveryActive = computed(() => ['pending', 'processing'].includes(recovery.value?.status)
     || (recovery.value?.status === 'failed' && recovery.value.retry_scheduled));
-function selectStatus(value) { status.value = value; page.value = 1; filterDialog.value?.close(); load(); }
+const correctionId = ref(''), correctionTopic = ref(null), draftLabel = ref('');
+function selectStatus(value, filterCorrections = false) {
+    correctionId.value = ''; correctionTopic.value = filterCorrections ? selectedTopic.value : null;
+    items.value = []; index.value = 0;
+    status.value = value; page.value = 1; filterDialog.value?.close(); load();
+}
 let loadSerial = 0, sourceSerial = 0, poll;
 const tabs = [{ key: 'pending', label: 'To review' }, { key: 'corrections', label: 'Needs correction' }, { key: 'approved', label: 'Verified' }, { key: 'reprocessing', label: 'Reprocessing' }, { key: 'rejected', label: 'Rejected regions' }, { key: 'skipped', label: 'Skipped pages' }];
 const isCoverage = computed(() => ['rejected', 'skipped'].includes(status.value));
@@ -144,6 +166,7 @@ const canDecide = computed(() => question.value?.current && ['pending', 'review_
 const visibleLessons = computed(() => lessons.value.filter(l => (!grade.value || Number(l.grade_id) === Number(grade.value)) && (!subject.value || Number(l.subject_id) === Number(subject.value))));
 const visibleTopics = computed(() => (reviewSelection.value?.topics || []).filter(item => (!grade.value || item.grade_id === Number(grade.value)) && (!subject.value || item.subject_id === Number(subject.value))));
 const activeTopicKey = computed(() => topic.value ? visibleTopics.value.find(item => item.topic === topic.value)?.key || '' : '');
+const selectedTopic = computed(() => visibleTopics.value.find(item => item.key === activeTopicKey.value));
 const selectionSummary = computed(() => [grades.value.find(g => Number(g.id) === Number(grade.value))?.name, subjects.value.find(s => Number(s.id) === Number(subject.value))?.name, topic.value?.replace(/^\d+\.\s*/, '') || 'All topics', lessons.value.find(l => Number(l.id) === Number(lesson.value))?.title].filter(Boolean).join(' / '));
 const statusLabel = value => ({ pending: 'Needs review', approved: 'Verified', reprocessing: 'Reprocessing', review_again: 'Review again', needs_attention: 'Needs attention', rejected: 'Not extracted', skipped: 'Page inspection needed' })[value] || value;
 const reasonLabel = value => ({ unsupported_multiline_maths: 'The maths spans multiple lines the extractor cannot interpret safely.', ambiguous_superscript: 'The position or meaning of a power is unclear.', unsupported_text_or_symbol: 'Some text or symbols are not supported by the extractor.', ambiguous_fraction: 'The numerator and denominator could not be identified reliably.', empty_question: 'No usable question content was recognised.', no_exercise_heading: 'No recognised exercise heading was found.', mixed_revision_exercise: 'The page contains a mixed revision exercise excluded by the current rules.', no_question_boundaries: 'The extractor could not find reliable question boundaries.', worked_examples_or_revision: 'The page matched the worked-example or revision exclusion rule.', worked_examples_or_solutions: 'The page matched the worked-example or solution exclusion rule.', ambiguous_columns: 'The page columns could not be separated reliably.', invalid_regions: 'The detected question regions were not usable.', unsupported_list_maths: 'This question contains a list of expressions that the extractor cannot represent safely yet.', continuation_not_confirmed: 'This page could not be safely matched to the preceding exercise.', new_instructions_without_heading: 'New instructions were detected without a recognised exercise heading.' })[value] || String(value).replaceAll('_', ' ');
@@ -155,7 +178,7 @@ async function load(silent = false, correctionChanged = false) {
     if (!silent) loading.value = true;
     error.value = '';
     try {
-        const { data } = await api.get('/admin/question-reviews', { params: { grade_id: grade.value || undefined, subject_id: subject.value || undefined, lesson_id: lesson.value || undefined, status: status.value === 'corrections' ? 'pending' : status.value, page: page.value, review_scope: reviewScope.value, topic: topic.value || undefined } });
+        const { data } = await api.get('/admin/question-reviews', { timeout: 30000, params: { grade_id: grade.value || undefined, subject_id: subject.value || undefined, lesson_id: lesson.value || undefined, status: status.value === 'corrections' ? 'pending' : status.value, page: page.value, review_scope: reviewScope.value, topic: topic.value || undefined } });
         if (serial !== loadSerial) return;
         emit('review-counts', data.notification_counts);
         reviewSelection.value = data.selection || null; items.value = data.data; counts.value = data.counts; grades.value = data.grades; subjects.value = data.subjects; lessons.value = data.lessons;
@@ -199,6 +222,21 @@ async function flagForCorrection() {
     } catch (e) { error.value = e.response?.data?.message || 'Could not save the flag. Try again.'; }
     finally { saving.value = false; }
 }
+async function draftExtractionIssue() {
+    if (saving.value || !question.value?.coverage) return;
+    saving.value = true; error.value = ''; message.value = '';
+    try {
+        const { data } = await api.post(`/admin/question-reviews/issues/${question.value.id}/draft`, {
+            revision: question.value.coverage.source_revision, label: draftLabel.value || undefined,
+        }, { timeout: 30000 });
+        correctionId.value = data.id;
+        correctionTopic.value = null;
+        status.value = 'corrections';
+        message.value = 'Draft opened in Needs correction.';
+        load(true, true);
+    } catch (e) { error.value = e.response?.data?.message || 'Could not create the draft.'; }
+    finally { saving.value = false; }
+}
 async function retryExtraction() {
     if (saving.value || !question.value?.coverage || ['pending', 'processing'].includes(recovery.value?.status)) return;
     saving.value = true; error.value = ''; message.value = ''; recoveryError.value = '';
@@ -233,7 +271,8 @@ async function checkRecovery() {
 function reviewRecovered() { topic.value = ''; reviewScope.value = 'all'; grade.value = ''; subject.value = ''; lesson.value = recovery.value.lesson_id; status.value = 'pending'; page.value = 1; load(); }
 function previous() { if (index.value > 0) index.value--; else if (page.value > 1) { page.value--; load(); } }
 function next() { if (index.value < items.value.length - 1) index.value++; else if (page.value < lastPage.value) { page.value++; load(); } }
-watch(() => question.value?.id, () => { closeSource(); note.value = ''; originIndex.value = 0; diagramsReady.value = false; if (isCoverage.value && question.value) openSource(); });
+watch(() => question.value?.id, () => { closeSource(); note.value = ''; draftLabel.value = ''; originIndex.value = 0; diagramsReady.value = false; if (isCoverage.value && question.value) openSource(); });
+watch(status, () => { if (!isCoverage.value) closeSource(); });
 watch(recovery, job => {
     try { if (job && recoveryActive.value) sessionStorage.setItem('question-extraction-recovery', JSON.stringify(job)); else sessionStorage.removeItem('question-extraction-recovery'); } catch { /* Status remains available in the current view. */ }
 });
@@ -273,6 +312,9 @@ onBeforeUnmount(() => { loadSerial++; clearInterval(poll); closeSource(); });
 .coverage-empty { margin:0; }
 .coverage-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .coverage-actions button { min-height:44px; padding:8px 12px; font-size:.85rem; }
+.coverage-draft { display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-top:12px; }
+.coverage-draft label { display:grid; gap:4px; min-width:0; }
+.coverage-draft input,.coverage-draft button { min-height:44px; max-width:100%; }
 .coverage-actions .retry-extraction:disabled { cursor:default; }
 .coverage-options { font-size:.8rem; color:var(--app-muted); margin-top:8px; }
 .coverage-options summary { font-size:.8rem; min-height:30px; }

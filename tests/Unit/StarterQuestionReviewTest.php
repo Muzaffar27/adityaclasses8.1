@@ -27,7 +27,8 @@ class StarterQuestionReviewTest extends TestCase
         $this->assertSame(7, $selection['library_pending']);
         $this->assertSame(5, $selection['flagged_for_goal']);
         $this->assertSame(0, $selection['approved_for_goal']);
-        $this->assertSame(0, $selection['topics_ready']);
+        $this->assertSame(1, $selection['topics_ready']);
+        $this->assertSame(5, $selection['available_for_goal']);
         $reviews[$initial[0]]->status = 'pending';
         $questions[$initial[0]]['correction_of'] = 'older-flagged-version';
         $this->assertSame([], $service->select($questions, $reviews)['ids']);
@@ -50,6 +51,8 @@ class StarterQuestionReviewTest extends TestCase
         $this->assertSame(2, $selection['topic_count']);
         $this->assertSame(10, $selection['goal_total']);
         $this->assertSame(0, $selection['approved_for_goal']);
+        $this->assertSame(10, $selection['available_for_goal']);
+        $this->assertSame(2, $selection['topics_ready']);
         $this->assertSame($selection, $service->select(array_reverse($questions, true), $reviews->reverse()));
         foreach ([1, 2] as $grade) {
             $chosen = array_filter($selection['ids'], fn ($id) => $questions[$id]['grade_id'] === $grade);
@@ -65,6 +68,6 @@ class StarterQuestionReviewTest extends TestCase
         $progress = $service->select($questions, $reviews);
         $this->assertSame(5, $progress['approved_for_goal']);
         $this->assertSame(2, $progress['topic_count']);
-        $this->assertSame(1, $progress['topics_ready']);
+        $this->assertSame(2, $progress['topics_ready']);
     }
 }

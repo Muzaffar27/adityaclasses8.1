@@ -8,8 +8,8 @@
                 <span class="mode-label">More variety <span aria-hidden="true">↗</span></span><span class="mode-value">{{ selection.library_pending }}</span><span class="mode-count">All questions</span>
             </button>
         </div>
-        <div class="goal-row"><span><strong>{{ selection.approved_for_goal }}</strong> / {{ selection.goal_total }} approved</span><span>More approved = more variety</span></div>
-        <progress :value="selection.approved_for_goal" :max="selection.goal_total || 1" aria-label="Starter bank approval progress" />
+        <div class="goal-row"><span><strong>{{ selection.available_for_goal }}</strong> / {{ selection.goal_total }} questions available</span><span>{{ selection.topics_ready }} of {{ selection.topic_count }} topics meet the minimum</span></div>
+        <progress :value="selection.available_for_goal" :max="selection.goal_total || 1" aria-label="Starter bank question coverage" />
     </section>
 </template>
 <script setup>

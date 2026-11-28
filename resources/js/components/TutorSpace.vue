@@ -93,12 +93,12 @@ function updateReviewCount(counts) {
     countsLoading.value = false;
     lastCountAt = Date.now();
 }
-async function loadReviewCount() {
+async function loadReviewCount(refresh = false) {
     if (!auth.isTutor && !auth.isAdmin) return;
     const serial = ++countSerial;
-    countsLoading.value = true;
+    countsLoading.value = reviewCount.value === null;
     try {
-        const { data } = await api.get('/admin/question-reviews', { params: { status: 'pending', review_scope: 'all' } });
+        const { data } = await api.get('/admin/question-reviews/counts', { params: refresh === true ? { refresh: 1 } : undefined });
         if (disposed || serial !== countSerial) return;
         reviewCount.value = data.notification_counts;
         countsError.value = false;
@@ -108,7 +108,7 @@ async function loadReviewCount() {
     } finally { if (!disposed && serial === countSerial) countsLoading.value = false; }
 }
 const reviewSaves = useQuestionReviewSaves();
-watch(reviewSaves.result, () => { clearTimeout(countRefresh); countRefresh = setTimeout(loadReviewCount, 350); });
+watch(reviewSaves.result, () => { clearTimeout(countRefresh); countRefresh = setTimeout(() => loadReviewCount(true), 350); });
 function refreshOnFocus() { if (Date.now() - lastCountAt > 60000) loadReviewCount(); }
 onMounted(() => { loadReviewCount(); window.addEventListener('focus', refreshOnFocus); });
 onBeforeUnmount(() => { disposed = true; clearTimeout(countRefresh); window.removeEventListener('focus', refreshOnFocus); });

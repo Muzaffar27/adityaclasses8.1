@@ -18,8 +18,15 @@ class QuestionCorrectionController extends Controller
     public function index(Request $request, QuestionCorrectionService $service)
     {
         $this->authorizeStaff($request, $service);
-        $input = $request->validate(['page' => 'nullable|integer|min:1', 'status' => 'nullable|in:open,resolved,all']);
+        $input = $request->validate(['page' => 'nullable|integer|min:1', 'status' => 'nullable|in:open,resolved,all',
+            'id' => ['sometimes', 'string', 'regex:/^[a-f0-9]{64}$/'], 'topic' => 'sometimes|string|max:255',
+            'grade_id' => 'required_with:topic|integer|min:1', 'subject_id' => 'required_with:topic|integer|min:1']);
         $query = QuestionCorrection::query();
+        if (isset($input['id'])) $query->whereKey($input['id']);
+        if (isset($input['topic'])) {
+            $query->where('original->origins[0]->topic', $input['topic'])->where('status', '!=', 'stale')
+                ->whereIn('question_id', QuestionReview::select('id')->where('grade_id', $input['grade_id'])->where('subject_id', $input['subject_id']));
+        }
         if (($input['status'] ?? 'open') === 'open') $query->where('status', '!=', 'resolved');
         elseif ($input['status'] === 'resolved') $query->where('status', 'resolved');
         $rows = $query->orderBy('flagged_at')->paginate(20);

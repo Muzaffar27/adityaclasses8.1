@@ -8,7 +8,7 @@
             </select>
         </label>
         <p v-if="loading" role="status">Loading PDF review…</p>
-        <p v-else-if="!hasSources && !error && !queue.pending.value.length && !queue.failures.value.length">{{ scope === 'starter' && selection?.flagged_for_goal ? 'Starter reviewed. Finish flagged questions in Needs correction.' : 'No more questions in this selection.' }}</p>
+        <p v-else-if="!hasSources && !error && !queue.pending.value.length && !queue.failures.value.length">{{ scope === 'starter' && selection?.flagged_for_goal ? 'Open Needs correction to work on editable questions.' : 'No more questions in this selection.' }}</p>
         <template v-if="batch && !loading">
             <div class="batch-workspace">
                 <div class="question-list">
