@@ -13,6 +13,7 @@ use App\Models\TestPaperAttempt;
 use App\Models\TestPaperEvent;
 use App\Models\TestPaperQuestion;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -255,7 +256,7 @@ class SavedTestPaperService
                 && Schema::hasTable('test_paper_answers') && in_array($paper->status, ['available', 'started'], true), 'available_at' => $paper->available_at,
             'attempt' => ['id' => $paper->attempt->id, 'started_at' => $paper->attempt->started_at,
                 'submitted_at' => $paper->attempt->submitted_at, 'marked_at' => $paper->attempt->marked_at]];
-        if ($questions) $result['questions'] = $paper->questions->map(function ($q) use ($paper, $actor) {
+        if ($questions) $result['questions'] = $this->questionsInDisplayOrder($paper)->map(function ($q) use ($paper, $actor) {
             $content = array_intersect_key($q->content, array_flip(['instructions', 'text', 'math', 'diagrams']));
             if (isset($content['diagrams'])) $content['diagrams'] = array_map(fn ($d) => [
                 'url' => "/api/test-papers/{$paper->id}/diagrams/{$d['sha256']}",
@@ -280,6 +281,22 @@ class SavedTestPaperService
             'topics' => $paper->batch->topics, 'blueprint' => $paper->blueprint];
         if ($actor->role !== 'student' && $questions) $result['events'] = $paper->events->map(fn ($e) => $e->only(['actor_id', 'from_status', 'to_status', 'reason', 'created_at']))->all();
         return $result;
+    }
+
+    public function questionsInDisplayOrder(TestPaper $paper): Collection
+    {
+        // The paper ID fixes the shuffle for every viewer. Saved positions still identify responses.
+        return $paper->questions->groupBy('topic')->flatMap(function ($topicQuestions) use ($paper) {
+            $seeded = $topicQuestions->map(fn ($question) => [
+                'question' => $question,
+                'key' => hash('sha256', $paper->id.':'.$question->position),
+            ])->sortBy('key')->values();
+
+            // Spread each topic across the full paper, including when topic quotas differ.
+            return $seeded->map(fn ($item, $index) => $item + [
+                'spread' => ($index + 0.5) / $seeded->count(),
+            ]);
+        })->sortBy([['spread', 'asc'], ['key', 'asc']])->pluck('question')->values();
     }
 
     public function diagram(TestPaper $paper, string $hash): string

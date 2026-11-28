@@ -85,6 +85,14 @@ class SavedTestPaperTest extends TestCase
             ->assertJsonPath('marking_ready', false)->assertJsonCount(15, 'questions')->json('id');
     }
 
+    private function completeAnswers(array $answers): array
+    {
+        $byNumber = array_column($answers, null, 'number');
+        return array_map(fn ($number) => $byNumber[$number] ?? [
+            'number' => $number, 'answer' => '1', 'working' => '',
+        ], range(1, 15));
+    }
+
     public function test_attention_is_private_owned_and_tracks_start_and_submission(): void
     {
         $this->getJson('/api/test-papers/attention')->assertUnauthorized();
@@ -102,7 +110,7 @@ class SavedTestPaperTest extends TestCase
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $this->postJson("/api/test-papers/$id/start")->assertOk();
         $this->getJson('/api/test-papers/attention')->assertOk()->assertJsonPath('started_count', 1)->assertJsonPath('next.status', 'started');
-        $this->putJson("/api/test-papers/$id/answers", ['revision' => 0, 'answers' => [['number' => 1, 'answer' => '4', 'working' => '2 + 2']]])->assertOk();
+        $this->putJson("/api/test-papers/$id/answers", ['revision' => 0, 'answers' => $this->completeAnswers([['number' => 1, 'answer' => '4', 'working' => '2 + 2']])])->assertOk();
         $this->postJson("/api/test-papers/$id/submit", ['revision' => 1])->assertOk();
         $this->getJson('/api/test-papers/attention')->assertOk()->assertJsonPath('total', 0)->assertJsonPath('next', null);
     }
@@ -140,7 +148,7 @@ class SavedTestPaperTest extends TestCase
             Sanctum::actingAs($learner);
             $this->getJson('/api/test-papers')->assertOk()->assertJsonCount(1, 'data');
             $this->postJson("/api/test-papers/$id/start")->assertOk()->assertJsonPath('answering_available', true);
-            $this->putJson("/api/test-papers/$id/answers", ['revision' => 0, 'answers' => [['number' => 1, 'answer' => '4', 'working' => '2 + 2']]])->assertOk();
+            $this->putJson("/api/test-papers/$id/answers", ['revision' => 0, 'answers' => $this->completeAnswers([['number' => 1, 'answer' => '4', 'working' => '2 + 2']])])->assertOk();
             Sanctum::actingAs($this->tutor);
             $this->putJson("/api/test-papers/$id/answers", ['revision' => 1, 'answers' => [['number' => 1, 'answer' => '5', 'working' => '']]])->assertForbidden();
             Sanctum::actingAs($learner);
@@ -163,7 +171,7 @@ class SavedTestPaperTest extends TestCase
         $this->getJson('/api/test-papers?per_page=1&page=2')->assertOk()->assertJsonPath('data.0.id', $second);
         $this->getJson('/api/test-papers?per_page=100')->assertUnprocessable();
         $this->postJson("/api/test-papers/$first/start")->assertOk();
-        $this->putJson("/api/test-papers/$first/answers", ['revision' => 0, 'answers' => [['number' => 1, 'answer' => '4', 'working' => '']]])->assertOk();
+        $this->putJson("/api/test-papers/$first/answers", ['revision' => 0, 'answers' => $this->completeAnswers([['number' => 1, 'answer' => '4', 'working' => '']])])->assertOk();
         $this->postJson("/api/test-papers/$first/submit", ['revision' => 1])->assertOk();
         $this->getJson('/api/test-papers/attention')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('next.id', $second);
         $this->getJson('/api/test-papers?per_page=1')->assertOk()->assertJsonPath('data.0.id', $second);
@@ -175,6 +183,9 @@ class SavedTestPaperTest extends TestCase
     {
         $id = $this->issue();
         $first = $this->getJson("/api/test-papers/$id")->assertOk()->json('questions');
+        foreach (array_chunk($first, 5) as $page) {
+            $this->assertCount(3, array_unique(array_column($page, 'topic')));
+        }
         $this->postJson('/api/admin/test-papers', $this->input)->assertOk()->assertJsonPath('id', $id)->assertJsonPath('questions', $first);
         $this->assertSame(1, AssessmentBatch::count());
         $this->assertSame(1, TestPaper::count());
@@ -186,6 +197,19 @@ class SavedTestPaperTest extends TestCase
         $this->assertNull(TestPaperQuestion::first()->marks);
         $this->assertNull(TestPaperQuestion::first()->marking_snapshot);
         $this->assertNotEmpty(TestPaperQuestion::first()->provenance['origins'][0]['source_sha256']);
+
+        $positions = array_column($first, 'number');
+        Sanctum::actingAs($this->student);
+        $this->postJson("/api/test-papers/$id/start")->assertOk();
+        $number = $positions[0];
+        $this->putJson("/api/test-papers/$id/answers", [
+            'revision' => 0, 'answers' => [['number' => $number, 'answer' => '4', 'working' => '2 + 2']],
+        ])->assertOk();
+        $resumed = $this->getJson("/api/test-papers/$id")->assertOk();
+        $this->assertSame($positions, array_column($resumed->json('questions'), 'number'));
+        $resumed->assertJsonPath('responses.answers.0.number', $number)
+            ->assertJsonPath('responses.answers.0.answer', '4')
+            ->assertJsonPath('responses.answers.0.working', '2 + 2');
     }
 
     public function test_guests_students_and_unknown_roles_cannot_issue_papers(): void
@@ -367,10 +391,10 @@ class SavedTestPaperTest extends TestCase
         $this->postJson("/api/test-papers/$id/start")->assertOk();
         $formattedAnswer = '\(\frac34+2^3\)';
         $formattedWorking = '\(\begin{gathered}\frac{\placeholder{}}4\\ 2^3\end{gathered}\)';
-        $body = ['revision' => 0, 'answers' => [
+        $body = ['revision' => 0, 'answers' => $this->completeAnswers([
             ['number' => 1, 'answer' => '5/4', 'working' => "3/4 + 2/4\n= 5/4"],
             ['number' => 2, 'answer' => $formattedAnswer, 'working' => $formattedWorking],
-        ]];
+        ])];
         $this->putJson("/api/test-papers/$id/answers", $body)->assertOk()->assertJsonPath('revision', 1);
         $this->getJson("/api/test-papers/$id")->assertOk()->assertJsonPath('responses.revision', 1)
             ->assertJsonPath('responses.answers.0.answer', '5/4')->assertJsonPath('responses.answers.0.working', "3/4 + 2/4\n= 5/4")
@@ -391,7 +415,7 @@ class SavedTestPaperTest extends TestCase
     public function test_stale_tabs_and_late_autosaves_cannot_overwrite_saved_or_submitted_answers(): void
     {
         $id = $this->issue(); Sanctum::actingAs($this->student); $this->postJson("/api/test-papers/$id/start")->assertOk();
-        $body = ['revision' => 0, 'answers' => [['number' => 1, 'answer' => '8', 'working' => '2^3']]];
+        $body = ['revision' => 0, 'answers' => $this->completeAnswers([['number' => 1, 'answer' => '8', 'working' => '2^3']])];
         $this->putJson("/api/test-papers/$id/answers", $body)->assertOk();
         $body['answers'][0]['answer'] = 'wrong stale answer';
         $this->putJson("/api/test-papers/$id/answers", $body)->assertConflict();
@@ -415,7 +439,24 @@ class SavedTestPaperTest extends TestCase
         $this->assertSame(0, DB::table('test_paper_answers')->count());
     }
 
-    public function test_handwriting_saves_preserves_legacy_patches_and_submits_without_text(): void
+    public function test_submit_lists_blank_final_answers_in_display_order_and_keeps_paper_open(): void
+    {
+        $id = $this->issue();
+        Sanctum::actingAs($this->student);
+        $questions = $this->postJson("/api/test-papers/$id/start")->assertOk()->json('questions');
+        $answers = $this->completeAnswers([
+            ['number' => $questions[2]['number'], 'answer' => " \t ", 'working' => '2 + 2'],
+            ['number' => $questions[6]['number'], 'answer' => '0', 'working' => ''],
+        ]);
+        $answers = array_values(array_filter($answers, fn ($answer) => $answer['number'] !== $questions[11]['number']));
+        $this->putJson("/api/test-papers/$id/answers", ['revision' => 0, 'answers' => $answers])->assertOk();
+        $this->postJson("/api/test-papers/$id/submit", ['revision' => 1])->assertUnprocessable()
+            ->assertJsonPath('errors.answers.0', 'Final answers missing for questions 3, 12.');
+        $this->getJson("/api/test-papers/$id")->assertOk()->assertJsonPath('status', 'started')->assertJsonPath('responses.revision', 1);
+        $this->assertNull(TestPaperAttempt::sole()->submitted_at);
+    }
+
+    public function test_handwriting_is_preserved_but_submission_requires_final_answers(): void
     {
         $id = $this->issue();
         Sanctum::actingAs($this->student);
@@ -437,8 +478,10 @@ class SavedTestPaperTest extends TestCase
         $this->postJson("/api/test-papers/$id/submit", ['revision' => 3])->assertUnprocessable();
         $body['revision'] = 3;
         $this->putJson("/api/test-papers/$id/answers", $body)->assertOk();
-        $this->postJson("/api/test-papers/$id/submit", ['revision' => 4])->assertOk()->assertJsonPath('status', 'awaiting_review');
-        $this->putJson("/api/test-papers/$id/answers", array_replace($body, ['revision' => 4]))->assertConflict();
+        $this->postJson("/api/test-papers/$id/submit", ['revision' => 4])->assertUnprocessable()->assertJsonValidationErrors('answers');
+        $this->putJson("/api/test-papers/$id/answers", ['revision' => 4, 'answers' => $this->completeAnswers([])])->assertOk();
+        $this->postJson("/api/test-papers/$id/submit", ['revision' => 5])->assertOk()->assertJsonPath('status', 'awaiting_review');
+        $this->putJson("/api/test-papers/$id/answers", array_replace($body, ['revision' => 5]))->assertConflict();
         Sanctum::actingAs($this->tutor);
         $this->getJson("/api/test-papers/$id")->assertOk()->assertJsonPath('responses.answers.0.working_ink', $ink)
             ->assertJsonPath('handwriting_available', false);
@@ -461,6 +504,7 @@ class SavedTestPaperTest extends TestCase
         $this->postJson("/api/test-papers/$id/submit", ['revision' => 1])->assertUnprocessable();
         $body['revision'] = 1;
         $body['answers'][0]['answer'] = '\(7\)';
+        $body['answers'] = $this->completeAnswers($body['answers']);
         $this->putJson("/api/test-papers/$id/answers", $body)->assertOk();
         $this->getJson("/api/test-papers/$id")->assertOk()->assertJsonPath('responses.answers.0.answer', '\(7\)')
             ->assertJsonPath('responses.answers.0.answer_ink', $ink);

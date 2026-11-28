@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\{TestPaper, User};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class TestPaperResponseService
 {
@@ -68,13 +69,19 @@ class TestPaperResponseService
             abort_unless($paper->status === 'started', 409, 'Start the paper before submitting.');
             $current = (int) (DB::table('test_paper_response_versions')->where('attempt_id', $paper->attempt->id)->value('revision') ?? 0);
             abort_unless($current === $revision, 409, 'Newer answers were saved in another tab. Reload before submitting.');
-            $handwritingReady = Schema::hasColumn('test_paper_answers', 'answer_ink') && Schema::hasColumn('test_paper_answers', 'working_ink');
-            $hasResponse = DB::table('test_paper_answers')->where('attempt_id', $paper->attempt->id)
-                ->where(function ($q) use ($handwritingReady) {
-                    $q->where('answer', '!=', '')->orWhere('working', '!=', '');
-                    if ($handwritingReady) $q->orWhereNotNull('working_ink');
-                })->exists();
-            abort_unless($hasResponse, 422, 'Enter at least one answer or working step before submitting.');
+            $savedAnswers = DB::table('test_paper_answers')->where('attempt_id', $paper->attempt->id)
+                ->pluck('answer', 'question_id');
+            $missing = [];
+            foreach ($this->papers->questionsInDisplayOrder($paper) as $index => $question) {
+                if (trim($savedAnswers->get($question->id) ?? '') === '') {
+                    $missing[] = $index + 1;
+                }
+            }
+            if ($missing) {
+                throw ValidationException::withMessages([
+                    'answers' => 'Final answers missing for questions '.implode(', ', $missing).'.',
+                ]);
+            }
             return $this->papers->submitForReview($paper, $actor);
         }, 3);
     }

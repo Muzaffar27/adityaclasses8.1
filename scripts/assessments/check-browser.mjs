@@ -215,10 +215,13 @@ try {
 
     let revision = 0, status = 'available', failNextSave = false;
     let holdNextSave = false, releaseSave;
-    const answers = { 2: { answer: '3/4', working: 'My working\n1 + 2' } };
+    const questionOrder = [1, 2, 3, 4, 5, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15];
+    const answers = Object.fromEntries(questionOrder.filter(number => ![1, 6].includes(number))
+        .map(number => [number, { answer: '2', working: '' }]));
+    answers[7] = { answer: '3/4', working: 'My working\n1 + 2' };
     const paper = () => ({ id, grade: 'Grade 8', subject: 'Mathematics', status, version: 1,
         answering_available: ['available', 'started'].includes(status), handwriting_available: status === 'started', marking_ready: false,
-        questions: Array.from({ length: 15 }, (_, i) => ({ number: i + 1, content: { instructions: 'Calculate:', text: '1 + 1' } })),
+        questions: questionOrder.map(number => ({ number, content: { instructions: 'Calculate:', text: '1 + 1' } })),
         responses: { revision, answers: Object.entries(answers).map(([number, a]) => ({ number: Number(number), ...a })) } });
     const live = await context('student', async (url, request) => {
         if (url.pathname === '/api/test-papers/attention') return { total: ['available', 'started'].includes(status) ? 1 : 0,
@@ -262,9 +265,12 @@ try {
     await live.page.locator('math-field[aria-label="Question 1 final answer"]').waitFor();
     assert.equal(await live.page.locator('math-field[aria-label="Question 1 final answer"]').evaluate(element => element.getValue('ascii-math')), '2');
     await live.page.locator('math-field[aria-label="Question 1 final answer"]').click();
+    const pageNav = live.page.getByRole('navigation', { name: 'Question pages' });
     failNextSave = true;
     await live.page.getByRole('button', { name: '3', exact: true }).click();
+    await pageNav.getByRole('button', { name: /Next/ }).click();
     await live.page.getByRole('button', { name: 'Retry save', exact: true }).waitFor();
+    await live.page.getByRole('heading', { name: 'Question 1', exact: true }).waitFor();
     assert.equal(await live.page.locator('math-field[aria-label="Question 1 final answer"]').evaluate(element => element.getValue('ascii-math')), '23');
     const recovered = live.page.waitForResponse(r => r.url().endsWith('/answers') && r.status() === 200);
     await live.page.getByRole('button', { name: 'Retry save', exact: true }).click();
@@ -283,13 +289,26 @@ try {
     await live.page.getByText('This field has reached its length limit.', { exact: true }).waitFor();
     assert.equal(await live.page.locator('math-field').first().evaluate(element => element.getValue('ascii-math')), '234');
     // Legacy text renders without rewriting its saved response.
-    await live.page.getByRole('button', { name: 'Next', exact: true }).click();
+    const questionNumbers = () => live.page.locator('.paper .question h3').allTextContents();
+    const expected = first => Array.from({ length: 5 }, (_, i) => 'Question ' + (first + i));
+    assert.deepEqual(await questionNumbers(), expected(1));
+    for (const width of [320, 390, 1440]) {
+        await live.page.setViewportSize({ width, height: 900 });
+        assert.equal(await live.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    }
+    await live.page.setViewportSize({ width: 390, height: 900 });
+    await pageNav.getByRole('button', { name: /Next/ }).click();
+    assert.deepEqual(await questionNumbers(), expected(6));
     assert.equal(await live.page.locator('math-field').first().evaluate(element => element.getValue('ascii-math')), '(3)/(4)');
-    assert.equal(answers[2].answer, '3/4');
-    await live.page.getByRole('tab', { name: 'Working', exact: true }).click();
+    assert.equal(answers[7].answer, '3/4');
+    await live.page.locator('.question').first().getByRole('tab', { name: 'Working', exact: true }).click();
     assert.ok((await live.page.locator('math-field').nth(1).evaluate(element => element.value)).includes('\\text{My working}'));
-    assert.equal(answers[2].working, 'My working\n1 + 2');
-    await live.page.getByRole('button', { name: 'Previous', exact: true }).click();
+    assert.equal(answers[7].working, 'My working\n1 + 2');
+    await pageNav.getByRole('button', { name: /Next/ }).click();
+    assert.deepEqual(await questionNumbers(), expected(11));
+    assert.ok(await pageNav.getByRole('button', { name: /Next/ }).isDisabled());
+    await pageNav.getByRole('button', { name: /Previous/ }).click();
+    await pageNav.getByRole('button', { name: /Previous/ }).click();
     const entry = live.page.locator('math-field').first();
     await entry.click();
     await entry.evaluate(element => element.executeCommand('selectAll'));
@@ -315,7 +334,7 @@ try {
     await live.page.locator('math-field').first().waitFor();
     assert.equal(await live.page.locator('math-field').first().evaluate(element => element.getValue('ascii-math')), '(3)/(4)+2^3');
     assert.equal(await live.page.getByRole('button', { name: 'Handwrite', exact: true }).count(), 0);
-    await live.page.getByRole('tab', { name: 'Working', exact: true }).click();
+    await live.page.locator('.question').first().getByRole('tab', { name: 'Working', exact: true }).click();
     await live.page.getByRole('button', { name: 'Handwrite', exact: true }).click();
     holdNextSave = true;
     const inkRequest = live.page.waitForRequest(request => request.url().endsWith('/answers'));
@@ -327,10 +346,10 @@ try {
     assert.equal(answers[1].working_ink.strokes.length, 2);
     assert.equal('answer_ink' in answers[1], false);
     await live.page.reload();
-    await live.page.getByRole('tab', { name: 'Working', exact: true }).click();
+    await live.page.locator('.question').first().getByRole('tab', { name: 'Working', exact: true }).click();
     await live.page.getByLabel(inkLabel, { exact: true }).waitFor();
     assert.equal(await hasCanvasInk(live.page, inkLabel), true);
-    await live.page.getByRole('tab', { name: 'Working', exact: true }).click();
+    await live.page.locator('.question').first().getByRole('tab', { name: 'Working', exact: true }).click();
     await live.page.getByRole('button', { name: 'Keypad', exact: true }).click();
     await live.page.locator('math-field[aria-label="Question 1 working"]').click();
     for (const key of ['1', 'Space', '1', 'Fraction: /', '4']) await pressKey(live.page, key);
@@ -341,16 +360,41 @@ try {
     assert.equal(answers[1].working_ink.strokes.length, 3);
     assert.equal(answers[1].working, '\\(1\\;\\frac14\\)');
     await live.page.reload();
-    await live.page.getByRole('tab', { name: 'Working', exact: true }).click();
+    await live.page.locator('.question').first().getByRole('tab', { name: 'Working', exact: true }).click();
     await live.page.locator('math-field[aria-label="Question 1 working"]').waitFor();
     assert.equal(await live.page.locator('math-field[aria-label="Question 1 working"]').evaluate(element => element.value), '1\\;\\frac14');
     assert.equal(await live.page.locator('math-field').first().evaluate(element => element.getValue('ascii-math')), '(3)/(4)+2^3');
-    await live.page.getByRole('button', { name: 'Submit answers', exact: true }).click();
-    await live.page.getByRole('button', { name: 'Submit now', exact: true }).click();
+    const submission = live.page.getByRole('region', { name: 'Answer saving and submission' });
+    for (const width of [320, 390, 1440]) {
+        await live.page.setViewportSize({ width, height: 900 });
+        assert.equal(await live.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+        const header = await live.page.locator('.reader-header').boundingBox();
+        const actions = await submission.boundingBox();
+        const firstQuestion = await live.page.locator('.question').first().boundingBox();
+        assert.ok(header.height < (width < 540 ? 120 : 80));
+        assert.ok(actions.y < firstQuestion.y);
+    }
+    await live.page.setViewportSize({ width: 390, height: 900 });
+    await submission.getByRole('button', { name: 'Submit answers', exact: true }).click();
+    await submission.getByRole('alert').filter({ hasText: 'Final answers missing for questions 7.' }).waitFor();
+    assert.equal(await submission.getByRole('button', { name: 'Submit now', exact: true }).count(), 0);
+    assert.equal(status, 'started');
+    await pageNav.getByRole('button', { name: /Next/ }).click();
+    await live.page.locator('math-field[aria-label="Question 7 final answer"]').click();
+    await pressKey(live.page, '0');
+    await live.page.getByText('All changes saved', { exact: true }).waitFor();
+    assert.equal(answers[6].answer, '\\(0\\)');
+    await submission.getByRole('button', { name: 'Submit answers', exact: true }).click();
+    await submission.getByRole('button', { name: 'Submit now', exact: true }).click();
     await live.page.getByText(/Your answers are saved and awaiting review/).waitFor();
     assert.equal(status, 'awaiting_review');
     assert.equal(await live.page.getByRole('button', { name: 'Handwrite', exact: true }).count(), 0);
-    assert.equal(await hasCanvasInk(live.page, 'Question 1 working handwriting'), true);
+    await live.page.locator('.question').first().getByRole('tab', { name: 'Working', exact: true }).click();
+    await live.page.waitForFunction(label => {
+        const canvas = document.querySelector(`canvas[aria-label="${label}"]`);
+        return canvas?.width > 0 && canvas?.height > 0;
+    }, inkLabel);
+    assert.equal(await hasCanvasInk(live.page, inkLabel), true);
     await live.page.getByRole('link', { name: 'Dashboard', exact: true }).first().click();
     await live.page.getByRole('heading', { name: 'Test papers', exact: true }).waitFor();
     assert.equal(await live.page.getByRole('status', { name: 'Test paper reminder' }).count(), 0);
