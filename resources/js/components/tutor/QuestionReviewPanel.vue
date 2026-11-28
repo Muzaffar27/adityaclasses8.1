@@ -93,7 +93,7 @@
                         <StructuredQuestion :content="question.content" />
                         <QuestionDiagrams v-if="question.content.diagrams?.length" :key="question.id" :question-id="question.id" :diagrams="question.content.diagrams" @ready="diagramsReady = $event" />
                     </ReviewQuestionContent>
-                    <div v-if="!isCoverage" class="source-controls"><label v-if="question.origins.length > 1">Original sheet<select v-model="originIndex" :disabled="sourceLoading" @change="closeSource"><option v-for="(origin, n) in question.origins" :key="`${origin.source_id}-${origin.page}`" :value="n">{{ origin.lesson_title }} · page {{ origin.page }}</option></select></label><span v-else-if="origin" class="source-page">Original PDF · page {{ origin.page }}</span><button type="button" :disabled="sourceLoading" @click="sourceUrl ? closeSource() : openSource()">{{ sourceLoading ? 'Loading PDF…' : sourceUrl ? 'Close original PDF' : 'Compare original PDF' }}</button></div>
+                    <div v-if="!isCoverage" class="source-controls"><label v-if="question.origins.length > 1">Original sheet<select v-model="originIndex" :disabled="sourceLoading" @change="comparisonOpen && openSource()"><option v-for="(origin, n) in question.origins" :key="`${origin.source_id}-${origin.page}`" :value="n">{{ origin.lesson_title }} · page {{ origin.page }}</option></select></label><span v-else-if="origin" class="source-page">Original PDF · page {{ origin.page }}</span><button type="button" :disabled="sourceLoading" @click="sourceUrl ? closeSource() : openSource()">{{ sourceLoading ? 'Loading PDF…' : sourceUrl ? 'Close original PDF' : 'Compare original PDF' }}</button></div>
                     <p v-if="sourceError" class="error" role="alert">{{ sourceError }} <button type="button" @click="openSource">Retry PDF</button></p>
                     <template v-if="canDecide">
                         <details class="note-options"><summary>Describe the correction needed <span>(optional){{ note ? ' · Note added' : '' }}</span></summary><label class="review-note">What looks wrong?<textarea v-model="note" rows="2" maxlength="1000" placeholder="For example: denominator missing, wrong sign, incomplete instructions" /></label></details>
@@ -139,6 +139,8 @@ function changeLesson() { topic.value = ''; page.value = 1; load(); }
 const page = ref(1), lastPage = ref(1), total = ref(0), index = ref(0), originIndex = ref(0);
 const loading = ref(false), saving = ref(false), error = ref(''), message = ref(''), note = ref('');
 const sourceUrl = ref(''), sourceLoading = ref(false), sourceError = ref('');
+const comparisonOpen = ref(false);
+let openedSourceKey = '', sourceRequest = null;
 const recovery = ref(null), recoveryChecking = ref(false), recoveryError = ref('');
 const recoveryNotice = ref(null), filterDialog = ref(null);
 function resetFilters() { grade.value = ''; subject.value = ''; topic.value = ''; lesson.value = ''; page.value = 1; load(); }
@@ -189,13 +191,25 @@ async function load(silent = false, correctionChanged = false) {
     finally { if (serial === loadSerial) loading.value = false; }
 }
 function changeFilters() { topic.value = ''; lesson.value = ''; page.value = 1; load(); }
-function closeSource() { sourceSerial++; if (sourceUrl.value) URL.revokeObjectURL(sourceUrl.value); sourceUrl.value = ''; sourceLoading.value = false; sourceError.value = ''; }
+function resetSource() {
+    sourceSerial++; sourceRequest?.abort();
+    if (sourceUrl.value) URL.revokeObjectURL(sourceUrl.value);
+    sourceUrl.value = ''; sourceLoading.value = false; sourceError.value = ''; openedSourceKey = '';
+}
+function closeSource() { comparisonOpen.value = false; resetSource(); }
 async function openSource() {
     if (!origin.value) return;
-    const selected = origin.value, serial = ++sourceSerial;
+    comparisonOpen.value = true;
+    const selected = origin.value;
+    const key = `${selected.lesson_id}:${selected.slot}`;
+    if (key === openedSourceKey && (sourceUrl.value || sourceLoading.value)) return;
+    resetSource();
+    const serial = ++sourceSerial;
+    openedSourceKey = key;
+    sourceRequest = new AbortController();
     sourceLoading.value = true; sourceError.value = '';
     try {
-        const { data } = await api.get(`/lessons/${selected.lesson_id}/pdf/${selected.slot}`, { responseType: 'blob', timeout: 60000 });
+        const { data } = await api.get(`/lessons/${selected.lesson_id}/pdf/${selected.slot}`, { responseType: 'blob', timeout: 60000, signal: sourceRequest.signal });
         if (serial !== sourceSerial) return;
         sourceUrl.value = URL.createObjectURL(data);
     } catch { if (serial === sourceSerial) sourceError.value = 'The original PDF could not be loaded.'; }
@@ -271,7 +285,10 @@ async function checkRecovery() {
 function reviewRecovered() { topic.value = ''; reviewScope.value = 'all'; grade.value = ''; subject.value = ''; lesson.value = recovery.value.lesson_id; status.value = 'pending'; page.value = 1; load(); }
 function previous() { if (index.value > 0) index.value--; else if (page.value > 1) { page.value--; load(); } }
 function next() { if (index.value < items.value.length - 1) index.value++; else if (page.value < lastPage.value) { page.value++; load(); } }
-watch(() => question.value?.id, () => { closeSource(); note.value = ''; draftLabel.value = ''; originIndex.value = 0; diagramsReady.value = false; if (isCoverage.value && question.value) openSource(); });
+watch(() => question.value?.id, () => {
+    note.value = ''; draftLabel.value = ''; originIndex.value = 0; diagramsReady.value = false;
+    if (question.value && (isCoverage.value || comparisonOpen.value)) openSource();
+});
 watch(status, () => { if (!isCoverage.value) closeSource(); });
 watch(recovery, job => {
     try { if (job && recoveryActive.value) sessionStorage.setItem('question-extraction-recovery', JSON.stringify(job)); else sessionStorage.removeItem('question-extraction-recovery'); } catch { /* Status remains available in the current view. */ }

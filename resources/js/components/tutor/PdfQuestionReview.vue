@@ -11,8 +11,9 @@
         <p v-else-if="!hasSources && !error && !queue.pending.value.length && !queue.failures.value.length">{{ scope === 'starter' && selection?.flagged_for_goal ? 'Open Needs correction to work on editable questions.' : 'No more questions in this selection.' }}</p>
         <template v-if="batch && !loading">
             <div class="batch-workspace">
-                <div class="question-list">
-                    <article v-for="question in visibleQuestions" :key="question.id" class="batch-question" :data-question-id="question.id">
+                <div ref="questionList" class="question-list">
+                    <article v-for="question in visibleQuestions" :key="question.id" class="batch-question" :data-question-id="question.id"
+                        @focusin="showPage(question.origin.page)" @click="showPage(question.origin.page)">
                         <header><h3 :id="`pdf-question-${question.id}`" tabindex="-1">Page {{ question.origin.page }} · {{ question.origin.label }}</h3><span v-if="question.status !== 'pending'">{{ question.status === 'approved' ? 'Verified' : 'Review again' }}</span></header>
                         <ReviewQuestionContent>
                             <StructuredQuestion :content="question.content" />
@@ -31,7 +32,7 @@
                     <button class="original-toggle" :aria-expanded="originalExpanded" @click="originalExpanded = !originalExpanded">{{ originalExpanded ? 'Hide original PDF' : 'Show original PDF' }} · page {{ pdfPage }}</button>
                     <div v-show="originalExpanded" class="original-content">
                     <p v-if="pdfLoading" role="status">Loading original PDF…</p>
-                    <p v-if="pdfError" role="alert">{{ pdfError }} <button @click="loadOriginal">Retry PDF</button></p>
+                    <p v-if="pdfError" role="alert">{{ pdfError }} <button @click="loadOriginal()">Retry PDF</button></p>
                     <template v-if="pdfUrl"><a :href="pdfUrl" target="_blank" rel="noopener">Open full PDF to zoom</a><PdfDocumentViewer :url="pdfUrl" :page-number="pdfPage" @ready="pdfReady = true" /></template>
                     </div>
                 </aside>
@@ -47,7 +48,7 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import api from '../../api';
 import { useQuestionReviewSaves } from '../../composables/questionReviewSaves';
 const queue = useQuestionReviewSaves();
@@ -62,10 +63,11 @@ const selection = ref(null);
 const sources = ref([]), selected = ref(''), batch = ref(null), flagged = ref([]), ready = ref({});
 const loading = ref(false), error = ref('');
 const pdfUrl = ref(''), pdfPage = ref(1), pdfLoading = ref(false), pdfError = ref(''), pdfReady = ref(false);
-const original = ref(null), reasons = ref({});
+const original = ref(null), questionList = ref(null), reasons = ref({});
 
 const originalExpanded = ref(!window.matchMedia('(max-width:800px)').matches);
-let serial = 0, pdfSerial = 0;
+let serial = 0, pdfSerial = 0, scrollFrame = 0;
+let pdfRequest = null;
 function savedFlags() {
     try { const ids = JSON.parse(sessionStorage.getItem(`pdf-review-flags:${selected.value}`) || '[]'); return Array.isArray(ids) ? ids : []; }
     catch { return []; }
@@ -78,8 +80,27 @@ function rememberFlags() {
 }
 function comparePage(number) {
     originalExpanded.value = true;
-    pdfPage.value = number;
+    showPage(number);
     if (window.matchMedia('(max-width:800px)').matches) nextTick(() => original.value?.scrollIntoView({ block: 'start' }));
+}
+function showPage(number) {
+    if (pdfPage.value === number) return;
+    pdfReady.value = false;
+    pdfPage.value = number;
+}
+function followScrolledQuestion(event) {
+    const list = questionList.value;
+    if (!list || !originalExpanded.value || window.matchMedia('(max-width:800px)').matches || scrollFrame
+        || (event.target instanceof Element && !event.target.contains(list))) return;
+    scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        if (!list.isConnected) return;
+        const readingLine = original.value?.getBoundingClientRect().top + 36;
+        if (!Number.isFinite(readingLine) || readingLine > window.innerHeight || list.getBoundingClientRect().bottom < readingLine) return;
+        const card = [...list.children].find(element => element.getBoundingClientRect().bottom > readingLine);
+        const question = visibleQuestions.value.find(item => item.id === card?.dataset.questionId);
+        if (question) showPage(question.origin.page);
+    });
 }
 const eligible = question => ['pending', 'review_again'].includes(question.status);
 const scopeQuestions = computed(() => (batch.value?.questions || []).filter(q => props.scope !== 'starter' || selection.value?.ids.includes(q.id)));
@@ -102,7 +123,7 @@ async function refreshCompleted() {
     refreshWhenEmpty = false; depleted.clear(); await reload();
 }
 const allDiagramsReady = computed(() => approvalQuestions.value.every(q => !q.content.diagrams?.length || ready.value[q.id]));
-function closeOriginal() { pdfSerial++; if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value); pdfUrl.value = ''; pdfReady.value = false; pdfLoading.value = false; pdfError.value = ''; }
+function closeOriginal() { pdfSerial++; pdfRequest?.abort(); if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value); pdfUrl.value = ''; pdfReady.value = false; pdfLoading.value = false; pdfError.value = ''; }
 async function reload(preferredSource) {
     if (Number.isInteger(preferredSource)) depleted.delete(preferredSource);
     const request = ++serial;
@@ -123,23 +144,26 @@ async function loadPdf() {
     loading.value = true; error.value = ''; batch.value = null; flagged.value = []; ready.value = {}; closeOriginal();
     try {
         if (!selected.value) return;
+        const listedSource = sources.value.find(source => source.source_id === selected.value);
+        if (listedSource) void loadOriginal(listedSource);
         const { data } = await api.get(`/admin/question-reviews/pdfs/${selected.value}`);
         if (request !== serial) return;
-        batch.value = data; pdfPage.value = data.questions[0]?.origin.page || 1;
+        batch.value = data; pdfPage.value = visibleQuestions.value[0]?.origin.page || 1;
         const legacy = savedFlags().filter(id => data.questions.some(q => q.id === id && eligible(q)));
         flagged.value = data.questions.filter(q => q.status === 'needs_correction').map(q => q.id);
         for (const id of legacy) { if (request !== serial) return; flagQuestion(batch.value.questions.find(q => q.id === id)); }
         rememberFlags();
-        loadOriginal();
-    } catch (e) { if (request === serial) error.value = e.response?.data?.message || 'Could not load this PDF review. Try again.'; }
+        if (!listedSource) void loadOriginal(data.source);
+    } catch (e) { if (request === serial) { closeOriginal(); error.value = e.response?.data?.message || 'Could not load this PDF review. Try again.'; } }
     finally { if (request === serial) { loading.value = false; if (batch.value && !approvalQuestions.value.length && !hasFailedSource.value && !error.value) await advance(); } }
 }
-async function loadOriginal() {
-    if (!batch.value) return;
-    closeOriginal(); const request = ++pdfSerial, source = batch.value.source;
+async function loadOriginal(source = batch.value?.source) {
+    if (!source) return;
+    closeOriginal(); const request = ++pdfSerial;
+    pdfRequest = new AbortController();
     pdfLoading.value = true;
     try {
-        const { data } = await api.get(`/lessons/${source.lesson_id}/pdf/${source.slot}`, { responseType: 'blob', timeout: 60000 });
+        const { data } = await api.get(`/lessons/${source.lesson_id}/pdf/${source.slot}`, { responseType: 'blob', timeout: 60000, signal: pdfRequest.signal });
         if (request === pdfSerial) pdfUrl.value = URL.createObjectURL(data);
     } catch { if (request === pdfSerial) pdfError.value = 'The original PDF could not be loaded.'; }
     finally { if (request === pdfSerial) pdfLoading.value = false; }
@@ -151,7 +175,12 @@ function flagQuestion(question) {
     if (!queue.enqueue({ kind: 'flag', questionId: question.id, revision: question.revision, reason: reasons.value[question.id] || null, sourceId: source.id, lessonId: source.lesson_id, label: source.lesson_title })) return;
     refreshWhenEmpty = true;
     if (!approvalQuestions.value.length && !loading.value) void advance();
-    else nextTick(() => { const next = visibleQuestions.value[Math.min(Math.max(position, 0), visibleQuestions.value.length - 1)]; if (next) document.getElementById(`pdf-question-${next.id}`)?.focus({ preventScroll: true }); });
+    else nextTick(() => {
+        const next = visibleQuestions.value[Math.min(Math.max(position, 0), visibleQuestions.value.length - 1)];
+        if (!next) return;
+        showPage(next.origin.page);
+        document.getElementById(`pdf-question-${next.id}`)?.focus({ preventScroll: true });
+    });
 }
 function approve() {
     if (!batch.value || error.value || hasFailedSource.value || !approvalQuestions.value.length || !allDiagramsReady.value || !pdfReady.value) return;
@@ -170,7 +199,11 @@ watch(queue.result, result => {
 watch(() => queue.pending.value.length, count => { if (!count) void nextTick(refreshCompleted); });
 watch(() => [props.grade, props.subject, props.lesson, props.scope, props.topic], reload, { immediate: true });
 defineExpose({ reload });
-onBeforeUnmount(() => { serial++; closeOriginal(); });
+onMounted(() => window.addEventListener('scroll', followScrolledQuestion, { capture: true, passive: true }));
+onBeforeUnmount(() => {
+    serial++; closeOriginal(); cancelAnimationFrame(scrollFrame);
+    window.removeEventListener('scroll', followScrolledQuestion, true);
+});
 </script>
 
 <style scoped>
